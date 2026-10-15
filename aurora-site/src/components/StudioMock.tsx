@@ -5,7 +5,7 @@ export function StudioMock() {
       <div className="orb one" /><div className="orb two" />
       <div className="label">A calmer way to show up.</div>
       <div className="bcard">
-        <div className="chrome-bar"><i /><i /><i /><span>Aurora · Instagram Studio</span></div>
+        <div className="chrome-bar"><i /><i /><i /><span>Aurora Studio</span></div>
         <div className="body">
           <div className="tabs"><b>✳</b><span /><span /><span /></div>
           <h4>A little focus goes a long way.</h4>
