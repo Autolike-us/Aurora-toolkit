@@ -1,0 +1,32 @@
+1:"$Sreact.fragment"
+2:"/Aurora-toolkit/site-preview/_next/static/chunks/0st2_hvdcejvc.js"
+3:"/Aurora-toolkit/site-preview/_next/static/chunks/3wb10lglfypdn.js"
+4:I[84834,["$2","$3"],"Nav"]
+5:I[39756,["$2","$3"],"default"]
+6:I[37457,["$2","$3"],"default"]
+7:I[22016,["$2","$3"],""]
+12:"ViewportBoundary"
+13:I[97367,["$2","$3"],"$12"]
+14:"MetadataBoundary"
+15:I[97367,["$2","$3"],"$14"]
+16:"$Sreact.suspense"
+:HL["/Aurora-toolkit/site-preview/_next/static/chunks/15r8h9wpw6_sv.css","style"]
+9:X
+c:X
+c:C
+f:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[["$","main",null,{"children":["$","article",null,{"className":"prose","children":[["$","h1",null,{"children":"Privacy policy"}],["$","p",null,{"className":"muted","children":"Last updated: October 2026. Template text — have it reviewed by a lawyer before launch."}],["$","h2",null,{"children":"What we collect"}],["$","p",null,{"children":"Your email address and password (stored hashed by our authentication provider), your license key, device identifiers of browsers that use your license, and subscription status. Payments are handled by Stripe and PayPal; we never see or store full card numbers."}],["$","h2",null,{"children":"What stays on your device"}],["$","p",null,{"children":"Your tasks, targets, comments, history and settings stay in your browser’s local storage. The extensions do not send them to us and do not read or store your social-network passwords."}],["$","h2",null,{"children":"How we use it"}],["$","p",null,{"children":"To run your account, verify your license, process payments, send essential service emails and prevent abuse. We do not sell your data."}],["$","h2",null,{"children":"Processors"}],["$","p",null,{"children":"Supabase (database and authentication), Vercel (hosting), Stripe and PayPal (payments)."}],["$","h2",null,{"children":"Your rights"}],["$","p",null,{"children":"You can ask to access, correct or delete your data at any time by contacting support@your-domain.example."}]]}]}],null,"$L10"]}],"p":"$@11","v":null,"s":"$9"}}]]
+d:[["children",{"s":"privacy","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@e","v":"$c","s":"$9"},"c":"$Qf"}]]
+a:[["children",{"s":"legal","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@b","v":"$c","s":"$9"},"c":"$Qd"}]]
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/Aurora-toolkit/site-preview/_next/static/chunks/15r8h9wpw6_sv.css","precedence":"next"}],["$","script","script-0",{"src":"/Aurora-toolkit/site-preview/_next/static/chunks/0st2_hvdcejvc.js","async":true}],["$","script","script-1",{"src":"/Aurora-toolkit/site-preview/_next/static/chunks/3wb10lglfypdn.js","async":true}]],["$","html",null,{"lang":"en","children":["$","body",null,{"children":[["$","$L4",null,{}],["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}],"notFound":[["$","main",null,{"children":["$","div",null,{"className":"auth center","children":[["$","h1",null,{"style":{"fontSize":40},"children":"Page not found"}],["$","p",null,{"className":"muted","style":{"margin":"10px 0 20px"},"children":"That page drifted away."}],["$","$L7",null,{"className":"btn primary","href":"/","children":"Back home"}]]}]}],[]]}],["$","footer",null,{"className":"site","children":["$","div",null,{"className":"wrap","children":[["$","div",null,{"className":"cols","children":[["$","div",null,{"children":[["$","$L7",null,{"href":"/","className":"logo","children":["✦ ",["$","span",null,{"children":"Aurora"}]]}],["$","p",null,{"className":"muted","style":{"marginTop":10,"maxWidth":280},"children":"Thoughtful growth tools for the platforms you already use."}]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Extensions"}],[["$","$L7","facebook",{"href":"/products/facebook","children":"Aurora for Facebook"}],["$","$L7","instagram",{"href":"/products/instagram","children":"Aurora for Instagram"}],["$","$L7","tiktok",{"href":"/products/tiktok","children":"Aurora for TikTok"}]]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Company"}],["$","$L7",null,{"href":"/pricing","children":"Pricing"}],["$","$L7",null,{"href":"/download","children":"Download"}],["$","$L7",null,{"href":"/account","children":"My account"}]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Legal"}],["$","$L7",null,{"href":"/legal/terms","children":"Terms of service"}],["$","$L7",null,{"href":"/legal/privacy","children":"Privacy policy"}],["$","$L7",null,{"href":"/legal/refunds","children":"Refunds & cancellation"}],["$","$L7",null,{"href":"/legal/disclaimer","children":"Platform disclaimer"}]]}]]}],["$","p",null,{"className":"legal","children":["Aurora is an independent product and is not affiliated with, endorsed by, or sponsored by Meta Platforms, Facebook, Instagram or TikTok. All product names and logos are trademarks of their respective owners. Automating activity may be restricted by each platform’s rules; you are responsible for how you use Aurora. © ",2026," Aurora."]}]]}]}]]}]}]]}],"p":"$@8","v":null,"s":"$9"},"c":"$Qa"},"h":{"r":["$","$1","h",{"children":[null,["$","$L13",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L15",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$16",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Privacy policy · Aurora"}],["$","meta","1",{"name":"description","content":"Aurora is a family of browser extensions that like, comment, follow and more on Facebook, Instagram and TikTok at a human pace. Preview first. 3-day free trial."}]]}]}],null]}],null]}],"p":"$@17","v":null,"s":"$9"}},"a":"$@18","u":"$@19","b":"N2MDnYtNfz4lST4aIpj0t"}
+1a:I[97367,["$2","$3"],"OutletBoundary"]
+10:["$","$L1a",null,{"children":["$","$16",null,{"name":"Next.MetadataOutlet","children":"$@1b"}]}]
+9:300
+1b:null
+19:true
+9:C
+18:0
+e:"$undefined"
+b:"$undefined"
+8:"$undefined"
+17:"$undefined"
+11:"$undefined"

@@ -1,0 +1,29 @@
+1:"$Sreact.fragment"
+2:"/Aurora-toolkit/site-preview/_next/static/chunks/0st2_hvdcejvc.js"
+3:"/Aurora-toolkit/site-preview/_next/static/chunks/3wb10lglfypdn.js"
+4:I[84834,["$2","$3"],"Nav"]
+5:I[39756,["$2","$3"],"default"]
+6:I[37457,["$2","$3"],"default"]
+7:I[22016,["$2","$3"],""]
+e:I[97367,["$2","$3"],"OutletBoundary"]
+f:"$Sreact.suspense"
+12:"ViewportBoundary"
+13:I[97367,["$2","$3"],"$12"]
+14:"MetadataBoundary"
+15:I[97367,["$2","$3"],"$14"]
+:HL["/Aurora-toolkit/site-preview/_next/static/chunks/15r8h9wpw6_sv.css","style"]
+9:X
+c:X
+c:C
+d:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[["$","main",null,{"children":["$","div",null,{"className":"auth center","children":[["$","h1",null,{"style":{"fontSize":40},"children":"Page not found"}],["$","p",null,{"className":"muted","style":{"margin":"10px 0 20px"},"children":"That page drifted away."}],["$","$L7",null,{"className":"btn primary","href":"/","children":"Back home"}]]}]}],null,["$","$Le",null,{"children":["$","$f",null,{"name":"Next.MetadataOutlet","children":"$@10"}]}]]}],"p":"$@11","v":null,"s":"$9"}}]]
+a:[["children",{"s":"/_not-found","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@b","v":"$c","s":"$9"},"c":"$Qd"}]]
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/Aurora-toolkit/site-preview/_next/static/chunks/15r8h9wpw6_sv.css","precedence":"next"}],["$","script","script-0",{"src":"/Aurora-toolkit/site-preview/_next/static/chunks/0st2_hvdcejvc.js","async":true}],["$","script","script-1",{"src":"/Aurora-toolkit/site-preview/_next/static/chunks/3wb10lglfypdn.js","async":true}]],["$","html",null,{"lang":"en","children":["$","body",null,{"children":[["$","$L4",null,{}],["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}],"notFound":[["$","main",null,{"children":["$","div",null,{"className":"auth center","children":[["$","h1",null,{"style":{"fontSize":40},"children":"Page not found"}],["$","p",null,{"className":"muted","style":{"margin":"10px 0 20px"},"children":"That page drifted away."}],["$","$L7",null,{"className":"btn primary","href":"/","children":"Back home"}]]}]}],[]]}],["$","footer",null,{"className":"site","children":["$","div",null,{"className":"wrap","children":[["$","div",null,{"className":"cols","children":[["$","div",null,{"children":[["$","$L7",null,{"href":"/","className":"logo","children":["✦ ",["$","span",null,{"children":"Aurora"}]]}],["$","p",null,{"className":"muted","style":{"marginTop":10,"maxWidth":280},"children":"Thoughtful growth tools for the platforms you already use."}]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Extensions"}],[["$","$L7","facebook",{"href":"/products/facebook","children":"Aurora for Facebook"}],["$","$L7","instagram",{"href":"/products/instagram","children":"Aurora for Instagram"}],["$","$L7","tiktok",{"href":"/products/tiktok","children":"Aurora for TikTok"}]]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Company"}],["$","$L7",null,{"href":"/pricing","children":"Pricing"}],["$","$L7",null,{"href":"/download","children":"Download"}],["$","$L7",null,{"href":"/account","children":"My account"}]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Legal"}],["$","$L7",null,{"href":"/legal/terms","children":"Terms of service"}],["$","$L7",null,{"href":"/legal/privacy","children":"Privacy policy"}],["$","$L7",null,{"href":"/legal/refunds","children":"Refunds & cancellation"}],["$","$L7",null,{"href":"/legal/disclaimer","children":"Platform disclaimer"}]]}]]}],["$","p",null,{"className":"legal","children":["Aurora is an independent product and is not affiliated with, endorsed by, or sponsored by Meta Platforms, Facebook, Instagram or TikTok. All product names and logos are trademarks of their respective owners. Automating activity may be restricted by each platform’s rules; you are responsible for how you use Aurora. © ",2026," Aurora."]}]]}]}]]}]}]]}],"p":"$@8","v":null,"s":"$9"},"c":"$Qa"},"h":{"r":["$","$1","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$L13",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L15",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Aurora — thoughtful growth tools for Facebook, Instagram & TikTok"}],["$","meta","1",{"name":"description","content":"Aurora is a family of browser extensions that like, comment, follow and more on Facebook, Instagram and TikTok at a human pace. Preview first. 3-day free trial."}]]}]}],null]}],null]}],"p":"$@16","v":null,"s":"$9"}},"a":"$@17","u":"$@18","b":"N2MDnYtNfz4lST4aIpj0t"}
+10:null
+9:300
+18:true
+9:C
+17:0
+b:"$undefined"
+8:"$undefined"
+16:"$undefined"
+11:"$undefined"

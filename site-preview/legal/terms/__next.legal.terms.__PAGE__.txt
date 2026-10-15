@@ -1,0 +1,38 @@
+1:"$Sreact.fragment"
+2:"/Aurora-toolkit/site-preview/_next/static/chunks/0st2_hvdcejvc.js"
+3:"/Aurora-toolkit/site-preview/_next/static/chunks/3wb10lglfypdn.js"
+4:I[84834,["$2","$3"],"Nav"]
+5:I[39756,["$2","$3"],"default"]
+6:I[37457,["$2","$3"],"default"]
+7:I[22016,["$2","$3"],""]
+18:"ViewportBoundary"
+19:I[97367,["$2","$3"],"$18"]
+1a:"MetadataBoundary"
+1b:I[97367,["$2","$3"],"$1a"]
+1c:"$Sreact.suspense"
+:HL["/Aurora-toolkit/site-preview/_next/static/chunks/15r8h9wpw6_sv.css","style"]
+9:X
+c:X
+c:C
+f:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[["$","main",null,{"children":["$","article",null,{"className":"prose","children":[["$","h1",null,{"children":"Terms of service"}],["$","p",null,{"className":"muted","children":"Last updated: October 2026. Template text — have it reviewed by a lawyer before launch."}],["$","h2",null,{"children":"1. The service"}],["$","p",null,{"children":"Aurora provides browser extensions and a website (the “Service”) that help you perform actions in your own logged-in browser session on third-party platforms. You are solely responsible for the content you post and the actions you perform."}],["$","h2",null,{"children":"2. Accounts, trial and licenses"}],["$","p",null,{"children":"A free trial lasts 3 days from sign-up and is limited to one per person. A license is personal, may be used on up to 3 browsers, and may not be shared, resold or published."}],["$","h2",null,{"children":"3. Subscriptions and billing"}],["$","p",null,{"children":"Subscriptions renew monthly until cancelled. Prices are shown at checkout. A launch price, where offered, applies for as long as the subscription that started it remains active without interruption. You can cancel at any time; access continues until the end of the paid period."}],["$","h2",null,{"children":"4. Platform rules and your risk"}],["$","p",null,{"children":"Facebook, Instagram and TikTok restrict automated activity. Using Aurora may lead to warnings, temporary limits or suspension of your accounts. We give no guarantee about outcomes and are not responsible for actions taken by those platforms. See the platform disclaimer."}],"$L10","$L11","$L12","$L13","$L14","$L15"]}]}],null,"$L16"]}],"p":"$@17","v":null,"s":"$9"}}]]
+d:[["children",{"s":"terms","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@e","v":"$c","s":"$9"},"c":"$Qf"}]]
+a:[["children",{"s":"legal","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@b","v":"$c","s":"$9"},"c":"$Qd"}]]
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/Aurora-toolkit/site-preview/_next/static/chunks/15r8h9wpw6_sv.css","precedence":"next"}],["$","script","script-0",{"src":"/Aurora-toolkit/site-preview/_next/static/chunks/0st2_hvdcejvc.js","async":true}],["$","script","script-1",{"src":"/Aurora-toolkit/site-preview/_next/static/chunks/3wb10lglfypdn.js","async":true}]],["$","html",null,{"lang":"en","children":["$","body",null,{"children":[["$","$L4",null,{}],["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}],"notFound":[["$","main",null,{"children":["$","div",null,{"className":"auth center","children":[["$","h1",null,{"style":{"fontSize":40},"children":"Page not found"}],["$","p",null,{"className":"muted","style":{"margin":"10px 0 20px"},"children":"That page drifted away."}],["$","$L7",null,{"className":"btn primary","href":"/","children":"Back home"}]]}]}],[]]}],["$","footer",null,{"className":"site","children":["$","div",null,{"className":"wrap","children":[["$","div",null,{"className":"cols","children":[["$","div",null,{"children":[["$","$L7",null,{"href":"/","className":"logo","children":["✦ ",["$","span",null,{"children":"Aurora"}]]}],["$","p",null,{"className":"muted","style":{"marginTop":10,"maxWidth":280},"children":"Thoughtful growth tools for the platforms you already use."}]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Extensions"}],[["$","$L7","facebook",{"href":"/products/facebook","children":"Aurora for Facebook"}],["$","$L7","instagram",{"href":"/products/instagram","children":"Aurora for Instagram"}],["$","$L7","tiktok",{"href":"/products/tiktok","children":"Aurora for TikTok"}]]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Company"}],["$","$L7",null,{"href":"/pricing","children":"Pricing"}],["$","$L7",null,{"href":"/download","children":"Download"}],["$","$L7",null,{"href":"/account","children":"My account"}]]}],["$","div",null,{"children":[["$","h4",null,{"children":"Legal"}],["$","$L7",null,{"href":"/legal/terms","children":"Terms of service"}],["$","$L7",null,{"href":"/legal/privacy","children":"Privacy policy"}],["$","$L7",null,{"href":"/legal/refunds","children":"Refunds & cancellation"}],["$","$L7",null,{"href":"/legal/disclaimer","children":"Platform disclaimer"}]]}]]}],["$","p",null,{"className":"legal","children":["Aurora is an independent product and is not affiliated with, endorsed by, or sponsored by Meta Platforms, Facebook, Instagram or TikTok. All product names and logos are trademarks of their respective owners. Automating activity may be restricted by each platform’s rules; you are responsible for how you use Aurora. © ",2026," Aurora."]}]]}]}]]}]}]]}],"p":"$@8","v":null,"s":"$9"},"c":"$Qa"},"h":{"r":["$","$1","h",{"children":[null,["$","$L19",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1b",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Terms of service · Aurora"}],["$","meta","1",{"name":"description","content":"Aurora is a family of browser extensions that like, comment, follow and more on Facebook, Instagram and TikTok at a human pace. Preview first. 3-day free trial."}]]}]}],null]}],null]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"N2MDnYtNfz4lST4aIpj0t"}
+20:I[97367,["$2","$3"],"OutletBoundary"]
+10:["$","h2",null,{"children":"5. Acceptable use"}]
+11:["$","p",null,{"children":"Do not use Aurora for spam, harassment, deception, illegal activity or to violate anyone’s rights. We may suspend licenses used this way."}]
+12:["$","h2",null,{"children":"6. Warranty and liability"}]
+13:["$","p",null,{"children":"The Service is provided “as is”. To the maximum extent permitted by law, our total liability is limited to the amount you paid in the three months before the claim."}]
+14:["$","h2",null,{"children":"7. Changes and contact"}]
+15:["$","p",null,{"children":"We may update these terms and will post the new date here. Contact: support@your-domain.example."}]
+16:["$","$L20",null,{"children":["$","$1c",null,{"name":"Next.MetadataOutlet","children":"$@21"}]}]
+9:300
+21:null
+1f:true
+9:C
+1e:0
+e:"$undefined"
+b:"$undefined"
+8:"$undefined"
+1d:"$undefined"
+17:"$undefined"
