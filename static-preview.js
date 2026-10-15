@@ -1,0 +1,1 @@
+window.AURORA_STATIC_PREVIEW = true;
