@@ -17,14 +17,14 @@ export interface Product {
 
 export const PRODUCTS: Product[] = [
   {
-    id: 'facebook', slug: 'facebook', name: 'Aurora for Facebook', short: 'Facebook', accent: '#1877f2', accent2: '#0a5bd3',
+    id: 'facebook', slug: 'facebook', name: 'Aurora for Facebook', short: 'Facebook', accent: '#1877f2', accent2: '#2bb673',
     tagline: 'Walk your feed like a person: react, comment, share, follow and more — in place, at your pace.',
     actions: ['React (all 7 reactions)', 'Comment', 'Share', 'Follow', 'Unfollow', 'Send friend requests', 'Join groups'],
     highlights: ['Works through pages, profiles, groups and hashtags', 'Finds the first post you have not handled and acts on it', 'Skips already-reacted posts automatically'],
     site: 'facebook.com', zip: 'aurora-facebook-latest.zip',
   },
   {
-    id: 'instagram', slug: 'instagram', name: 'Aurora for Instagram', short: 'Instagram', accent: '#d62976', accent2: '#fa7e1e',
+    id: 'instagram', slug: 'instagram', name: 'Aurora for Instagram', short: 'Instagram', accent: '#d62976', accent2: '#ef8430',
     tagline: 'Open a profile, like the first post, press Next, repeat — exactly the way you would by hand.',
     actions: ['Like', 'Comment', 'Follow', 'Unfollow'],
     highlights: ['In-place profile walk through the post popup', 'Sources: profiles, followers, following, hashtags, locations, commenters, likers', 'Post-age and skip-video filters'],

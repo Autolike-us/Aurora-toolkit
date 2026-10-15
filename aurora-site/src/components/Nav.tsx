@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { browserClient } from '@/lib/supabase-browser';
+import { Brand } from './Brand';
 
 export function Nav() {
   const [signedIn, setSignedIn] = useState(false);
@@ -14,14 +15,14 @@ export function Nav() {
   }, []);
   return (
     <header className="nav"><div className="wrap">
-      <Link href="/" className="logo">✦ <span>Aurora</span></Link>
+      <Brand />
       <nav aria-label="Main">
-        <Link href="/#products">Extensions</Link><Link href="/pricing">Pricing</Link><Link href="/download">Download</Link><Link href="/#faq">FAQ</Link>
+        <Link href="/#studios">The studios</Link><Link href="/#how">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/download">Download</Link><Link href="/#faq">Questions</Link>
       </nav>
       <div className="right">
         {signedIn ? <Link className="btn sm primary" href="/account">My account</Link> : <>
-          <Link className="btn sm" href="/login">Log in</Link>
-          <Link className="btn sm primary" href="/signup">Start free trial</Link></>}
+          <Link className="link" href="/login">Sign in ↗</Link>
+          <Link className="btn sm primary" href="/signup">Try Aurora <span className="arrow">↗</span></Link></>}
       </div>
     </div></header>
   );

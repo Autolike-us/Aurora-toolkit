@@ -12,59 +12,67 @@ export default function Home() {
     <main>
       <section className="hero"><div className="wrap grid">
         <div>
-          <span className="pill">✦ <b>New</b> · Aurora for Facebook, Instagram &amp; TikTok</span>
-          <h1>Grow your presence, <span className="grad-text">one thoughtful action at a time.</span></h1>
-          <p className="lead">Aurora is a family of browser extensions that like, comment, follow and more — in your own logged-in tab, at a human pace. Preview everything first. Go live when you are ready.</p>
+          <span className="eyebrow"><span className="star">✳</span>Your social workflow, in a better light</span>
+          <h1>Less busywork.<br />More <em>possibility.</em></h1>
+          <p className="lead">A little more intention. A lot less repetition. Meet your new browser companions for Facebook, Instagram and TikTok — they like, comment, follow and more, at a human pace.</p>
           <div className="cta">
-            <Link className="btn primary lg" href="/signup">Start your {TRIAL_DAYS}-day free trial</Link>
-            <Link className="btn lg" href="/pricing">See pricing</Link>
+            <Link className="btn primary lg" href="/signup">Start my {TRIAL_DAYS}-day free trial <span className="arrow">↗</span></Link>
+            <a className="demo" href="#how"><span className="play">▶</span>Take a closer look</a>
           </div>
-          <p className="fine">No card required · All 3 extensions during the trial · Then $10/month — launch offer inside</p>
+          <p className="fine">All three studios included. No card required for the trial.<br />Then $10/month — launch offer inside. Cancel any time.</p>
+          <div className="platforms">
+            <span className="cap">Three platforms<br />One familiar feel</span>
+            <span className="pmini fb">f</span><span className="pmini ig">◎</span><span className="pmini tk">♪</span>
+            <span className="sep" /><span className="chrome"><i />Made for<br />Chrome</span>
+          </div>
         </div>
         <StudioMock />
       </div></section>
 
-      <section className="block"><div className="wrap center">
-        <span className="eyebrow">The Aurora series</span>
-        <h2 style={{ marginTop: 10 }}>One studio. Three platforms.</h2>
-        <p className="lead">Each extension feels the same, so what you learn on one works on the others — with the actions that make sense for each platform.</p>
+      <div className="principles"><div className="wrap">
+        <span className="lead-in">Thoughtful tools.<br /><b>By design.</b></span>
+        <p><span>◉</span>Preview before you act</p><p><span>◷</span>Set your own pace</p><p><span>▤</span>Keep a local activity history</p><p><span>✦</span>Stay in control</p>
+      </div></div>
+
+      <section className="block"><div className="wrap">
+        <div className="section-head">
+          <div><span className="eyebrow">01 / The Aurora series</span><h2>Three studios.<br />Your kind of workflow.</h2></div>
+          <p className="side">Different platforms. The same thoughtful approach. Choose your studio and make it your own.</p>
+        </div>
         <ProductCards />
+        <p className="fineprint center">Works with the English versions of each platform in Chrome 110+. Keep your task tab open and start with a one-target preview.</p>
       </div></section>
 
-      <section className="block"><div className="wrap center">
-        <span className="eyebrow">How it works</span>
-        <h2 style={{ marginTop: 10 }}>Up and running in three minutes</h2>
-        <div className="steps" style={{ textAlign: 'left' }}>
-          <div className="step"><h3>Install &amp; sign in</h3><p className="muted" style={{ marginTop: 8 }}>Add the extension, paste your license key from your account page, and open the studio from the toolbar.</p></div>
-          <div className="step"><h3>Preview your task</h3><p className="muted" style={{ marginTop: 8 }}>Pick an action and your targets. Preview shows exactly what Aurora would do — nothing is sent.</p></div>
-          <div className="step"><h3>Go live, at your pace</h3><p className="muted" style={{ marginTop: 8 }}>Switch to live. Watch “Target 2 of 5 · next in 24s” tick along, pause or skip a target any time.</p></div>
+      <section className="block" id="how"><div className="wrap workflow">
+        <div>
+          <span className="eyebrow">02 / A little less friction</span>
+          <h2>From hello<br />to <em>in your flow.</em></h2>
+          <p className="lead">No new social password to share. Your studios work in the tabs you already use.</p>
+          <Link className="linkarrow" href="/download">Find your starting point ↗</Link>
+        </div>
+        <div className="steps">
+          <div className="step"><span className="n">01</span><div><h3>Meet your new companions</h3><p>Create your Aurora account — your {TRIAL_DAYS}-day trial starts right away, no card needed.</p></div></div>
+          <div className="step"><span className="n">02</span><div><h3>Make yourself at home</h3><p>Download your studios, load them in Chrome and paste your license key. Choose a task, your targets and a pace that fits.</p></div></div>
+          <div className="step"><span className="n">03</span><div><h3>Preview. Then decide.</h3><p>See what your session will do. Start live actions only when you’re ready — with pause and skip within reach.</p></div></div>
         </div>
       </div></section>
 
-      <section className="block"><div className="wrap center">
+      <section className="block" style={{ paddingTop: 20 }}><div className="wrap">
         <span className="eyebrow">Why Aurora</span>
-        <h2 style={{ marginTop: 10 }}>Built to be careful, calm and clear</h2>
-        <div className="features" style={{ textAlign: 'left' }}>
-          {COMMON_FEATURES.map(f => <div className="feature" key={f.title}><div className="ic">{f.icon}</div><h3>{f.title}</h3><p>{f.text}</p></div>)}
-        </div>
+        <h2>Built to be careful,<br /><em>calm and clear.</em></h2>
+        <div className="features">{COMMON_FEATURES.map(f => <div className="feature" key={f.title}><div className="ic">{f.icon}</div><h3>{f.title}</h3><p>{f.text}</p></div>)}</div>
       </div></section>
 
-      <section className="block" id="pricing"><div className="wrap center">
-        <span className="eyebrow">Pricing</span>
-        <h2 style={{ marginTop: 10, marginBottom: 34 }}>Simple, honest pricing</h2>
-        <PricingPlans />
-      </div></section>
+      <section className="block" id="pricing" style={{ paddingTop: 20 }}><div className="wrap" style={{ maxWidth: 1360, padding: 0 }}><PricingPlans /></div></section>
 
-      <section className="block" id="faq"><div className="wrap center">
-        <span className="eyebrow">FAQ</span>
-        <h2 style={{ marginTop: 10 }}>Good questions</h2>
+      <section className="block" id="faq"><div className="wrap faqgrid">
+        <div><span className="eyebrow">04 / Good questions</span><h2>A little clarity<br />before you begin.</h2></div>
         <Faq />
       </div></section>
 
-      <section><div className="wrap"><div className="cta-band">
-        <h2>Try all three, free for {TRIAL_DAYS} days.</h2>
-        <p style={{ marginTop: 10, opacity: .92 }}>No card. No commitment. Install in minutes.</p>
-        <Link className="btn lg" href="/signup">Start free trial</Link>
+      <section><div className="wrap"><div className="closing">
+        <p><span className="star">✳</span>A little more space for what comes next.</p>
+        <Link className="btn primary" href="/signup">Find your Aurora <span className="arrow">↗</span></Link>
       </div></div></section>
     </main>
   );

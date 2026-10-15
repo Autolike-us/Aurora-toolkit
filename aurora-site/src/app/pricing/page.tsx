@@ -14,18 +14,19 @@ const ROWS: [string, boolean, boolean, boolean][] = [
 
 export default function Pricing() {
   return (
-    <main><section className="block"><div className="wrap center">
-      <span className="eyebrow">Pricing</span>
-      <h1 style={{ margin: '10px 0 14px', fontSize: 'clamp(34px,5vw,56px)' }}>Start free. Stay for <span className="grad-text">$10/month.</span></h1>
-      <p className="lead" style={{ marginBottom: 36 }}>3 days free with every extension, no card. Then one simple subscription.</p>
+    <main><section className="block"><div className="wrap">
+      <div className="center" style={{ marginBottom: 44 }}>
+        <span className="eyebrow">Pricing</span>
+        <h1 style={{ fontSize: 'clamp(36px,5vw,60px)' }}>Start free. Stay for <em>$10/month.</em></h1>
+        <p className="lead" style={{ marginTop: 16 }}>3 days free with every studio, no card. Then one simple subscription.</p>
+      </div>
       <PricingPlans />
-      <h2 style={{ margin: '70px 0 6px', fontSize: 30 }}>What each extension can do</h2>
+      <h2 style={{ margin: '80px 0 6px', fontSize: 32 }}>What each studio can do</h2>
       <table className="compare">
         <thead><tr><th>Action</th>{PRODUCTS.map(p => <th key={p.id}>{p.short}</th>)}</tr></thead>
         <tbody>{ROWS.map(r => <tr key={r[0]}><td>{r[0]}</td>{r.slice(1).map((v, i) => <td key={i} className={v ? 'y' : 'n'}>{v ? '✓' : '—'}</td>)}</tr>)}</tbody>
       </table>
-      <h2 style={{ margin: '70px 0 0', fontSize: 30 }}>Pricing questions</h2>
-      <Faq items={FAQ.slice(0, 4)} />
+      <div className="faqgrid" style={{ marginTop: 90 }}><div><span className="eyebrow">Good questions</span><h2>Pricing, answered.</h2></div><Faq items={FAQ.slice(0, 4)} /></div>
     </div></section></main>
   );
 }
