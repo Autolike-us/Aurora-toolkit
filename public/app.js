@@ -3,6 +3,10 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 let account = null, authMode = 'register', config = null;
 async function api(path, body) {
+  if (window.AURORA_STATIC_PREVIEW) {
+    if (path === '/api/config') return {scope:'suite',price:10,regularPrice:30,introMonths:3,currency:'USD',trialDays:3,providers:{stripe:false,paypal:false}};
+    throw Error('This GitHub Pages site previews the design. Accounts, licenses, and payments require the Aurora backend.');
+  }
   const response = await fetch(path, {method:body === undefined ? 'GET':'POST', credentials:'same-origin',
     headers:body === undefined ? {} : {'Content-Type':'application/json'}, body:body === undefined ? undefined : JSON.stringify(body)});
   const data = await response.json();
@@ -12,6 +16,14 @@ async function api(path, body) {
 function toast(message) { $('#toast').textContent=message; $('#toast').hidden=false; setTimeout(()=>$('#toast').hidden=true,5000); }
 function node(tag, text, className) { const n=document.createElement(tag); if(text)n.textContent=text; if(className)n.className=className; return n; }
 function openCheckout() {
+  if (window.AURORA_STATIC_PREVIEW) {
+    $('#auth-form').hidden=true; $('#payment-step').hidden=false;
+    $('#signed-in-email').textContent='Preview your subscription';
+    $$('[data-pay]').forEach(b=>b.disabled=true);
+    $('#checkout-status').textContent='Design preview only. The full website connects these buttons to Stripe and PayPal through its Python backend. No account, trial, or payment is created here.';
+    if (!$('#checkout-dialog').open) $('#checkout-dialog').showModal();
+    return;
+  }
   $('#auth-form').hidden=!!account; $('#payment-step').hidden=!account;
   $('#signed-in-email').textContent=account ? 'Signed in as '+account.email : '';
   $('#checkout-status').textContent=config && !Object.values(config.providers).some(Boolean) ? 'Payment setup is pending. You can create your account, but no trial or charge will start until checkout is connected.' : '';

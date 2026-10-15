@@ -47,7 +47,15 @@ With the development server running, Python Playwright and Chromium installed, r
 - `docs/EXTENSION_REVIEW.md`: review of the three original uploads, before website design.
 - `docs/PAYMENTS.md`: merchant setup and required sandbox validation.
 
-Use the existing checkout for this isolated cloud task; do not create an additional Git worktree. Nothing has been pushed or deployed.
+Use the existing checkout for this isolated cloud task; do not create an additional Git worktree. Source is published on GitHub; running the full backend requires a separate deployment.
+
+## GitHub Pages design preview
+
+The `gh-pages` branch contains a standalone static design preview. In GitHub repository **Settings → Pages**, select **Deploy from a branch**, branch **gh-pages**, folder **/ (root)**, then save. The expected project address is `https://autolike-us.github.io/Aurora-toolkit/` once GitHub finishes deployment.
+
+This preview supports the design, product dialogs, FAQ, and trial dialog. Accounts and payments are intentionally disabled; GitHub Pages cannot run the Python service. No API calls or trial charges are made by the static preview.
+
+To rebuild after design changes, run `python scripts/build_pages.py` and publish the contents of `artifacts/pages/` to `gh-pages`. This generates relative asset paths so the project URL works. Deploy the full Python app separately to test accounts, licensing, and merchant integrations.
 
 ## Deployment boundaries
 
