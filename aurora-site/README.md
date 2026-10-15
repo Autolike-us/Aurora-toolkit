@@ -1,47 +1,44 @@
-# Aurora site
+# Aurora site (getaurorastudios.com)
 
-Marketing site, accounts, billing and license server for the Aurora extensions (Facebook, Instagram, TikTok).
+Static marketing site + accounts + billing + license server, built to run on an ordinary **HostGator cPanel plan** — no Node server, no Vercel, no Supabase.
 
-* **Next.js 16 (App Router) + TypeScript**, plain CSS, deploys to Vercel.
-* **Supabase**: email/password auth + Postgres (`supabase/schema.sql`) + a private `releases` storage bucket.
-* **Stripe** (cards) and **PayPal** (subscriptions) with signed webhooks.
-* **License API** (`POST /api/license/verify`): the extensions send their key; the site returns an ES256-signed token valid 72 h.
+| Part | Tech | Where it runs |
+|---|---|---|
+| Website (home, pricing, studios, account, legal) | Next.js, exported to plain HTML/JS | `public_html/` |
+| API (sign-up, login, trial, license check, Stripe/PayPal, downloads) | PHP 8 + MySQL, no dependencies | `public_html/api/` |
+| Secrets + release zips | PHP config file, zip files | **outside** `public_html` |
 
-## Pricing logic (`src/lib/pricing.ts`)
+## Pricing logic
 
-| | price |
-|---|---|
-| 3-day trial (no card), all 3 extensions | free |
-| **Launch window** (3 months from `NEXT_PUBLIC_LAUNCH_DATE`): all 3 extensions | **$10/month**, locked while the subscription stays active |
-| After the window: one extension | $10/month |
-| After the window: all 3 | $20/month |
+3-day free trial (no card, all three extensions) → **launch window** (3 months from `launch_date`): all three for **$10/month**, locked while the subscription stays active → afterwards **$10 per extension** or **$20 for all three**. Prices live in Stripe/PayPal; the API picks the launch price by date (`api/lib/pricing.php`).
 
-The launch price is a separate Stripe Price / PayPal Plan. Customers who subscribe in the window stay on it; nobody new can buy it afterwards (the checkout route picks the price by date).
+## Deploy on HostGator (cPanel)
 
-## Setup
+1. **Database** — cPanel → *MySQL Databases*: create a database and a user, give the user *All privileges*. Open *phpMyAdmin*, select the database, *Import* → `hostgator/schema.sql`.
+2. **Email** — cPanel → *Email Accounts*: create `no-reply@getaurorastudios.com` (used for confirmation and reset emails).
+3. **License keys** — run `php hostgator/gen-license-key.php` (or `node scripts/gen-license-key.mjs`). Keep the private key line; keep `PUBLIC_KEY_JWK` for the extensions.
+4. **Config** — in *File Manager*, open your home folder (the one that *contains* `public_html`). Copy `hostgator/aurora-config.sample.php` there as **`aurora-config.php`** and fill it in (database, license key, Stripe, PayPal). Create a folder **`aurora-releases`** next to it.
+5. **Upload the site** — on your computer: `npm install`, then `npm run build:hostgator`. Upload `dist/aurora-public_html.zip` to `public_html` and *Extract* (it includes `.htaccess` and `api/`).
+6. **Check** — open `https://getaurorastudios.com/api/me`. You should see `{"ok":false,"error":"Please sign in."}`. Then sign up on the site; the confirmation email arrives; the link signs you in.
+7. **Stripe** — create 5 monthly Prices (all-3 launch $10, all-3 $20, and $10 for each extension) and put their IDs in the config. Webhook endpoint: `https://getaurorastudios.com/api/webhooks/stripe`, events `checkout.session.completed` and `customer.subscription.created|updated|deleted`. Turn on the customer portal.
+8. **PayPal** — create a Product and 5 monthly Billing Plans, put the IDs in the config. Webhook: `https://getaurorastudios.com/api/webhooks/paypal` with `BILLING.SUBSCRIPTION.*` and `PAYMENT.SALE.COMPLETED`. Keep `paypal_env` = `sandbox` until you have tested, then `live`.
+9. **Extensions** — in each extension repo: `node scripts/configure-license.cjs --api https://getaurorastudios.com --jwk '<PUBLIC_KEY_JWK>'`, then `npm run package`. Upload the zips to `aurora-releases/` named `aurora-facebook-latest.zip`, `aurora-instagram-latest.zip`, `aurora-tiktok-latest.zip`. Customers download them from their account page.
 
-1. `npm install`, copy `.env.example` to `.env.local`.
-2. **Supabase**: create a project → SQL editor → run `supabase/schema.sql` → copy URL, anon key, service-role key. Auth → URL configuration: add your site URL and `/account` as redirect.
-3. **License keys**: `node scripts/gen-license-key.mjs` → put `LICENSE_PRIVATE_KEY_PKCS8` in the environment, keep `PUBLIC_KEY_JWK` for the extensions.
-4. **Stripe**: create 5 monthly Prices (bundle launch $10, bundle $20, facebook $10, instagram $10, tiktok $10) → set `STRIPE_PRICE_*`. Webhook endpoint `https://YOUR-SITE/api/webhooks/stripe` with events `checkout.session.completed`, `customer.subscription.created|updated|deleted` → `STRIPE_WEBHOOK_SECRET`. Enable the customer portal.
-5. **PayPal**: create a Product and 5 monthly Billing Plans → `PAYPAL_PLAN_*`. Webhook `https://YOUR-SITE/api/webhooks/paypal` with `BILLING.SUBSCRIPTION.*` and `PAYMENT.SALE.COMPLETED` → `PAYPAL_WEBHOOK_ID`. Use `PAYPAL_ENV=sandbox` until tested.
-6. `npm run dev` (http://localhost:3000), `npm test`, `npm run build`.
-
-## Releasing the extensions
-
-For each extension repo (`FB-Growth-V1`, `IG-Growth-V1`, `TK-Growth-V1`):
+## Develop & test
 
 ```bash
-node scripts/configure-license.cjs --api https://YOUR-SITE --jwk '<PUBLIC_KEY_JWK>'   # turns enforcement on
-npm run package                                                                          # refuses to build an unlocked zip
-node ../aurora-site/scripts/upload-release.mjs <facebook|instagram|tiktok> dist/<zip>    # private download for customers
+npm install
+npm test               # pricing unit tests (vitest)
+npm run test:php       # PHP API tests: 50 checks on a temporary SQLite database
+npm run build:e2e && npm run test:e2e   # real-browser flow: sign up → email link → account → download → login/reset → license check
+npm run build:preview  # demo copy for GitHub Pages (demo account, checkout off)
 ```
 
-Upload the same zip to the Chrome Web Store if you publish there (set `NEXT_PUBLIC_CWS_<PRODUCT>` to show the link on /download).
+`hostgator/tests/cross.test.cjs` proves a token minted by the PHP server is accepted by the real `license.js` in the three extensions.
 
 ## Security notes
 
-* The service-role key and private license key exist only on the server. The browser only gets the anon key.
-* Webhooks verify signatures; Stripe/PayPal state is re-read from the provider, not trusted from the request.
-* A client-side license check can be bypassed by someone who edits an unpacked extension; the signed tokens, device limit (3 browsers) and server-side downloads make casual sharing hard, not impossible.
-* Legal pages are templates — have them reviewed before launch. Automating Facebook/Instagram/TikTok activity violates those platforms’ terms; the copy says so honestly and you accept that risk.
+* Secrets (`aurora-config.php`, private license key, Stripe/PayPal keys) and the release zips live outside `public_html`.
+* Passwords are hashed with PHP's `password_hash`; sessions are random tokens stored hashed; email links are one-time and hashed; login, sign-up, forgot-password and license checks are rate limited; webhooks verify signatures and PayPal state is re-read from PayPal.
+* A client-side license check can be bypassed by someone who edits an unpacked extension. Signed 72-hour tokens, the 3-browser limit and server-side downloads make casual sharing hard, not impossible.
+* The legal pages are templates: have them reviewed. Automating Facebook/Instagram/TikTok activity violates those platforms' terms; the site says so openly.

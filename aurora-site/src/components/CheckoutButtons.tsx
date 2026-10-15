@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { accessToken, api } from '@/lib/supabase-browser';
+import { api, getToken } from '@/lib/client';
 import type { PlanId } from '@/lib/pricing';
 
 export function CheckoutButtons({ plan, primary = false }: { plan: PlanId; primary?: boolean }) {
@@ -12,9 +12,9 @@ export function CheckoutButtons({ plan, primary = false }: { plan: PlanId; prima
   async function go(provider: 'stripe' | 'paypal') {
     setError('');
     if (process.env.NEXT_PUBLIC_PREVIEW === '1') { setError('Preview only — checkout is switched off in this demo. The live site opens Stripe or PayPal here.'); return; }
-    if (!(await accessToken())) { router.push(`/signup?plan=${plan}`); return; }
+    if (!getToken()) { router.push(`/signup?plan=${plan}`); return; }
     setBusy(provider);
-    const res = await api<{ url: string }>('/api/checkout', { plan, provider });
+    const res = await api<{ url: string }>('/checkout', { plan, provider });
     if (res.ok && res.url) { window.location.href = res.url; return; }
     setError(res.error || 'Could not start checkout.'); setBusy(null);
   }

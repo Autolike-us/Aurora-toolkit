@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PRODUCTS } from '@/lib/products';
 import { PlatformIcon } from '@/components/PlatformIcon';
-import { env } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Download & install' };
 
@@ -14,7 +13,7 @@ export default function Download() {
       <p className="lead">Pick the way that suits you. Both give you the same extension. Sign in to your account first so we can unlock your downloads and show your license key.</p>
 
       <div className="products" style={{ marginTop: 34 }}>
-        {PRODUCTS.map(p => { const store = env.chromeStoreUrl(p.id); return (
+        {PRODUCTS.map(p => { const store = ({ facebook: process.env.NEXT_PUBLIC_CWS_FACEBOOK, instagram: process.env.NEXT_PUBLIC_CWS_INSTAGRAM, tiktok: process.env.NEXT_PUBLIC_CWS_TIKTOK } as Record<string, string | undefined>)[p.id]; return (
           <article key={p.id} className="pcard" style={{ ['--a' as string]: p.accent, ['--b' as string]: p.accent2 }}>
             <div className="top"><PlatformIcon id={p.id} size="lg" /><span className="meta">Chrome extension</span></div><h3>{p.short} Studio</h3>
             {store ? <a className="btn primary" href={store} target="_blank" rel="noreferrer">Add from Chrome Web Store</a> : <span className="note">Chrome Web Store listing: coming soon.</span>}

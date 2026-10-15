@@ -1,18 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { browserClient } from '@/lib/supabase-browser';
+import { useSignedIn } from '@/lib/client';
 import { Brand } from './Brand';
 
 export function Nav() {
-  const [signedIn, setSignedIn] = useState(false);
-  useEffect(() => {
-    const c = browserClient();
-    if (!c) return;
-    c.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
-    const { data } = c.auth.onAuthStateChange((_e, s) => setSignedIn(!!s));
-    return () => data.subscription.unsubscribe();
-  }, []);
+  const signedIn = useSignedIn();
   return (
     <header className="nav"><div className="wrap">
       <Brand />

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { PRODUCTS, type ProductId } from '@/lib/products';
-import { api, browserClient } from '@/lib/supabase-browser';
+import { api, downloadRelease, getToken, setToken } from '@/lib/client';
 import { CheckoutButtons } from './CheckoutButtons';
 import { PlatformIcon } from './PlatformIcon';
 
@@ -20,25 +20,21 @@ function View() {
       setMe({ ok: true, email: 'demo@aurora.example', licenseKey: 'AUR-DEMO-7K2P-X9QM', access: { status: 'trial', products: ['facebook', 'instagram', 'tiktok'], trialEndsAt: ends, renewsAt: null, plan: null, message: 'Free trial: 3 days left.' }, subscriptions: [] });
       return;
     }
-    const c = browserClient();
-    if (!c) { setError('Accounts are not configured on this site yet.'); return; }
-    const { data } = await c.auth.getSession();
-    if (!data.session) { router.replace('/login'); return; }
-    await api('/api/trial', {});
-    const res = await api<Me>('/api/me');
-    if (res.ok) setMe(res); else setError(res.error || 'Could not load your account.');
+    if (!getToken()) { router.replace('/login/'); return; }
+    const res = await api<Me>('/me');
+    if (res.ok) setMe(res); else if (!getToken()) router.replace('/login/'); else setError(res.error || 'Could not load your account.');
   }, [router]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (note.startsWith('Payment')) { const t = setTimeout(load, 3500); return () => clearTimeout(t); } }, [note, load]);
 
   async function download(product: ProductId) {
     if (process.env.NEXT_PUBLIC_PREVIEW === '1') { setNote('Preview only — downloads are switched off in this demo.'); return; }
-    const res = await api<{ url: string }>('/api/download', { product });
-    if (res.ok && res.url) window.location.href = res.url; else setNote(res.error || 'Download unavailable.');
+    const err = await downloadRelease(product);
+    if (err) setNote(err);
   }
-  async function portal() { const r = await api<{ url: string }>('/api/billing/portal', {}); if (r.ok && r.url) window.location.href = r.url; else setNote(r.error || 'Could not open billing.'); }
-  async function cancelPayPal() { if (!confirm('Cancel your PayPal subscription? You keep access until the end of the paid period.')) return; const r = await api('/api/billing/cancel', {}); setNote(r.ok ? 'Cancelled. Access continues until the period ends.' : r.error || 'Could not cancel.'); load(); }
-  async function signOut() { await browserClient()?.auth.signOut(); router.push('/'); }
+  async function portal() { const r = await api<{ url: string }>('/billing/portal', {}); if (r.ok && r.url) window.location.href = r.url; else setNote(r.error || 'Could not open billing.'); }
+  async function cancelPayPal() { if (!confirm('Cancel your PayPal subscription? You keep access until the end of the paid period.')) return; const r = await api('/billing/cancel', {}); setNote(r.ok ? 'Cancelled. Access continues until the period ends.' : r.error || 'Could not cancel.'); load(); }
+  async function signOut() { if (process.env.NEXT_PUBLIC_PREVIEW !== '1') await api('/auth/logout', {}); setToken(null); router.push('/'); }
 
   if (error) return <div className="auth"><p className="msg err">{error}</p></div>;
   if (!me) return <div className="auth"><p className="muted">Loading your account…</p></div>;

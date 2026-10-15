@@ -1,0 +1,62 @@
+-- Aurora database (MySQL 5.7+ / MariaDB). Run once in cPanel > phpMyAdmin > SQL on your new database.
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(32) NOT NULL PRIMARY KEY,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  email_verified_at DATETIME NULL,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash CHAR(64) NOT NULL PRIMARY KEY,
+  user_id VARCHAR(32) NOT NULL,
+  created_at DATETIME NOT NULL,
+  expires_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS email_tokens (
+  token_hash CHAR(64) NOT NULL PRIMARY KEY,
+  user_id VARCHAR(32) NOT NULL,
+  purpose VARCHAR(16) NOT NULL,
+  expires_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS licenses (
+  id VARCHAR(32) NOT NULL PRIMARY KEY,
+  user_id VARCHAR(32) NOT NULL UNIQUE,
+  license_key VARCHAR(20) NOT NULL UNIQUE,
+  trial_started_at DATETIME NOT NULL,
+  trial_ends_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id VARCHAR(32) NOT NULL PRIMARY KEY,
+  user_id VARCHAR(32) NOT NULL,
+  provider VARCHAR(10) NOT NULL,
+  provider_sub_id VARCHAR(100) NOT NULL,
+  provider_customer_id VARCHAR(100) NULL,
+  plan VARCHAR(12) NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  current_period_end DATETIME NULL,
+  launch_price TINYINT NOT NULL DEFAULT 0,
+  cancel_at_period_end TINYINT NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  UNIQUE KEY uniq_provider_sub (provider, provider_sub_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS activations (
+  id VARCHAR(32) NOT NULL PRIMARY KEY,
+  license_id VARCHAR(32) NOT NULL,
+  install_id VARCHAR(80) NOT NULL,
+  product VARCHAR(12) NOT NULL,
+  first_seen DATETIME NOT NULL,
+  last_seen DATETIME NOT NULL,
+  UNIQUE KEY uniq_activation (license_id, install_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id VARCHAR(100) NOT NULL PRIMARY KEY,
+  provider VARCHAR(10) NOT NULL,
+  received_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS rate_limits (
+  k CHAR(64) NOT NULL PRIMARY KEY,
+  window_start DATETIME NOT NULL,
+  hits INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
