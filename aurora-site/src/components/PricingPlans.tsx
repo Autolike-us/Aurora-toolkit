@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CheckoutButtons } from './CheckoutButtons';
 import { PRODUCTS } from '@/lib/products';
+import { PlatformIcon, PlatformRow } from './PlatformIcon';
 import { PRICE_BUNDLE, PRICE_SINGLE, TRIAL_DAYS, daysLeftInOffer, launchEnd, offerActive, quote } from '@/lib/pricing';
 
 const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -23,7 +24,7 @@ export function PricingPlans({ showCta = true }: { showCta?: boolean }) {
         <div className="pricecard">
           <div className="row"><span>The complete series</span><span className="pill">{launch ? 'Launch offer' : 'Best value'}</span></div>
           <div className="price"><sup>$</sup><strong>{bundle.amount}</strong><span className="per">USD /<br />month</span>{launch && <s>${PRICE_BUNDLE}</s>}</div>
-          <p className="muted" style={{ fontSize: 14 }}>Facebook + Instagram + TikTok studios.</p>
+          <p className="muted inline-id" style={{ fontSize: 14 }}><PlatformRow size="sm" />Facebook + Instagram + TikTok studios.</p>
           <ul><li>All three studios, every feature</li><li>One subscription, one license</li><li>Up to 3 browsers</li><li>Preview, task controls &amp; local history</li><li>Cancel any time — access lasts through the paid period</li></ul>
           {showCta ? <CheckoutButtons plan="bundle" primary /> : null}
           <div className="paid"><span>Payments handled by</span><b>stripe</b><b className="pp">PayPal</b></div>
@@ -32,7 +33,7 @@ export function PricingPlans({ showCta = true }: { showCta?: boolean }) {
       <div className="singles">
         {PRODUCTS.map(p => (
           <div key={p.id} className="single">
-            <span className="eyebrow" style={{ margin: 0, color: p.accent }}>{p.short} only</span>
+            <span className="inline-id"><PlatformIcon id={p.id} size="md" /><span className="eyebrow" style={{ margin: 0, color: p.accent }}>{p.short} only</span></span>
             <h3>Aurora for {p.short}</h3>
             <div className="p"><strong>${PRICE_SINGLE}</strong><span>/month</span></div>
             <ul><li>{p.actions.slice(0, 3).join(' · ')}{p.actions.length > 3 ? ' …' : ''}</li><li>Up to 3 browsers</li><li>Cancel any time</li></ul>

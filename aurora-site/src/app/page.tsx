@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Faq } from '@/components/Faq';
 import { PricingPlans } from '@/components/PricingPlans';
 import { ProductCards } from '@/components/ProductCards';
+import { PlatformRow } from '@/components/PlatformIcon';
 import { StudioMock } from '@/components/StudioMock';
 import { COMMON_FEATURES } from '@/lib/products';
 import { TRIAL_DAYS } from '@/lib/pricing';
@@ -22,7 +23,7 @@ export default function Home() {
           <p className="fine">All three studios included. No card required for the trial.<br />Then $10/month — launch offer inside. Cancel any time.</p>
           <div className="platforms">
             <span className="cap">Three platforms<br />One familiar feel</span>
-            <span className="pmini fb">f</span><span className="pmini ig">◎</span><span className="pmini tk">♪</span>
+            <PlatformRow size="md" />
             <span className="sep" /><span className="chrome"><i />Made for<br />Chrome</span>
           </div>
         </div>

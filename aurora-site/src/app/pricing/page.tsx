@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Faq, FAQ } from '@/components/Faq';
 import { PricingPlans } from '@/components/PricingPlans';
 import { PRODUCTS } from '@/lib/products';
+import { PlatformIcon } from '@/components/PlatformIcon';
 
 export const metadata: Metadata = { title: 'Pricing', description: 'Aurora pricing: launch offer of $10/month for all 3 extensions, then $10 per extension or $20 for all three. 3-day free trial.' };
 
@@ -23,7 +24,7 @@ export default function Pricing() {
       <PricingPlans />
       <h2 style={{ margin: '80px 0 6px', fontSize: 32 }}>What each studio can do</h2>
       <table className="compare">
-        <thead><tr><th>Action</th>{PRODUCTS.map(p => <th key={p.id}>{p.short}</th>)}</tr></thead>
+        <thead><tr><th>Action</th>{PRODUCTS.map(p => <th key={p.id}><span className="inline-id"><PlatformIcon id={p.id} size="xs" />{p.short}</span></th>)}</tr></thead>
         <tbody>{ROWS.map(r => <tr key={r[0]}><td>{r[0]}</td>{r.slice(1).map((v, i) => <td key={i} className={v ? 'y' : 'n'}>{v ? '✓' : '—'}</td>)}</tr>)}</tbody>
       </table>
       <div className="faqgrid" style={{ marginTop: 90 }}><div><span className="eyebrow">Good questions</span><h2>Pricing, answered.</h2></div><Faq items={FAQ.slice(0, 4)} /></div>

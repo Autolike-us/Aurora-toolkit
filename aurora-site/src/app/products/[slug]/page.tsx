@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { COMMON_FEATURES, PRODUCTS, getProduct } from '@/lib/products';
+import { PlatformIcon } from '@/components/PlatformIcon';
 import { StudioMock } from '@/components/StudioMock';
 import { TRIAL_DAYS } from '@/lib/pricing';
 
@@ -18,7 +19,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <main style={{ ['--a' as string]: p.accent, ['--b' as string]: p.accent2 }}>
       <section className="hero"><div className="wrap grid">
         <div>
-          <span className="eyebrow" style={{ color: p.accent }}><span className="star">✳</span>{p.short} Studio</span>
+          <span className="eyebrow inline-id" style={{ color: p.accent }}><PlatformIcon id={p.id} size="md" />{p.short} Studio</span>
           <h1 style={{ fontSize: 'clamp(34px,4.6vw,58px)' }}>{p.tagline}</h1>
           <div className="cta" style={{ marginTop: 28 }}>
             <Link className="btn primary lg" href="/signup">Try it free for {TRIAL_DAYS} days <span className="arrow">↗</span></Link>

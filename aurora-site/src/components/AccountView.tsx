@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { PRODUCTS, type ProductId } from '@/lib/products';
 import { api, browserClient } from '@/lib/supabase-browser';
 import { CheckoutButtons } from './CheckoutButtons';
+import { PlatformIcon } from './PlatformIcon';
 
 interface Me { ok: boolean; email: string; licenseKey: string; access: { status: 'active' | 'trial' | 'expired' | 'none'; products: ProductId[]; trialEndsAt: string | null; renewsAt: string | null; plan: string | null; message: string }; subscriptions: { id: string; provider: string; plan: string; status: string; renewsAt: string | null; launchPrice: boolean }[]; }
 
@@ -66,7 +67,7 @@ function View() {
             <div className="dl">
               {PRODUCTS.map(p => { const ok = a.products.includes(p.id); return (
                 <div key={p.id} className={'item' + (ok ? '' : ' lock')}>
-                  <span className="name">{p.name}</span>
+                  <span className="name inline-id"><PlatformIcon id={p.id} size="sm" />{p.name}</span>
                   {ok ? <button className="btn sm primary" onClick={() => download(p.id)}>Download .zip</button> : <Link className="btn sm" href="/pricing">Unlock</Link>}
                 </div>); })}
             </div>

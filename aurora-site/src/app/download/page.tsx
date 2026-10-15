@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PRODUCTS } from '@/lib/products';
+import { PlatformIcon } from '@/components/PlatformIcon';
 import { env } from '@/lib/env';
 
 export const metadata: Metadata = { title: 'Download & install' };
@@ -15,7 +16,7 @@ export default function Download() {
       <div className="products" style={{ marginTop: 34 }}>
         {PRODUCTS.map(p => { const store = env.chromeStoreUrl(p.id); return (
           <article key={p.id} className="pcard" style={{ ['--a' as string]: p.accent, ['--b' as string]: p.accent2 }}>
-            <div className="top"><div className="badge" aria-hidden>{p.short[0]}</div><span className="meta">Chrome extension</span></div><h3>{p.short} Studio</h3>
+            <div className="top"><PlatformIcon id={p.id} size="lg" /><span className="meta">Chrome extension</span></div><h3>{p.short} Studio</h3>
             {store ? <a className="btn primary" href={store} target="_blank" rel="noreferrer">Add from Chrome Web Store</a> : <span className="note">Chrome Web Store listing: coming soon.</span>}
             <Link className="btn" href="/account">Private download (my account)</Link>
           </article>); })}
