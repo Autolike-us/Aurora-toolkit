@@ -1,0 +1,16 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
+const context=vm.createContext({URL});for(const file of ['selectors.js','engine.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'..',file),'utf8'),context);const S=context.AuroraSelectors,E=context.AuroraEngine;
+const config=(extra={})=>E.config({action:'like',mode:'users',target:'@alice',perUser:3,limit:10,delay:30,maxAge:0,scanLimit:30,...extra});
+test('profile inputs normalize Instagram usernames and links',()=>{for(const input of ['Alice','@Alice','https://www.instagram.com/Alice/'])assert.equal(E.profile(input),'alice');});
+test('reject foreign hosts and deceptive domains',()=>{for(const x of ['https://evil.test/alice/','https://www.instagram.com.evil.test/alice/'])assert.throws(()=>E.profile(x));assert.equal(S.profileName('https://evil.test/alice/'),null);});
+test('profile-prefixed and /reels/ links resolve to the same reel key',()=>{assert.equal(S.postURL('https://www.instagram.com/dabijou/reel/DCpAh4aM00_/'),'https://www.instagram.com/reel/DCpAh4aM00_/');assert.equal(S.pageKey('https://www.instagram.com/reels/DCpAh4aM00_/'),S.pageKey('https://www.instagram.com/reel/DCpAh4aM00_/'));assert.equal(S.postURL('https://www.instagram.com/reels/audio/674418992995801/'),null);});
+test('post URLs canonicalize and drop tracking',()=>assert.equal(S.postURL('https://www.instagram.com/p/AbC-1/?utm_source=x'),'https://www.instagram.com/p/AbC-1/'));
+test('post identity ignores query and author prefix',()=>assert.equal(S.pageKey('https://www.instagram.com/alice/p/AbC-1/?x=1'),S.pageKey('https://www.instagram.com/p/AbC-1/')));
+test('profile identity tolerates tracking query params',()=>assert.equal(S.pageKey('https://www.instagram.com/Alice/?hl=en'),S.pageKey('https://www.instagram.com/alice/')));
+test('hashtag identity is case-insensitive',()=>assert.equal(S.pageKey('https://www.instagram.com/explore/tags/Travel/'),'tag:travel'));
+test('delay below 30 seconds is rejected',()=>assert.throws(()=>config({delay:5})));
+test('daily cap is optional and validated',()=>{assert.equal(config().dailyCap,0);assert.equal(config({dailyCap:150}).dailyCap,150);assert.throws(()=>config({dailyCap:-1}));assert.throws(()=>config({dailyCap:10001}));});
+test('unfollow only works from an explicit list',()=>assert.throws(()=>config({action:'unfollow',mode:'hashtag',target:'#x'})));
+test('comment needs text up to 2200 characters',()=>{assert.throws(()=>config({action:'comment',comment:''}));assert.throws(()=>config({action:'comment',comment:'x'.repeat(2201)}));assert.equal(config({action:'comment',comment:'Nice!'}).comment,'Nice!');});
+test('like on a profile list plans an in-place walk step per profile',()=>{const steps=E.initial(config({target:'alice, bob'}));assert.equal(steps.length,2);assert.equal(steps[0].kind,'walk');assert.equal(steps[0].username,'alice');});
+test('follow on a profile list plans account steps',()=>assert.equal(E.initial(config({action:'follow',target:'alice'}))[0].kind,'account'));

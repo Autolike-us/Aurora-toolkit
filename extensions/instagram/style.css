@@ -1,0 +1,253 @@
+/* Aurora • TikTok Studio — Instagram-inspired theme (sunset gradient / magenta) */
+*{box-sizing:border-box}
+body{
+  --bg:#fff8f6;--surface:rgba(255,255,255,.86);--solid:#fff;--border:rgba(214,41,118,.16);--muted:#76707a;--ink:#161823;
+  --accent:#d62976;--accent2:#fa7e1e;--ok:#12a594;--warn:#f59e0b;--bad:#d62976;--tint:rgba(214,41,118,.08);
+  --shadow:0 14px 40px -18px rgba(214,41,118,.35);--grad:linear-gradient(45deg,#f09433,#dc2743 55%,#bc1888);--grad2:linear-gradient(90deg,#feda75,#fa7e1e,#d62976,#962fbf);
+  margin:0;color:var(--ink);font:15px/1.6 ui-rounded,"SF Pro Rounded","Segoe UI Variable","Segoe UI",system-ui,sans-serif;
+  background:
+    radial-gradient(900px 520px at 6% -8%,rgba(214,41,118,.16),transparent 60%),
+    radial-gradient(800px 520px at 100% 0%,rgba(150,47,191,.22),transparent 60%),
+    radial-gradient(900px 600px at 55% 112%,rgba(214,41,118,.08),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+body.dark{
+  --bg:#0b0b10;--surface:rgba(28,28,36,.82);--solid:#1b1b24;--border:rgba(255,255,255,.10);--muted:#a6a3b3;--ink:#f6f4fa;
+  --accent:#d62976;--accent2:#fa7e1e;--tint:rgba(214,41,118,.13);--shadow:0 16px 40px -18px rgba(0,0,0,.8);
+  background:
+    radial-gradient(900px 520px at 6% -8%,rgba(214,41,118,.20),transparent 60%),
+    radial-gradient(800px 520px at 100% 0%,rgba(150,47,191,.15),transparent 60%),
+    radial-gradient(900px 600px at 55% 112%,rgba(214,41,118,.10),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+
+/* sidebar */
+aside{position:fixed;width:244px;height:100vh;background:var(--surface);backdrop-filter:blur(18px);border-right:1px solid var(--border);padding:34px 22px;display:flex;flex-direction:column;z-index:2}
+.brand{font-size:30px;font-weight:850;letter-spacing:-.5px;text-decoration:none;background:linear-gradient(45deg,#f09433,#dc2743 55%,#bc1888);-webkit-background-clip:text;background-clip:text;color:transparent}
+small{font-size:10px;letter-spacing:1.6px;color:var(--muted)}
+aside small{margin-top:8px;font-size:8px}
+nav{display:grid;gap:8px;margin-top:42px}
+nav button{text-align:left;border:0;background:transparent;border-radius:999px;padding:11px 18px;color:var(--muted);font-weight:600}
+nav button:hover{background:var(--tint);color:var(--ink)}
+nav button.selected,.selected{background:var(--tint);color:var(--accent);box-shadow:inset 0 0 0 1px var(--border)}
+.aside-bottom{margin-top:auto;font-size:12px;color:var(--muted)}
+.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;border:1px solid var(--border);border-radius:999px;padding:7px 14px;color:var(--accent);background:var(--tint)}
+
+/* base controls */
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:1px solid var(--border);border-radius:14px;background:var(--solid);color:inherit;padding:10px 18px;font-weight:600;transition:transform .15s,box-shadow .15s,border-color .15s}
+button:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px);box-shadow:0 8px 18px -10px rgba(214,41,118,.55)}
+button:disabled{opacity:.4;cursor:default}
+.primary{background:var(--grad);color:#fff;border:0;flex:1;box-shadow:0 14px 24px -12px rgba(220,39,67,.8)}
+.primary:hover:not(:disabled){box-shadow:0 18px 28px -12px rgba(220,39,67,.95);border-color:transparent}
+input:not([type=checkbox]),select,textarea{width:100%;background:var(--solid);color:inherit;border:1px solid var(--border);border-radius:14px;padding:12px 14px;outline:none;transition:box-shadow .15s,border-color .15s}
+select option{background:var(--solid)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--tint)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=checkbox]{accent-color:var(--accent);width:17px;height:17px}
+label{display:block;font-size:12px;font-weight:700;margin:16px 0 7px}
+p{color:var(--muted)}
+.hint{font-size:11px;line-height:1.6}
+[hidden]{display:none!important}
+
+/* layout */
+main{margin-left:244px;padding:44px 5%;max-width:1500px}
+header{display:flex;justify-content:space-between;align-items:center;gap:20px}
+h1{font-size:34px;letter-spacing:-1.2px;line-height:1.2;margin:10px 0}
+header p{margin:0}
+h2{font-size:19px;margin:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:32px 0}
+.stats article,.card{background:var(--surface);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:var(--shadow)}
+.stats article{position:relative;overflow:hidden}
+.stats article::after{content:"";position:absolute;right:-26px;top:-26px;width:90px;height:90px;border-radius:50%;background:var(--grad2);opacity:.18}
+.stats article:nth-child(1)::before{content:"📸"}
+.stats article:nth-child(2)::before{content:"🍃"}
+.stats article:nth-child(3)::before{content:"✨"}
+.stats article::before{position:absolute;right:20px;top:16px;font-size:22px;z-index:1}
+.stats strong{display:block;font-size:28px;font-weight:750;margin-top:4px}
+.grid{display:grid;grid-template-columns:1.5fr 1fr;gap:24px}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.card-head span{font-size:11px;color:var(--muted)}
+.checks label{font-weight:500;display:flex;align-items:center;gap:9px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.live{min-height:250px}
+.note{margin-top:24px;padding:26px;border-radius:24px;background:linear-gradient(135deg,rgba(150,47,191,.18),rgba(214,41,118,.14));color:#3a2140;position:relative;overflow:hidden}
+body.dark .note{background:linear-gradient(135deg,rgba(150,47,191,.12),rgba(214,41,118,.20));color:#f6f4fa}
+.note p{color:inherit;opacity:.78;font-size:13px}
+.note span{font-size:34px;display:inline-block;animation:twinkle 3.2s ease-in-out infinite}
+footer{font-size:11px;color:var(--muted);margin:30px 0}
+.event{padding:12px 0;border-bottom:1px solid var(--border);font-size:13px}
+.event a{color:var(--accent)}
+#notice{font-size:13px;color:var(--accent);background:var(--tint);border-radius:14px;padding:11px 14px;margin:0 0 16px;overflow-wrap:anywhere}
+
+/* status chip (value text is set by script; colour comes from body[data-status]) */
+#status{display:inline-block;font-size:18px;text-transform:capitalize;padding:4px 14px;border-radius:999px;background:var(--tint);color:var(--accent);margin-top:6px}
+body[data-status=running] #status{background:rgba(31,174,124,.15);color:var(--ok)}
+body[data-status=paused] #status{background:rgba(244,63,94,.15);color:var(--bad);animation:pulse 1.6s ease-in-out infinite}
+body[data-status=completed] #status{background:rgba(150,47,191,.18);color:var(--ok)}
+body[data-status=stopped] #status{background:rgba(245,158,11,.16);color:var(--warn)}
+
+/* progress */
+progress{width:100%;height:10px;appearance:none;-webkit-appearance:none;border:0;border-radius:999px;overflow:hidden;background:var(--tint)}
+progress::-webkit-progress-bar{background:var(--tint);border-radius:999px}
+progress::-webkit-progress-value{background:var(--grad2);border-radius:999px;transition:width .4s}
+.dot{color:var(--muted)!important;font-size:18px}
+body[data-status=running] .dot{color:var(--ok)!important;animation:pulse 1.4s ease-in-out infinite}
+body[data-status=paused] .dot{color:var(--bad)!important;animation:pulse 1s ease-in-out infinite}
+
+/* needs-attention banner */
+.banner{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:22px 0 0;padding:16px 20px;border-radius:20px;border:1px solid rgba(244,63,94,.35);background:linear-gradient(135deg,rgba(244,63,94,.14),rgba(255,111,165,.12));box-shadow:0 14px 30px -18px rgba(244,63,94,.7);animation:slidein .35s ease-out}
+.banner strong{display:block;color:var(--bad);font-size:15px}
+.banner span{display:block;color:var(--ink);font-size:13px;overflow-wrap:anywhere}
+.banner.ok{border-color:rgba(31,174,124,.4);background:linear-gradient(135deg,rgba(31,174,124,.14),rgba(150,235,215,.16));box-shadow:0 14px 30px -18px rgba(31,174,124,.7)}
+.banner.ok strong{color:var(--ok)}
+.banner-actions{display:flex;gap:8px;flex-shrink:0}
+.banner-actions .primary{flex:none}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes twinkle{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.15) rotate(12deg)}}
+@keyframes slidein{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+@media(max-width:1000px){aside{width:180px;padding:25px 15px}main{margin-left:180px;padding:30px}.grid{grid-template-columns:1fr}header{align-items:flex-start}header>.badge{display:none}}
+@media(max-width:600px){aside{position:static;height:auto;width:auto;flex-direction:row;align-items:center;gap:20px;padding:15px}aside small,.aside-bottom{display:none}nav{margin:0;display:flex}main{margin:0;padding:20px}h1{font-size:27px}.stats{gap:8px}.stats article{padding:15px}.stats strong{font-size:20px}.banner{flex-direction:column;align-items:flex-start}}
+
+/* toolbar popup */
+body.popup{width:760px;height:600px;min-height:580px;overflow-y:auto}
+.popup aside{position:static;width:auto;height:auto;padding:14px 24px;flex-direction:row;gap:20px;align-items:center;border-right:0;border-bottom:1px solid var(--border)}
+.popup aside small,.popup .aside-bottom{display:none}
+.popup .brand{font-size:24px}
+.popup nav{display:flex;margin:0 0 0 auto;gap:5px}
+.popup nav button{font-size:12px;padding:8px 14px}
+.popup main{margin:0;padding:20px;max-width:none}
+.popup header h1{font-size:25px}
+.popup header p{font-size:12px}
+.popup header>.badge{display:none}
+.popup .stats{margin:15px 0;gap:10px}
+.popup .stats article{padding:10px 18px}
+.popup .stats strong{font-size:20px}
+.popup .stats #status{font-size:14px;padding:2px 10px}
+.popup .grid{grid-template-columns:1.4fr 1fr;gap:15px}
+.popup .card{padding:18px}
+.popup .note{display:none}
+.popup label{margin-top:10px}
+.popup input:not([type=checkbox]),.popup select,.popup textarea{padding:8px 10px;font-size:12px}
+.popup .fields{gap:0 10px}
+.popup footer{margin:12px 0;font-size:10px}
+/* Popup: one scrollbar only (the page's). The right column simply flows under the form instead of scrolling inside itself. */
+.popup .grid>div:last-child{align-self:start;min-width:0}
+.popup .hint{font-size:10px}
+.popup .banner{margin-top:12px;padding:12px 14px}
+/* no pinned bars anywhere: the popup's Start/Save buttons are ordinary form content too */
+.popup #task .actions{position:static;margin:16px 0 0}
+.popup .kbdtip{display:none}
+.popup main{padding-bottom:20px}
+.popup .aside-bottom{display:block;margin:0}
+.popup .aside-bottom p,.popup .aside-bottom .badge{display:none}
+.popup #theme{font-size:0;padding:5px 12px}
+.popup #theme::after{content:'☾';font-size:19px}
+.popup .live .actions button{padding:8px 12px}
+
+main a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+
+#debugText{white-space:pre-wrap;font:12px/1.55 ui-monospace,Consolas,monospace;background:var(--tint);border-radius:14px;padding:14px;max-height:540px;overflow:auto;overflow-wrap:anywhere;color:var(--ink);margin:0}
+#debug .card-head span{display:flex;gap:8px;flex-wrap:wrap}
+#debug .primary{flex:none}
+
+.presets{margin-top:22px;padding-top:16px;border-top:1px dashed var(--border)}.presets .row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.presets input{width:100%;box-sizing:border-box}
+
+/* preview / live indicator */
+.modebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:11px 14px;border-radius:14px;font-size:12.5px;line-height:1.5;font-weight:600}
+.modebar b{font-weight:800;letter-spacing:.04em}
+.modebar button{flex:none;padding:6px 12px;border-radius:10px;font-size:12px}
+.modebar.mode-preview{background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.55);color:#8a5200}
+.dark .modebar.mode-preview{color:#ffcf7a}
+.modebar.mode-live{background:rgba(250,56,62,.10);border:1px solid rgba(250,56,62,.45);color:#b3202a}
+.dark .modebar.mode-live{color:#ff9aa0}
+.popup .modebar{font-size:11px;padding:8px 10px}
+[hidden]{display:none!important}
+.setups{margin-top:24px}
+.setups .row{display:flex;gap:8px;flex-wrap:wrap}
+.setups .row button{flex:1 1 auto}
+.setups select,.setups input{width:100%}
+.setups .row{margin:12px 0}
+.setups .row button{flex:1 1 0;padding:10px 8px;white-space:nowrap}
+.setups #presetName{margin-top:4px}
+
+/* ---- navigation upgrades ---- */
+/* collapsible form sections */
+details.sec{margin:16px 0 0;border:1px solid var(--border);border-radius:16px;padding:0 14px;background:transparent}
+details.sec>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;font-size:13px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::before{content:"▸";margin-right:8px;color:var(--muted);transition:transform .15s}
+details.sec[open]>summary::before{transform:rotate(90deg)}
+details.sec>summary b{flex:none}
+details.sec>summary small{margin-left:auto;color:var(--muted);font-size:11px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.sec[open]{padding-bottom:12px}
+details.sec[open]>summary small{display:none}
+/* target check */
+.tcheck{font-size:12px;line-height:1.5;margin:6px 0 0;min-height:0}
+.tcheck .ok{color:var(--ok);font-weight:700}
+.tcheck .bad{color:var(--bad);font-weight:700}
+.tcheck .why{color:var(--muted)}
+/* start bar + summary */
+.startbar{margin-top:18px}
+#task .startbar{position:static;margin:18px 0 0;padding:0;border:0;background:none}
+.startbar .actions{margin:0}
+.summary{font-size:12px;line-height:1.5;margin:0 0 10px;padding:8px 12px;border-radius:12px;background:var(--tint);color:var(--ink)}
+.summary.is-live{background:rgba(250,56,62,.10);border:1px solid rgba(250,56,62,.35)}
+.summary.is-preview{border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.10)}
+.summary b{font-weight:800}
+.kbdtip{margin:8px 0 0}
+kbd{font:600 10px ui-monospace,Consolas,monospace;padding:1px 5px;border:1px solid var(--border);border-radius:5px;background:var(--surface)}
+/* tab badges */
+nav button{position:relative}
+.tabdot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#1fae7c;margin-left:8px;vertical-align:middle}
+.tabdot.warn{background:var(--bad)}
+.tabdot.pulse{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.tabcount{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;background:var(--tint);color:var(--accent);font-style:normal;font-size:11px;font-weight:700}
+/* history tools */
+.histtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.chip{padding:6px 12px;border-radius:999px;font-size:12px}
+.chip.on{background:var(--grad);color:#fff;border-color:transparent}
+.histtools input{flex:1 1 160px;min-width:140px;margin:0;padding:8px 12px;font-size:12px}
+.event .ic{display:inline-block;width:1.4em}
+.event.k-problem{border-left:3px solid var(--bad)}
+.event.k-skipped{opacity:.85}
+/* live session */
+.nowline{margin:6px 0 0;font-size:13px;font-weight:600;min-height:0}
+.tlist{margin:10px 0 0;display:grid;gap:4px;font-size:12px}
+.tlist div{display:flex;gap:8px;align-items:baseline;overflow-wrap:anywhere}
+.tlist .st{flex:none;width:1.2em;text-align:center}
+.tlist .cur{font-weight:700;color:var(--accent)}
+.tlist .more,.tlist .upc{color:var(--muted)}
+.tlist .skp{color:var(--muted)}
+/* first run */
+.firstrun{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin:0 0 22px;padding:16px 20px;border-radius:20px;border:1px solid rgba(24,119,242,.35);background:rgba(24,119,242,.08);font-size:13px}
+.firstrun ul{margin:8px 0 0;padding-left:18px;line-height:1.7}
+.firstrun .okmark{color:var(--ok);font-weight:700}.firstrun .nomark{color:var(--bad);font-weight:700}
+.popup .firstrun{font-size:11px;padding:10px 14px;margin-bottom:14px}
+/* keep focused/scrolled-to controls clear of the sticky Start bar */
+/* (no sticky Start bar any more: nothing to keep controls clear of) */
+
+
+/* ---- layout fixes ---- */
+nav button{display:flex;align-items:center;gap:8px;white-space:nowrap}
+nav .tabcount,nav .tabdot{margin-left:auto}
+/* popup: the form (with its fixed Start bar) must stack above the pinned right column */
+.popup #task{position:relative;z-index:6}
+.popup .banner{flex-direction:column;align-items:flex-start;gap:10px}
+.popup .banner-actions{flex-wrap:wrap}
+
+/* never a horizontal scrollbar: long button labels wrap instead of overflowing */
+.setups button,.setups input,.setups select{min-width:0;max-width:100%}
+.setups .row button{white-space:normal;line-height:1.25}
+html,body{overflow-x:hidden}
+/* popup: a blurred (backdrop-filter) card becomes the containing block of position:fixed children, which pushed the Start bar 21px sideways. */
+.popup #task{backdrop-filter:none}
+
+.license-link{display:inline-block;font:11px Arial,sans-serif;color:#87669e;padding:8px;white-space:nowrap}
