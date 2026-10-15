@@ -10,7 +10,7 @@ for path in (root/'public').iterdir():
     if path.is_file():
         shutil.copy2(path,target/path.name)
 p=target/'index.html'
-s=p.read_text().replace('href="/mark.svg"','href="./mark.svg"').replace('href="/style.css"','href="./style.css"')
+s=p.read_text().replace('href="/mark.svg"','href="./mark.svg"').replace('href="/style.css"','href="./style.css"').replace('href="/vibrant.css"','href="./vibrant.css"')
 s=s.replace('<script src="/app.js" defer></script>','<script src="./static-preview.js" defer></script><script src="./app.js" defer></script>')
 s=s.replace('<title>Aurora —','<title>Aurora —')
 p.write_text(s)
