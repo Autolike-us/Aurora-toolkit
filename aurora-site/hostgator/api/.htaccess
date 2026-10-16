@@ -1,0 +1,9 @@
+# Route every /api/... request to index.php (Apache, cPanel).
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
+# Never serve code or config directly.
+<FilesMatch "\.(sql|md|log|inc)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes

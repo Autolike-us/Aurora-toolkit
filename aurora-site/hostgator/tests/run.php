@@ -1,0 +1,179 @@
+<?php
+// Integration tests: starts PHP's built-in server with a throw-away SQLite database and exercises the real API.
+// Run:  php tests/run.php
+declare(strict_types=1);
+
+$root = dirname(__DIR__);
+$tmp = sys_get_temp_dir() . '/aurora-test-' . bin2hex(random_bytes(4));
+mkdir($tmp); mkdir("$tmp/releases");
+$port = random_int(20000, 29000);
+
+// Same schema as production, translated for SQLite.
+$schema = file_get_contents("$root/schema.sql");
+$schema = preg_replace('/\)\s*ENGINE=InnoDB[^;]*;/', ');', $schema);
+$schema = preg_replace('/UNIQUE KEY \w+ \(/', 'UNIQUE (', $schema);
+$pdo = new PDO("sqlite:$tmp/db.sqlite", null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+$pdo->exec($schema);
+
+$key = openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+openssl_pkey_export($key, $privPem);
+$pubPem = openssl_pkey_get_details($key)['key'];
+file_put_contents("$tmp/config.php", '<?php return ' . var_export([
+    'site_url' => "http://127.0.0.1:$port", 'launch_date' => gmdate('Y-m-d', time() - 86400), 'db_dsn' => "sqlite:$tmp/db.sqlite",
+    'mail_driver' => 'file', 'mail_log' => "$tmp/mail.log", 'license_private_key' => $privPem, 'releases_dir' => "$tmp/releases",
+    'stripe_webhook_secret' => 'whsec_test',
+], true) . ';');
+
+$cmd = sprintf('AURORA_CONFIG=%s php -S 127.0.0.1:%d %s > %s 2>&1 & echo $!', escapeshellarg("$tmp/config.php"), $port, escapeshellarg("$root/api/index.php"), escapeshellarg("$tmp/server.log"));
+$pid = (int) trim((string) shell_exec($cmd));
+register_shutdown_function(function () use ($pid, $tmp) { posix_kill($pid, SIGTERM); });
+for ($i = 0; $i < 50; $i++) { if (@fsockopen('127.0.0.1', $port)) break; usleep(100000); }
+
+$passed = 0; $failed = 0;
+function check(string $name, bool $ok, $detail = ''): void { global $passed, $failed; if ($ok) { $passed++; echo "PASS $name\n"; } else { $failed++; echo "FAIL $name " . (is_string($detail) ? $detail : json_encode($detail)) . "\n"; } }
+function call(string $method, string $path, $body = null, ?string $token = null, array $extra = [], bool $raw = false): array
+{
+    global $port;
+    $ch = curl_init("http://127.0.0.1:$port/api$path");
+    $headers = $extra;
+    if ($token) $headers[] = "Authorization: Bearer $token";
+    $payload = is_string($body) ? $body : ($body === null ? null : json_encode($body));
+    if ($payload !== null && !$raw) $headers[] = 'Content-Type: application/json';
+    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_POSTFIELDS => $payload]);
+    $resp = (string) curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    $hs = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    curl_close($ch);
+    $head = substr($resp, 0, $hs); $bodyText = substr($resp, $hs);
+    return ['status' => $code, 'json' => json_decode($bodyText, true) ?: [], 'body' => $bodyText, 'headers' => $head];
+}
+function last_mail(string $to): ?array { global $tmp; $found = null; foreach (file_exists("$tmp/mail.log") ? file("$tmp/mail.log") : [] as $l) { $m = json_decode($l, true); if ($m && $m['to'] === $to) $found = $m; } return $found; }
+function mail_token(string $to): string { $m = last_mail($to); preg_match('/token=([a-f0-9]{48})/', $m['text'] ?? '', $mm); return $mm[1] ?? ''; }
+
+// ---- sign up / verify / login ----
+$r = call('POST', '/auth/signup', ['email' => 'nope', 'password' => 'longenough1']); check('signup rejects a bad email', $r['status'] === 400);
+$r = call('POST', '/auth/signup', ['email' => 'a@example.com', 'password' => 'short']); check('signup rejects a short password', $r['status'] === 400);
+$r = call('POST', '/auth/signup', ['email' => 'A@Example.com', 'password' => 'correct horse 9']); check('signup works and asks to confirm the email', $r['status'] === 200 && $r['json']['ok']);
+check('a confirmation email with a link was sent', strlen(mail_token('a@example.com')) === 48);
+$r = call('POST', '/auth/login', ['email' => 'a@example.com', 'password' => 'correct horse 9']); check('login is blocked until the email is confirmed', $r['status'] === 403 && ($r['json']['code'] ?? '') === 'unverified');
+$tok = mail_token('a@example.com');
+$r = call('POST', '/auth/verify', ['token' => 'deadbeef']); check('a wrong confirmation token is refused', $r['status'] === 400);
+$r = call('POST', '/auth/verify', ['token' => $tok]); check('confirming the email signs you in', $r['status'] === 200 && strlen($r['json']['token'] ?? '') === 48);
+$session = $r['json']['token'];
+$r = call('POST', '/auth/verify', ['token' => $tok]); check('a confirmation link cannot be reused', $r['status'] === 400);
+$r = call('POST', '/auth/signup', ['email' => 'a@example.com', 'password' => 'another pass 1']); check('signing up again with the same email gives the same answer (no account probing)', $r['status'] === 200 && $r['json']['ok']);
+
+$r = call('GET', '/billing/providers'); check('providers list is public and reports unconfigured payment methods as off, with no secrets', $r['status'] === 200 && ($r['json']['stripe'] ?? null) === false && ($r['json']['paypal'] ?? null) === false && count($r['json']) === 3);
+$r = call('POST', '/billing/sync', ['subscriptionId' => 'I-ABCDEF123456']); check('billing sync needs a session', $r['status'] === 401);
+$r = call('GET', '/me'); check('/me needs a session', $r['status'] === 401);
+$r = call('GET', '/me', null, $session);
+$me = $r['json'];
+check('/me shows a 3-day trial on all three extensions', $r['status'] === 200 && $me['access']['status'] === 'trial' && count($me['access']['products']) === 3 && preg_match('/^AUR-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/', $me['licenseKey']) === 1, $me);
+$licenseKey = $me['licenseKey'];
+$r = call('POST', '/trial', [], $session); check('asking for the trial again keeps the same license and trial end', $r['json']['licenseKey'] === $licenseKey && $r['json']['access']['trialEndsAt'] === $me['access']['trialEndsAt']);
+
+$r = call('POST', '/auth/login', ['email' => 'a@example.com', 'password' => 'wrong password']); check('a wrong password is refused', $r['status'] === 401);
+$r = call('POST', '/auth/login', ['email' => 'a@example.com', 'password' => 'correct horse 9']); check('the right password logs in', $r['status'] === 200 && !empty($r['json']['token']));
+$s2 = $r['json']['token'];
+$r = call('POST', '/auth/logout', [], $s2); $r2 = call('GET', '/me', null, $s2); check('logging out ends that session', $r['status'] === 200 && $r2['status'] === 401);
+
+// ---- password reset ----
+$r = call('POST', '/auth/forgot', ['email' => 'nobody@example.com']); check('forgot-password answers the same for unknown emails', $r['status'] === 200 && last_mail('nobody@example.com') === null);
+call('POST', '/auth/forgot', ['email' => 'a@example.com']); $rt = (string) preg_match('/token=([a-f0-9]{48})/', last_mail('a@example.com')['text'], $mm) ? $mm[1] : '';
+check('a reset email with a link was sent', strlen($rt) === 48);
+$r = call('POST', '/auth/reset', ['token' => $rt, 'password' => 'brand new pass 7']); check('reset sets the new password and signs in', $r['status'] === 200 && !empty($r['json']['token']));
+check('reset revokes older sessions', call('GET', '/me', null, $session)['status'] === 401);
+check('the old password no longer works', call('POST', '/auth/login', ['email' => 'a@example.com', 'password' => 'correct horse 9'])['status'] === 401);
+$s3 = call('POST', '/auth/login', ['email' => 'a@example.com', 'password' => 'brand new pass 7'])['json']['token'] ?? '';
+check('the new password works', strlen($s3) === 48);
+
+// ---- license check used by the extensions ----
+function verify(string $key, string $product, string $iid): array { return call('POST', '/license/verify', ['key' => $key, 'product' => $product, 'installId' => $iid]); }
+function verify_jwt(string $jwt, string $pubPem): ?array
+{
+    [$h, $p, $s] = explode('.', $jwt);
+    $raw = base64_decode(strtr($s, '-_', '+/'));
+    $enc = static function (string $x): string { $x = ltrim($x, "\x00"); if (ord($x[0]) > 127) $x = "\x00" . $x; return "\x02" . chr(strlen($x)) . $x; };
+    $body = $enc(substr($raw, 0, 32)) . $enc(substr($raw, 32));
+    $der = "\x30" . chr(strlen($body)) . $body;
+    return openssl_verify("$h.$p", $der, $pubPem, OPENSSL_ALGO_SHA256) === 1 ? json_decode(base64_decode(strtr($p, '-_', '+/')), true) : null;
+}
+$r = verify('nonsense', 'facebook', 'install-aaaa-1'); check('a malformed key is rejected', $r['status'] === 400);
+$r = verify('AUR-AAAA-BBBB-CCCC', 'facebook', 'install-aaaa-1'); check('an unknown key is rejected', $r['status'] === 404);
+$r = verify($licenseKey, 'facebook', 'install-aaaa-1');
+$claims = $r['status'] === 200 ? verify_jwt($r['json']['token'], $pubPem) : null;
+check('a trial key gets a token signed with the license key (ES256)', $claims !== null && $claims['product'] === 'facebook' && $claims['sub'] === $licenseKey && $claims['iid'] === 'install-aaaa-1' && $claims['status'] === 'trial', $r['json']);
+if ($out = getenv('CROSS_OUT')) { $ec = openssl_pkey_get_details($key)['ec']; $b = static fn($x) => rtrim(strtr(base64_encode($x), '+/', '-_'), '='); file_put_contents($out, json_encode(['token' => $r['json']['token'], 'key' => $licenseKey, 'installId' => 'install-aaaa-1', 'jwk' => ['kty' => 'EC', 'crv' => 'P-256', 'x' => $b($ec['x']), 'y' => $b($ec['y'])]])); }
+check('the token lasts about 72 hours', $claims && abs($claims['exp'] - time() - 72 * 3600) < 120);
+check('the license endpoint allows the extensions to call it (CORS)', stripos($r['headers'], 'access-control-allow-origin: *') !== false);
+check('all three products work during the trial', verify($licenseKey, 'instagram', 'install-aaaa-1')['status'] === 200 && verify($licenseKey, 'tiktok', 'install-aaaa-1')['status'] === 200);
+verify($licenseKey, 'facebook', 'install-bbbb-2'); verify($licenseKey, 'facebook', 'install-cccc-3');
+$r = verify($licenseKey, 'facebook', 'install-dddd-4'); check('a fourth browser is refused (3-browser limit)', $r['status'] === 403 && $r['json']['status'] === 'device_limit');
+check('a known browser keeps working at the limit', verify($licenseKey, 'facebook', 'install-aaaa-1')['status'] === 200);
+
+// ---- trial end ----
+$uidA = $pdo->query("SELECT user_id FROM licenses WHERE license_key = '$licenseKey'")->fetchColumn();
+$pdo->exec("UPDATE licenses SET trial_ends_at = '" . gmdate('Y-m-d H:i:s', time() - 60) . "' WHERE license_key = '$licenseKey'");
+$r = verify($licenseKey, 'facebook', 'install-aaaa-1'); check('after the trial, the license is refused with "expired"', $r['status'] === 402 && $r['json']['status'] === 'expired', $r['json']);
+$r = call('GET', '/me', null, $s3); check('/me shows the trial has ended', $r['json']['access']['status'] === 'expired' && $r['json']['access']['products'] === []);
+
+// ---- Stripe webhook => subscription => access ----
+function stripe_event(string $id, string $type, array $sub, string $secret = 'whsec_test', ?int $t = null): array
+{
+    $payload = json_encode(['id' => $id, 'type' => $type, 'data' => ['object' => $sub]]);
+    $t = $t ?? time();
+    return call('POST', '/webhooks/stripe', $payload, null, ['Stripe-Signature: t=' . $t . ',v1=' . hash_hmac('sha256', $t . '.' . $payload, $secret), 'Content-Type: application/json'], true);
+}
+$sub = ['id' => 'sub_1', 'customer' => 'cus_1', 'status' => 'active', 'current_period_end' => time() + 30 * 86400, 'metadata' => ['user_id' => $uidA, 'plan' => 'facebook', 'launch' => 'false']];
+$r = stripe_event('evt_bad', 'customer.subscription.created', $sub, 'wrong-secret'); check('a Stripe event with a bad signature is rejected', $r['status'] === 400);
+$r = stripe_event('evt_old', 'customer.subscription.created', $sub, 'whsec_test', time() - 4000); check('a Stripe event with an old timestamp is rejected', $r['status'] === 400);
+$r = stripe_event('evt_1', 'customer.subscription.created', $sub); check('a signed Stripe event is accepted', $r['status'] === 200 && $r['json']['ok']);
+$r = stripe_event('evt_1', 'customer.subscription.created', $sub); check('a repeated Stripe event is ignored', $r['json']['duplicate'] ?? false);
+$r = call('GET', '/me', null, $s3); check('a Facebook-only subscription unlocks only Facebook', $r['json']['access']['status'] === 'active' && $r['json']['access']['products'] === ['facebook'], $r['json']['access']);
+check('Facebook license works, TikTok says "not in your plan"', verify($licenseKey, 'facebook', 'install-aaaa-1')['status'] === 200 && ($t = verify($licenseKey, 'tiktok', 'install-aaaa-1'))['status'] === 402 && $t['json']['status'] === 'wrong_plan');
+$sub2 = ['id' => 'sub_2', 'customer' => 'cus_1', 'status' => 'active', 'current_period_end' => time() + 30 * 86400, 'metadata' => ['user_id' => $uidA, 'plan' => 'bundle', 'launch' => 'true']];
+stripe_event('evt_2', 'customer.subscription.created', $sub2);
+$r = call('GET', '/me', null, $s3); check('the launch bundle unlocks all three and remembers the launch price', count($r['json']['access']['products']) === 3 && $r['json']['subscriptions'][1]['launchPrice'] === true, $r['json']);
+check('TikTok now works', verify($licenseKey, 'tiktok', 'install-aaaa-1')['status'] === 200);
+$sub['status'] = 'canceled'; $sub2['status'] = 'canceled'; $sub2['current_period_end'] = time() + 5 * 86400;
+stripe_event('evt_3', 'customer.subscription.deleted', $sub); stripe_event('evt_4', 'customer.subscription.deleted', $sub2);
+check('a cancelled subscription keeps working until the paid period ends', verify($licenseKey, 'instagram', 'install-aaaa-1')['status'] === 200);
+$pdo->exec("UPDATE subscriptions SET current_period_end = '" . gmdate('Y-m-d H:i:s', time() - 60) . "'");
+check('…and stops afterwards', verify($licenseKey, 'instagram', 'install-aaaa-1')['status'] === 402);
+
+// ---- downloads ----
+$r = call('GET', '/download?product=facebook', null, $s3); check('a download is refused when there is no access', $r['status'] === 402);
+$pdo->exec("UPDATE licenses SET trial_ends_at = '" . gmdate('Y-m-d H:i:s', time() + 86400) . "'");
+$r = call('GET', '/download?product=facebook', null, $s3); check('a missing release file gives a clear 404', $r['status'] === 404);
+file_put_contents("$tmp/releases/aurora-facebook-latest.zip", 'PK-test-zip');
+$r = call('GET', '/download?product=facebook', null, $s3); check('a trial user can download the release', $r['status'] === 200 && $r['body'] === 'PK-test-zip' && stripos($r['headers'], 'application/zip') !== false);
+check('downloads need a session and a valid product', call('GET', '/download?product=facebook')['status'] === 401 && call('GET', '/download?product=../../etc', null, $s3)['status'] === 400);
+
+// ---- checkout + misc ----
+check('checkout needs a session', call('POST', '/checkout', ['plan' => 'bundle', 'provider' => 'stripe'])['status'] === 401);
+check('checkout rejects an unknown plan', call('POST', '/checkout', ['plan' => 'free', 'provider' => 'stripe'], $s3)['status'] === 400);
+check('checkout fails politely when the payment provider is not configured', call('POST', '/checkout', ['plan' => 'bundle', 'provider' => 'stripe'], $s3)['status'] === 502);
+check('unknown routes give 404', call('GET', '/nothing')['status'] === 404);
+
+// ---- brute force ----
+$codes = [];
+for ($i = 0; $i < 12; $i++) $codes[] = call('POST', '/auth/login', ['email' => 'victim@example.com', 'password' => 'guess' . $i])['status'];
+check('repeated wrong logins get rate limited', in_array(429, $codes, true), $codes);
+
+
+// ---- admin / tester access codes (aurora-master-keys.json next to the config; any number of browsers) ----
+file_put_contents("$tmp/aurora-master-keys.json", json_encode([
+    'AUR-MSTR-AAAA-1111' => ['note' => 'owner', 'until' => null, 'products' => null],
+    'AUR-MSTR-BBBB-2222' => ['note' => 'tester', 'until' => gmdate('Y-m-d', time() + 86400 * 30), 'products' => ['tiktok']],
+    'AUR-MSTR-CCCC-3333' => ['note' => 'old', 'until' => gmdate('Y-m-d', time() - 86400 * 2), 'products' => null],
+]));
+$ok = true; foreach (range(1, 8) as $n) { $r = verify('AUR-MSTR-AAAA-1111', ['facebook', 'instagram', 'tiktok'][$n % 3], "device-number-$n"); $ok = $ok && $r['status'] === 200 && ($r['json']['ok'] ?? false) && $r['json']['status'] === 'active' && substr_count((string) $r['json']['token'], '.') === 2; }
+check('an admin access code works on 8 different browsers and all three studios (no 3-browser limit)', $ok);
+$r = verify('AUR-MSTR-BBBB-2222', 'tiktok', 'tester-device-1'); check('a tester code limited to TikTok works for TikTok', $r['status'] === 200 && ($r['json']['ok'] ?? false) && ($r['json']['renewsAt'] ?? null) !== null);
+$r = verify('AUR-MSTR-BBBB-2222', 'facebook', 'tester-device-1'); check('a tester code is refused for a studio it does not include', $r['status'] === 402 && ($r['json']['status'] ?? '') === 'wrong_plan');
+$r = verify('AUR-MSTR-CCCC-3333', 'tiktok', 'old-device-1'); check('an expired access code is refused', $r['status'] === 402 && ($r['json']['status'] ?? '') === 'expired');
+$r = verify('AUR-MSTR-ZZZZ-9999', 'tiktok', 'device-xyz-1'); check('a code that is not in the file is still an unknown key', $r['status'] === 404);
+$r = verify('AUR-MSTR-AAAA-1111', 'tiktok', 'device-number-1'); [, $pl] = explode('.', (string) ($r['json']['token'] ?? 'a.e30.c')); $claims = json_decode(base64_decode(strtr($pl, '-_', '+/')), true);
+check('the token for an access code is a normal signed token (status active, this browser, this code)', ($claims['status'] ?? '') === 'active' && ($claims['iid'] ?? '') === 'device-number-1' && ($claims['sub'] ?? '') === 'AUR-MSTR-AAAA-1111' && ($claims['exp'] ?? 0) > time());
+echo "\n$passed passed, $failed failed\n";
+exit($failed ? 1 : 0);
