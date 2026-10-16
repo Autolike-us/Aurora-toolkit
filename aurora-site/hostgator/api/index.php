@@ -30,7 +30,7 @@ $routes = [
     'POST /auth/signup' => 'route_signup', 'POST /auth/verify' => 'route_verify', 'POST /auth/login' => 'route_login',
     'POST /auth/logout' => 'route_logout', 'POST /auth/forgot' => 'route_forgot', 'POST /auth/reset' => 'route_reset',
     'GET /me' => 'route_me', 'POST /trial' => 'route_trial',
-    'POST /checkout' => 'route_checkout', 'POST /billing/portal' => 'route_portal', 'POST /billing/cancel' => 'route_cancel',
+    'GET /billing/providers' => 'route_providers', 'POST /checkout' => 'route_checkout', 'POST /billing/sync' => 'route_billing_sync', 'POST /billing/portal' => 'route_portal', 'POST /billing/cancel' => 'route_cancel',
     'POST /webhooks/stripe' => 'route_webhook_stripe', 'POST /webhooks/paypal' => 'route_webhook_paypal',
     'POST /license/verify' => 'route_license_verify', 'GET /download' => 'route_download',
 ];

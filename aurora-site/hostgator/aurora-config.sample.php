@@ -5,6 +5,11 @@ return [
     'site_url'   => 'https://getaurorastudios.com',
     'launch_date' => '2026-10-15',           // the 3-month $10 all-three offer runs from this day
     'mail_from'  => 'no-reply@getaurorastudios.com', // create this mailbox in cPanel > Email Accounts
+    // Send through the Titan mailbox (best deliverability). Leave smtp_host empty to use the server's own mail().
+    'smtp_host'  => 'smtp.titan.email',
+    'smtp_port'  => 465,
+    'smtp_user'  => 'no-reply@getaurorastudios.com',
+    'smtp_pass'  => '',
 
     // MySQL: cPanel > MySQL Databases (names are prefixed with your cPanel user)
     'db_dsn'  => 'mysql:host=localhost;dbname=CPANELUSER_aurora;charset=utf8mb4',
@@ -17,7 +22,7 @@ return [
     // Where the zips live (outside public_html): aurora-facebook-latest.zip, aurora-instagram-latest.zip, aurora-tiktok-latest.zip
     'releases_dir' => '/home/CPANELUSER/aurora-releases',
 
-    'stripe_secret' => '', 'stripe_webhook_secret' => '',
+    'stripe_secret' => '', 'stripe_webhook_secret' => '', 'stripe_portal_config' => '',
     'stripe_price_bundle_launch' => '', 'stripe_price_bundle' => '', 'stripe_price_facebook' => '', 'stripe_price_instagram' => '', 'stripe_price_tiktok' => '',
 
     'paypal_env' => 'sandbox',               // 'live' when ready

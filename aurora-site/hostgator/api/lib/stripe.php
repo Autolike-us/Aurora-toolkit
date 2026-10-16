@@ -24,7 +24,7 @@ function stripe_checkout_url(array $user, string $plan): string
     $s = stripe_call('POST', '/v1/checkout/sessions', [
         'mode' => 'subscription', 'line_items[0][price]' => stripe_price_id($plan, $launch), 'line_items[0][quantity]' => 1,
         'customer_email' => $user['email'], 'client_reference_id' => $user['id'], 'allow_promotion_codes' => 'true',
-        'success_url' => site_url() . '/account/?checkout=success', 'cancel_url' => site_url() . '/pricing/?checkout=cancelled',
+        'success_url' => site_url() . '/account/?checkout=success&cs={CHECKOUT_SESSION_ID}', 'cancel_url' => site_url() . '/pricing/?checkout=cancelled',
         'subscription_data[metadata][user_id]' => $user['id'], 'subscription_data[metadata][plan]' => $plan, 'subscription_data[metadata][launch]' => $launch ? 'true' : 'false',
     ]);
     if (empty($s['url'])) throw new RuntimeException('Stripe returned no checkout URL.');

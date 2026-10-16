@@ -9,6 +9,6 @@ export default function Page() {
     <h2>4. Platform rules and your risk</h2><p>Facebook, Instagram and TikTok restrict automated activity. Using Aurora may lead to warnings, temporary limits or suspension of your accounts. We give no guarantee about outcomes and are not responsible for actions taken by those platforms. See the platform disclaimer.</p>
     <h2>5. Acceptable use</h2><p>Do not use Aurora for spam, harassment, deception, illegal activity or to violate anyone’s rights. We may suspend licenses used this way.</p>
     <h2>6. Warranty and liability</h2><p>The Service is provided “as is”. To the maximum extent permitted by law, our total liability is limited to the amount you paid in the three months before the claim.</p>
-    <h2>7. Changes and contact</h2><p>We may update these terms and will post the new date here. Contact: support@your-domain.example.</p>
+    <h2>7. Changes and contact</h2><p>We may update these terms and will post the new date here. Contact: support@getaurorastudios.com.</p>
   </article></main>);
 }

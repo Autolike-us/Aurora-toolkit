@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CheckoutButtons } from './CheckoutButtons';
+import { CheckoutButtons, PaymentsBy } from './CheckoutButtons';
 import { PRODUCTS } from '@/lib/products';
 import { PlatformIcon, PlatformRow } from './PlatformIcon';
 import { PRICE_BUNDLE, PRICE_SINGLE, TRIAL_DAYS, daysLeftInOffer, launchEnd, offerActive, quote } from '@/lib/pricing';
@@ -27,7 +27,7 @@ export function PricingPlans({ showCta = true }: { showCta?: boolean }) {
           <p className="muted inline-id" style={{ fontSize: 14 }}><PlatformRow size="sm" />Facebook + Instagram + TikTok studios.</p>
           <ul><li>All three studios, every feature</li><li>One subscription, one license</li><li>Up to 3 browsers</li><li>Preview, task controls &amp; local history</li><li>Cancel any time — access lasts through the paid period</li></ul>
           {showCta ? <CheckoutButtons plan="bundle" primary /> : null}
-          <div className="paid"><span>Payments handled by</span><b>stripe</b><b className="pp">PayPal</b></div>
+          <PaymentsBy />
         </div>
       </div>
       <div className="singles">

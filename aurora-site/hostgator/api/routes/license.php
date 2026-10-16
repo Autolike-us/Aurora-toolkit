@@ -3,6 +3,20 @@ declare(strict_types=1);
 
 const MAX_DEVICES = 3;
 
+/**
+ * Admin / tester access codes. They live in aurora-master-keys.json next to aurora-config.php (outside public_html), are not tied to an
+ * account or a subscription, work on any number of browsers and can be limited to some studios and an end date. Remove the entry to revoke it.
+ * Format: { "AUR-XXXX-XXXX-XXXX": { "note": "owner", "until": null | "2027-01-31", "products": null | ["tiktok"] } }
+ */
+function master_license(string $key): ?array
+{
+    $path = (string) cfg('master_keys_file', '') ?: dirname(config_path()) . '/aurora-master-keys.json';
+    if (!is_file($path)) return null;
+    $all = json_decode((string) file_get_contents($path), true);
+    $e = is_array($all) ? ($all[$key] ?? null) : null;
+    return is_array($e) ? $e : null;
+}
+
 /** Called by the browser extensions. Returns a signed token when this license may run this product on this device. */
 function route_license_verify(): void
 {
@@ -14,6 +28,16 @@ function route_license_verify(): void
         json_out(['ok' => false, 'status' => 'invalid', 'message' => 'That license key does not look right. Copy it from your Aurora account page.'], 400);
     rate_limit('lic-ip:' . client_ip(), 120, 3600);
     rate_limit('lic-key:' . $key, 60, 3600);
+    if ($master = master_license($key)) {
+        $until = !empty($master['until']) ? strtotime((string) $master['until'] . ' 23:59:59 UTC') : null;
+        if ($until !== null && ($until === false || $until < time())) json_out(['ok' => false, 'status' => 'expired', 'message' => 'This access code has expired.'], 402);
+        $products = isset($master['products']) && is_array($master['products']) ? array_values(array_intersect(PRODUCTS, $master['products'])) : PRODUCTS;
+        if (!in_array($product, $products, true)) json_out(['ok' => false, 'status' => 'wrong_plan', 'message' => "This access code does not include Aurora for $product."], 402);
+        $renews = $until ? gmdate('Y-m-d\TH:i:s\Z', $until) : null;
+        try { $t = sign_license_token($key, $product, ['status' => 'active', 'trialEndsAt' => null], $iid); }
+        catch (Throwable $e) { error_log('aurora license: ' . $e->getMessage()); json_out(['ok' => false, 'status' => 'error', 'message' => 'License server is not ready. Try again shortly.'], 500); }
+        json_out(['ok' => true, 'status' => 'active', 'token' => $t['token'], 'expiresAt' => $t['expiresAt'], 'trialEndsAt' => null, 'renewsAt' => $renews, 'message' => 'Access code accepted.']);
+    }
     $license = q_one('SELECT * FROM licenses WHERE license_key = ?', [$key]);
     if (!$license) json_out(['ok' => false, 'status' => 'invalid', 'message' => 'License key not found. Check it on your Aurora account page.'], 404);
     $subs = q_all('SELECT * FROM subscriptions WHERE user_id = ?', [$license['user_id']]);

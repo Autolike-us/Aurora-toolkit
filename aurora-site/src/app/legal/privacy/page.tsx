@@ -7,6 +7,6 @@ export default function Page() {
     <h2>What stays on your device</h2><p>Your tasks, targets, comments, history and settings stay in your browser’s local storage. The extensions do not send them to us and do not read or store your social-network passwords.</p>
     <h2>How we use it</h2><p>To run your account, verify your license, process payments, send essential service emails and prevent abuse. We do not sell your data.</p>
     <h2>Processors</h2><p>Supabase (database and authentication), Vercel (hosting), Stripe and PayPal (payments).</p>
-    <h2>Your rights</h2><p>You can ask to access, correct or delete your data at any time by contacting support@your-domain.example.</p>
+    <h2>Your rights</h2><p>You can ask to access, correct or delete your data at any time by contacting support@getaurorastudios.com.</p>
   </article></main>);
 }

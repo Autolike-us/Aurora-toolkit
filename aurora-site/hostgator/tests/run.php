@@ -63,6 +63,8 @@ $session = $r['json']['token'];
 $r = call('POST', '/auth/verify', ['token' => $tok]); check('a confirmation link cannot be reused', $r['status'] === 400);
 $r = call('POST', '/auth/signup', ['email' => 'a@example.com', 'password' => 'another pass 1']); check('signing up again with the same email gives the same answer (no account probing)', $r['status'] === 200 && $r['json']['ok']);
 
+$r = call('GET', '/billing/providers'); check('providers list is public and reports unconfigured payment methods as off, with no secrets', $r['status'] === 200 && ($r['json']['stripe'] ?? null) === false && ($r['json']['paypal'] ?? null) === false && count($r['json']) === 3);
+$r = call('POST', '/billing/sync', ['subscriptionId' => 'I-ABCDEF123456']); check('billing sync needs a session', $r['status'] === 401);
 $r = call('GET', '/me'); check('/me needs a session', $r['status'] === 401);
 $r = call('GET', '/me', null, $session);
 $me = $r['json'];
@@ -158,5 +160,20 @@ $codes = [];
 for ($i = 0; $i < 12; $i++) $codes[] = call('POST', '/auth/login', ['email' => 'victim@example.com', 'password' => 'guess' . $i])['status'];
 check('repeated wrong logins get rate limited', in_array(429, $codes, true), $codes);
 
+
+// ---- admin / tester access codes (aurora-master-keys.json next to the config; any number of browsers) ----
+file_put_contents("$tmp/aurora-master-keys.json", json_encode([
+    'AUR-MSTR-AAAA-1111' => ['note' => 'owner', 'until' => null, 'products' => null],
+    'AUR-MSTR-BBBB-2222' => ['note' => 'tester', 'until' => gmdate('Y-m-d', time() + 86400 * 30), 'products' => ['tiktok']],
+    'AUR-MSTR-CCCC-3333' => ['note' => 'old', 'until' => gmdate('Y-m-d', time() - 86400 * 2), 'products' => null],
+]));
+$ok = true; foreach (range(1, 8) as $n) { $r = verify('AUR-MSTR-AAAA-1111', ['facebook', 'instagram', 'tiktok'][$n % 3], "device-number-$n"); $ok = $ok && $r['status'] === 200 && ($r['json']['ok'] ?? false) && $r['json']['status'] === 'active' && substr_count((string) $r['json']['token'], '.') === 2; }
+check('an admin access code works on 8 different browsers and all three studios (no 3-browser limit)', $ok);
+$r = verify('AUR-MSTR-BBBB-2222', 'tiktok', 'tester-device-1'); check('a tester code limited to TikTok works for TikTok', $r['status'] === 200 && ($r['json']['ok'] ?? false) && ($r['json']['renewsAt'] ?? null) !== null);
+$r = verify('AUR-MSTR-BBBB-2222', 'facebook', 'tester-device-1'); check('a tester code is refused for a studio it does not include', $r['status'] === 402 && ($r['json']['status'] ?? '') === 'wrong_plan');
+$r = verify('AUR-MSTR-CCCC-3333', 'tiktok', 'old-device-1'); check('an expired access code is refused', $r['status'] === 402 && ($r['json']['status'] ?? '') === 'expired');
+$r = verify('AUR-MSTR-ZZZZ-9999', 'tiktok', 'device-xyz-1'); check('a code that is not in the file is still an unknown key', $r['status'] === 404);
+$r = verify('AUR-MSTR-AAAA-1111', 'tiktok', 'device-number-1'); [, $pl] = explode('.', (string) ($r['json']['token'] ?? 'a.e30.c')); $claims = json_decode(base64_decode(strtr($pl, '-_', '+/')), true);
+check('the token for an access code is a normal signed token (status active, this browser, this code)', ($claims['status'] ?? '') === 'active' && ($claims['iid'] ?? '') === 'device-number-1' && ($claims['sub'] ?? '') === 'AUR-MSTR-AAAA-1111' && ($claims['exp'] ?? 0) > time());
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);

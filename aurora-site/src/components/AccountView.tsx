@@ -25,6 +25,21 @@ function View() {
     if (res.ok) setMe(res); else if (!getToken()) router.replace('/login/'); else setError(res.error || 'Could not load your account.');
   }, [router]);
   useEffect(() => { load(); }, [load]);
+  const subId = params.get('subscription_id'), sessId = params.get('cs'); // not named session_id: host firewalls flag that name
+  useEffect(() => {
+    // PayPal sends the customer back with the subscription id: confirm it with PayPal now instead of waiting for the webhook.
+    if ((!subId && !sessId) || process.env.NEXT_PUBLIC_PREVIEW === '1') return;
+    let tries = 0, stop = false, timer: ReturnType<typeof setTimeout> | undefined;
+    const run = async () => {
+      tries++;
+      const r = await api<{ status: string }>('/billing/sync', sessId ? { sessionId: sessId } : { subscriptionId: subId });
+      await load();
+      if (r.ok && r.status === 'ACTIVE') { setNote('You are subscribed — thank you!'); return; }
+      if (!stop && tries < 5) timer = setTimeout(run, 4000);
+    };
+    run();
+    return () => { stop = true; if (timer) clearTimeout(timer); };
+  }, [subId, sessId, load]);
   useEffect(() => { if (note.startsWith('Payment')) { const t = setTimeout(load, 3500); return () => clearTimeout(t); } }, [note, load]);
 
   async function download(product: ProductId) {

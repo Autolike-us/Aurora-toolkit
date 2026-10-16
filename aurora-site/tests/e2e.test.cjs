@@ -41,9 +41,17 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     // license check by an extension (plain HTTP, as the extension would)
     const res = await page.evaluate(async ([k]) => { const r = await fetch('/api/license/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k, product: 'tiktok', installId: 'e2e-install-1' }) }); return { status: r.status, body: await r.json() }; }, [key]);
     check('the extension license check accepts the trial key', res.status === 200 && res.body.status === 'trial' && res.body.token.split('.').length === 3);
-    // checkout without provider config fails politely in the UI
-    await page.goto(site + '/pricing/'); await page.click('.priceband .pricecard button:has-text("card")'); await page.waitForSelector('.msg.err');
-    console.log('MSG', await page.textContent('.msg.err')); check('checkout shows a friendly message when payments are not configured yet', /temporarily unavailable/i.test(await page.textContent('.msg.err')));
+    // no payment provider configured: the pricing page does not offer broken buttons
+    await page.goto(site + '/pricing/'); await page.waitForSelector('.priceband .pricecard');
+    await page.waitForFunction(() => /Subscriptions open very soon/.test(document.body.textContent));
+    check('with no payment provider configured the pricing page says subscriptions open soon and shows no pay buttons', (await page.locator('.priceband .pricecard button:has-text("Subscribe")').count()) === 0);
+    // PayPal configured (fake credentials): only the PayPal button shows, and checkout fails politely because PayPal cannot be reached here
+    fs.writeFileSync(cfg, fs.readFileSync(cfg, 'utf8').replace('return array (', "return array ('paypal_client_id' => 'x', 'paypal_client_secret' => 'y', 'paypal_plan_bundle' => 'P-1', 'paypal_plan_bundle_launch' => 'P-2', 'paypal_plan_facebook' => 'P-3', "));
+    await page.waitForTimeout(2500); // PHP's opcache re-reads a changed config file after about 2 seconds
+    await page.goto(site + '/pricing/'); await page.waitForSelector('.priceband .pricecard button:has-text("PayPal")');
+    check('once PayPal is configured only the PayPal button is offered (no card button)', (await page.locator('.priceband .pricecard button:has-text("card")').count()) === 0);
+    await page.click('.priceband .pricecard button:has-text("PayPal")'); await page.waitForSelector('.msg.err');
+    console.log('MSG', await page.textContent('.msg.err')); check('checkout shows a friendly message when the payment provider cannot be reached', /temporarily unavailable/i.test(await page.textContent('.msg.err')));
     console.log('\n' + passed + ' e2e checks passed');
   } finally { await browser.close(); srv.kill(); }
 })().catch(e => { console.error(e); srv.kill(); process.exit(1); });

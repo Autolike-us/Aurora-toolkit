@@ -2,11 +2,13 @@
 declare(strict_types=1);
 
 /** Settings live in ~/aurora-config.php, ABOVE public_html, so secrets are never web-accessible. Override with AURORA_CONFIG. */
+function config_path(): string { return getenv('AURORA_CONFIG') ?: dirname(__DIR__, 3) . '/aurora-config.php'; }
+
 function cfg(string $key, $default = null)
 {
     static $c = null;
     if ($c === null) {
-        $path = getenv('AURORA_CONFIG') ?: dirname(__DIR__, 3) . '/aurora-config.php';
+        $path = config_path();
         $c = is_file($path) ? (require $path) : [];
     }
     return $c[$key] ?? $default;
