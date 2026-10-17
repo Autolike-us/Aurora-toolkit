@@ -9,6 +9,7 @@ import { Faq } from '@/components/Faq';
 export const metadata: Metadata = {
   title: 'Aurora Extract — free data extractor',
   description: 'Free Chrome extension: collect public data from Facebook, Instagram and TikTok — profiles, groups, Marketplace, posts, comments, followers — and download photos and videos. Export to CSV, Excel and JSON.',
+  openGraph: { title: 'Aurora Extract — free data extractor for Facebook, Instagram & TikTok', description: 'Collect public data and download photos and videos. Export to CSV, Excel or JSON. Free, no account, your data stays on your computer.', images: [{ url: '/og.png', width: 1200, height: 630 }] },
 };
 
 const FAQ_X = [
