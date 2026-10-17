@@ -54,7 +54,7 @@ export const COMMON_FEATURES = [
 /** The free 3-in-1 data extractor. Not part of the paid license; downloaded directly (no account needed). */
 export const EXTRACT = {
   name: 'Aurora Extract',
-  version: '0.2.1',
+  version: '0.2.2',
   zip: '/downloads/aurora-extract-latest.zip',
   tagline: 'Collect public data from Facebook, Instagram and TikTok — and download the photos and videos — into a clean spreadsheet.',
   platforms: [
