@@ -22,6 +22,7 @@ export default function Pricing() {
         <p className="lead" style={{ marginTop: 16 }}>3 days free with every studio, no card. Then one simple subscription.</p>
       </div>
       <PricingPlans />
+      <p className="note center" style={{ marginTop: 26 }}>Looking for data instead of automation? <a href="/extract" style={{ textDecoration: 'underline' }}>Aurora Extract</a> — the free extractor for Facebook, Instagram and TikTok — costs nothing.</p>
       <h2 style={{ margin: '80px 0 6px', fontSize: 32 }}>What each studio can do</h2>
       <table className="compare">
         <thead><tr><th>Action</th>{PRODUCTS.map(p => <th key={p.id}><span className="inline-id"><PlatformIcon id={p.id} size="xs" />{p.short}</span></th>)}</tr></thead>

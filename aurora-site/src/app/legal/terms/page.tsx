@@ -9,6 +9,7 @@ export default function Page() {
     <h2>4. Platform rules and your risk</h2><p>Facebook, Instagram and TikTok restrict automated activity. Using Aurora may lead to warnings, temporary limits or suspension of your accounts. We give no guarantee about outcomes and are not responsible for actions taken by those platforms. See the platform disclaimer.</p>
     <h2>5. Acceptable use</h2><p>Do not use Aurora for spam, harassment, deception, illegal activity or to violate anyone’s rights. We may suspend licenses used this way.</p>
     <h2>6. Warranty and liability</h2><p>The Service is provided “as is”. To the maximum extent permitted by law, our total liability is limited to the amount you paid in the three months before the claim.</p>
-    <h2>7. Changes and contact</h2><p>We may update these terms and will post the new date here. Contact: support@getaurorastudios.com.</p>
+    <h2>7. Aurora Extract (free extension)</h2><p>Aurora Extract is provided free of charge, “as is”, without a license key. You may use it to collect information that your own logged-in account is already allowed to see. You are responsible for complying with each platform’s terms and with the privacy, data-protection, anti-spam and marketing laws that apply to you (for example GDPR, CAN-SPAM, PECR and CCPA), and for having a lawful basis before you contact anyone using collected details. Do not use it to build lists of private individuals for harassment, to bypass privacy settings, or to collect data you are not entitled to see.</p>
+    <h2>8. Changes and contact</h2><p>We may update these terms and will post the new date here. Contact: support@getaurorastudios.com.</p>
   </article></main>);
 }

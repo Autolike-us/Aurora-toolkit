@@ -9,7 +9,7 @@ export function Nav() {
     <header className="nav"><div className="wrap">
       <Brand />
       <nav aria-label="Main">
-        <Link href="/#studios">The studios</Link><Link href="/#how">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/download">Download</Link><Link href="/#faq">Questions</Link>
+        <Link href="/#studios">The studios</Link><Link href="/#how">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/extract">Free extractor <span className="freetag">Free</span></Link><Link href="/download">Download</Link><Link href="/#faq">Questions</Link>
       </nav>
       <div className="right">
         {signedIn ? <Link className="btn sm primary" href="/account">My account</Link> : <>

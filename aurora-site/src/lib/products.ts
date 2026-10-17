@@ -50,3 +50,17 @@ export const COMMON_FEATURES = [
   { icon: '💾', title: 'Saved setups', text: 'Save any configuration, reload it in one click, or reset the whole form to factory defaults.' },
   { icon: '🔒', title: 'Your data stays yours', text: 'Everything runs in your own browser and logged-in tab. Aurora never asks for your social passwords.' },
 ];
+
+/** The free 3-in-1 data extractor. Not part of the paid license; downloaded directly (no account needed). */
+export const EXTRACT = {
+  name: 'Aurora Extract',
+  version: '0.2.1',
+  zip: '/downloads/aurora-extract-latest.zip',
+  tagline: 'Collect public data from Facebook, Instagram and TikTok — and download the photos and videos — into a clean spreadsheet.',
+  platforms: [
+    { id: 'facebook' as const, items: ['Pages & profiles with public email, phone and website', 'Group members and group info', 'Group, page and profile posts with photos and videos', 'Comments, people who commented, people who reacted', 'Friends, followers and following lists', 'Marketplace listings, prices, sellers and photos'] },
+    { id: 'instagram' as const, items: ['Profiles with business email, phone and website', 'Posts and reels with full-size photos and real video files', 'Followers and following lists', 'Comments, people who commented, people who liked', 'Hashtag pages'] },
+    { id: 'tiktok' as const, items: ['Profiles with bio contacts and stats', 'Videos with captions, hashtags, stats and the video file', 'Followers and following lists', 'Comments and people who commented', 'Hashtag and search pages'] },
+  ],
+  exports: ['CSV', 'Excel (.xlsx)', 'JSON', 'Photos & videos as ZIP'],
+};

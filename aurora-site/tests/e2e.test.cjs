@@ -52,6 +52,24 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     check('once PayPal is configured only the PayPal button is offered (no card button)', (await page.locator('.priceband .pricecard button:has-text("card")').count()) === 0);
     await page.click('.priceband .pricecard button:has-text("PayPal")'); await page.waitForSelector('.msg.err');
     console.log('MSG', await page.textContent('.msg.err')); check('checkout shows a friendly message when the payment provider cannot be reached', /temporarily unavailable/i.test(await page.textContent('.msg.err')));
+    // ---- free extension + Telegram support channel
+    const TG = 'https://t.me/+GqmNSvnMJxhhMzJh';
+    await page.goto(site + '/extract/');
+    check('the Aurora Extract page presents the free extension with a direct download link', /Aurora\s*Extract/.test(await page.textContent('h1')) && (await page.getAttribute('a[download]', 'href')) === '/downloads/aurora-extract-latest.zip' && /Free/.test(await page.textContent('.freetag')));
+    const zres = await page.request.get(site + '/downloads/aurora-extract-latest.zip');
+    const buf = await zres.body();
+    check('the download is a real zip containing the extension manifest', zres.ok() && buf.slice(0, 2).toString() === 'PK' && buf.includes(Buffer.from('manifest.json')));
+    check('the extract page lists all three platforms and the export formats', (await page.locator('.xcard').count()) === 3 && /Excel/.test(await page.textContent('.xexports')));
+    await page.goto(site + '/');
+    check('the home page features the free extension with a download button', (await page.locator('#free a[download]').count()) === 1 && /Aurora Extract/.test(await page.textContent('#free')));
+    check('the nav links to the free extractor', await page.locator('header.nav a[href="/extract/"]').count() === 1);
+    check('the footer links to the Telegram channel, support page and extractor', (await page.locator(`footer.site a[href="${TG}"]`).count()) === 1 && (await page.locator('footer.site a[href="/support/"]').count()) === 1 && (await page.locator('footer.site a[href="/extract/"]').count()) === 1);
+    await page.goto(site + '/support/');
+    check('the support page offers the Telegram channel and the support email', (await page.getAttribute(`a[href="${TG}"]`, 'href')) === TG && /support@getaurorastudios.com/.test(await page.textContent('main')));
+    await page.goto(site + '/download/');
+    check('the download page offers the free extension without needing an account', (await page.locator('.freebanner a[download]').count()) === 1);
+    await page.goto(site + '/legal/privacy/');
+    check('the privacy policy covers the free extension and no longer names old providers', /Aurora Extract/.test(await page.textContent('main')) && !/Supabase|Vercel/.test(await page.textContent('main')));
     console.log('\n' + passed + ' e2e checks passed');
   } finally { await browser.close(); srv.kill(); }
 })().catch(e => { console.error(e); srv.kill(); process.exit(1); });

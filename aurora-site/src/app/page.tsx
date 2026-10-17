@@ -7,6 +7,8 @@ import { PlatformRow } from '@/components/PlatformIcon';
 import { StudioMock } from '@/components/StudioMock';
 import { COMMON_FEATURES } from '@/lib/products';
 import { TRIAL_DAYS } from '@/lib/pricing';
+import { EXTRACT } from '@/lib/products';
+import { ExtractIcon } from '@/components/ExtractIcon';
 
 export default function Home() {
   return (
@@ -42,6 +44,21 @@ export default function Home() {
         </div>
         <ProductCards />
         <p className="fineprint center">Works with the English versions of each platform in Chrome 110+. Keep your task tab open and start with a one-target preview.</p>
+      </div></section>
+
+      <section className="block" id="free" style={{ paddingTop: 0 }}><div className="wrap">
+        <div className="freebanner">
+          <ExtractIcon size={84} />
+          <div className="txt">
+            <span className="eyebrow" style={{ marginBottom: 8 }}>New · <span className="freetag">Free</span></span>
+            <h2>Aurora Extract</h2>
+            <p>{EXTRACT.tagline} One extension for all three platforms — profiles, groups, Marketplace, posts, comments, followers and more. Export to CSV, Excel or JSON.</p>
+          </div>
+          <div className="act">
+            <a className="btn primary lg" href={EXTRACT.zip} download>Download free <span className="arrow">↓</span></a>
+            <Link className="linkarrow" href="/extract">See what it collects ↗</Link>
+          </div>
+        </div>
       </div></section>
 
       <section className="block" id="how"><div className="wrap workflow">
