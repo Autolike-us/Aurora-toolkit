@@ -55,7 +55,7 @@ if ((string) cfg('paypal_client_id', '') === '' || (string) cfg('paypal_client_s
 // ---------- Stripe ----------
 echo "\nStripe\n------\n";
 $sk = (string) cfg('stripe_secret', '');
-line('stripe_secret is a LIVE key (sk_live_… or rk_live_…)', preg_match('/^(sk|rk)_live_/', $sk) === 1, $sk === '' ? 'empty' : (strpos($sk, '_test_') !== false ? 'it is a TEST key' : 'unrecognised key'));
+line('stripe_secret is a LIVE key (sk_live_… or rk_live_…)', ($isLive = preg_match('/^(sk|rk)_live_/', $sk) === 1), $isLive ? '' : ($sk === '' ? 'empty' : (strpos($sk, '_test_') !== false ? 'it is a TEST key' : 'unrecognised key')));
 $sexpect = ['stripe_price_bundle_launch' => 1000, 'stripe_price_bundle' => 2000, 'stripe_price_facebook' => 1000, 'stripe_price_instagram' => 1000, 'stripe_price_tiktok' => 1000];
 if ($sk === '') line('Stripe key is set', false);
 else {
