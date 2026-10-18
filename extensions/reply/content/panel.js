@@ -10,7 +10,7 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['direct', 'Direct']];
 
-  const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '', hid: '', quick: [], qmark: {}, queue: null };
+  const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '', hid: '', quick: [], qmark: {}, queue: null, count: 0 };
 
   /* ---------- shell ---------- */
   const host = document.createElement('div');
@@ -65,16 +65,18 @@
       body += n ? S.comments.map((c, i) => `<div class="c" data-i="${i}"><div class="a">${esc(c.author)}</div><div class="t">${esc(c.text)}</div><div><button class="b p" data-draft="${i}">✦ Draft a reply</button></div></div>`).join('')
         : `<div class="warn"><b>No comments found yet.</b> Open a post and scroll to its comments, then press Rescan.<br>Comments are on screen but nothing shows? The site may have changed its page. <a class="l" id="report">Report a problem</a> — it takes 10 seconds.</div>`;
       const un = unanswered(); if (un.length) body = body.replace('<div class="c"', `<button class="b p" id="qstart" style="justify-self:start">▶ Reply to unanswered comments (${un.length})</button><div class="c"`);
+    } else if (S.view === 'report') {
+      body += `<div class="q"><b>Report a problem</b>Tell us what went wrong. We copy a few technical details about the page (no names, no comments) so we can fix it faster.</div><div class="bar"><button class="b p" id="repTg">💬 Telegram channel (fastest)</button><button class="b" id="repMail">✉ Email</button></div><div class="bar"><button class="b" id="back">← Back</button></div>`;
     } else if (S.view === 'qintro') {
       const un = unanswered(), N = Math.min(un.length, 15), u = S.usage, left = u ? Math.max(0, u.limit - u.used) : null;
-      body += `<div class="q"><b>Reply to unanswered comments</b>Aurora drafts one reply at a time for the ${N} comment${N === 1 ? '' : 's'} nobody has answered yet. You read each one, insert it, and press Send yourself — then go to the next.</div><div class="note">Uses up to ${N} of your drafts${left != null ? ` (${left} left this month)` : ''}. A draft is only written when you reach that comment.</div><div class="bar"><button class="b p" id="qgo">Start</button><button class="b" id="back">Cancel</button></div>`;
+      body += `<div class="q"><b>Reply to unanswered comments</b>Aurora writes ${nReplies() === 1 ? 'one reply' : nReplies() + ' options'} at a time for the ${N} comment${N === 1 ? '' : 's'} nobody has answered yet. You read each one, insert it, and press Send yourself — then go to the next.</div><div class="note">Uses up to ${N * nReplies()} of your drafts${left != null ? ` (${left} left this month)` : ''}. A draft is only written when you reach that comment.</div><div class="bar"><button class="b p" id="qgo">Start</button><button class="b" id="back">Cancel</button></div>`;
     } else {
       const c = S.sel;
       if (S.queue) body += `<div class="bar"><span class="note" style="flex:1"><b>Queue ${S.queue.i + 1} of ${S.queue.list.length}</b></span><button class="b" id="qskip">Skip ›</button><button class="b" id="qstop">Stop</button></div>`;
       body += `<div class="bar">${S.queue ? '' : '<button class="b" id="back">← All comments</button>'}</div><div class="q"><b>${esc(c.author)} wrote</b>${esc(c.text.length > 300 ? c.text.slice(0, 300) + '…' : c.text)}</div>`;
       body += `<div class="chips">${TONES.map(([id, l]) => `<button class="chip ${((S.tone || (S.state && S.state.voice && S.state.voice.tone) || 'friendly') === id) ? 'on' : ''}" data-tone="${id}">${l}</button>`).join('')}</div>`;
-      body += `<input class="h" id="hint" maxlength="200" placeholder="Optional: what should the reply say? e.g. thank them and mention Saturday" value="${esc(S.hint)}"><div class="row"><label><input type="checkbox" id="best" ${S.quality ? 'checked' : ''}> Best quality (slower)</label></div>`;
-      if (S.loading) body += `<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="note">Writing three replies in your voice…</div>`;
+      body += `<input class="h" id="hint" maxlength="200" placeholder="Optional: what should the reply say? e.g. thank them and mention Saturday" value="${esc(S.hint)}"><div class="row"><span>Replies:</span><div class="chips">${[1, 2, 3].map((k) => `<button class="chip ${nReplies() === k ? 'on' : ''}" data-count="${k}">${k}</button>`).join('')}</div><span class="note">uses ${nReplies()} draft${nReplies() > 1 ? 's' : ''}</span></div><div class="row"><label><input type="checkbox" id="best" ${S.quality ? 'checked' : ''}> Best quality (slower)</label></div>`;
+      if (S.loading) body += `<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="note">Writing ${nReplies() === 1 ? 'a reply' : nReplies() + ' replies'} in your voice…</div>`;
       else {
         if (S.error) body += `<div class="err">${esc(S.error.message)}${S.error.status === 'no_key' || S.error.status === 'invalid' || S.error.status === 'wrong_plan' ? ' <a class="l" id="optKey">Open settings</a>' : ''}</div>`;
         if (S.flag !== 'none') body += `<div class="warn"><b>${{ spam: 'This looks like spam.', abusive: 'This looks abusive.', sensitive: 'This one may need you personally.' }[S.flag]}</b> ${esc(S.note)}</div>`;
@@ -94,6 +96,7 @@
   async function refreshState() { const q = await ask('quickList'); S.quick = (q && q.quick) || []; S.state = await ask('getState'); if (S.state && S.state.usage) S.usage = S.state.usage; }
   function highlight(el, on) { if (!el) return; el.style.outline = on ? '2px solid #f97316' : ''; el.style.outlineOffset = on ? '2px' : ''; }
 
+  const nReplies = () => S.count || (S.state && S.state.voice && +S.state.voice.count) || 3;
   const unanswered = () => S.comments.filter((c) => !c.replied && !c.own && !(S.state && S.state.voice && S.state.voice.name && c.author.toLowerCase() === String(S.state.voice.name).toLowerCase()));
   function queueGo(step) {
     const q = S.queue; if (!q) return;
@@ -102,18 +105,24 @@
     if (q.i >= q.list.length) { S.queue = null; S.view = 'list'; S.sel = null; S.done = '✓ Queue finished. Nice work!'; scan(); render(); return; }
     draft(q.list[q.i]);
   }
-  async function report() {
+  const TG = 'https://t.me/+GqmNSvnMJxhhMzJh';
+  function reportText() {
     const info = Object.assign({ extension: (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '', ua: navigator.userAgent.replace(/\s+/g, ' ').slice(0, 110) }, A.diagnose());
-    const text = 'Aurora Reply — problem report\n(what happened, in your words: )\n\n--- technical details (no names or comments) ---\n' + JSON.stringify(info, null, 1);
+    return { info, text: 'Aurora Reply — problem report\n(what happened, in your words: )\n\n--- technical details (no names or comments) ---\n' + JSON.stringify(info, null, 1) };
+  }
+  function report() { S.open = true; S.view = 'report'; render(); }
+  async function reportVia(how) {
+    const { info, text } = reportText();
     try { await navigator.clipboard.writeText(text); } catch (_) {}
-    const a = document.createElement('a'); a.href = 'mailto:support@getaurorastudios.com?subject=' + encodeURIComponent('Aurora Reply problem on ' + info.platform) + '&body=' + encodeURIComponent(text); a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
-    S.done = 'Your email app should open. The technical details are also copied — paste them if it does not.'; render();
+    if (how === 'tg') { window.open(TG, '_blank', 'noopener'); S.done = 'Telegram is opening. The technical details are copied — paste them in the “Aurora Studios Report” channel and tell us what happened.'; }
+    else { const a = document.createElement('a'); a.href = 'mailto:support@getaurorastudios.com?subject=' + encodeURIComponent('Aurora Reply problem on ' + info.platform) + '&body=' + encodeURIComponent(text); a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove(); S.done = 'Your email app should open. The technical details are also copied — paste them if it does not.'; }
+    S.view = 'list'; render();
   }
   async function draft(c) {
     S.sel = c; S.view = 'draft'; S.loading = true; S.error = null; S.drafts = []; S.flag = 'none'; S.note = ''; S.done = ''; render();
     try { c.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
     const post = A.postContext();
-    const r = await ask('draft', { platform: A.platformId(), tone: S.tone || undefined, quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: { text: c.text, author: c.author }, post });
+    const r = await ask('draft', { platform: A.platformId(), tone: S.tone || undefined, quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: { text: c.text, author: c.author }, post, count: nReplies() });
     S.loading = false;
     if (r.usage) S.usage = r.usage;
     if (r.ok) { S.hid = r.historyId || ''; S.qmark = {}; S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status };
@@ -158,12 +167,15 @@
     else if (t.id === 'back') { S.view = 'list'; S.queue = null; S.error = null; render(); }
     else if (t.id === 'again') draft(S.sel);
     else if (t.id === 'report') report();
+    else if (t.id === 'repTg') reportVia('tg');
+    else if (t.id === 'repMail') reportVia('mail');
     else if (t.id === 'qstart') { S.view = 'qintro'; render(); }
     else if (t.id === 'qgo') { S.queue = { list: unanswered().slice(0, 15), i: -1 }; queueGo(1); }
     else if (t.id === 'qnext' || t.id === 'qskip') queueGo(1);
     else if (t.id === 'qstop') { S.queue = null; S.view = 'list'; S.done = ''; render(); }
     else if (t.id === 'optKey' || t.id === 'optVoice') ask('openOptions');
     else if (t.dataset.draft != null) draft(S.comments[+t.dataset.draft]);
+    else if (t.dataset.count) { S.count = +t.dataset.count; ask('setCount', { count: S.count }); render(); }
     else if (t.dataset.tone) { S.tone = t.dataset.tone; render(); if (S.drafts.length || S.error) draft(S.sel); }
     else if (t.dataset.quick != null) { const q = S.quick[+t.dataset.quick]; if (q) { const m = {}; Object.keys(S.qmark).forEach((k) => { m[+k + 1] = S.qmark[k]; }); S.qmark = m; S.qmark[0] = true; S.drafts = [q.text, ...S.drafts]; render(); } }
     else if (t.dataset.use != null) use(+t.dataset.use);

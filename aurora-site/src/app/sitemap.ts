@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 export const dynamic = 'force-static';
 
 const BASE = 'https://getaurorastudios.com';
-const PAGES = ['', '/pricing', '/extract', '/download', '/support', '/products/facebook', '/products/instagram', '/products/tiktok', '/signup', '/login', '/legal/terms', '/legal/privacy', '/legal/refunds', '/legal/disclaimer'];
+const PAGES = ['', '/pricing', '/extract', '/reply', '/download', '/support', '/products/facebook', '/products/instagram', '/products/tiktok', '/signup', '/login', '/legal/terms', '/legal/privacy', '/legal/refunds', '/legal/disclaimer'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

@@ -43,7 +43,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       const voice = await get('voice', {});
       const comment = { text: clip(msg.comment && msg.comment.text, 1000), author: clip(msg.comment && msg.comment.author, 80) };
       const r = await api('/reply/draft', {
-        platform: msg.platform, tone: msg.tone, quality: msg.quality, hint: clip(msg.hint, 200),
+        platform: msg.platform, count: Math.max(1, Math.min(3, +msg.count || 3)), tone: msg.tone, quality: msg.quality, hint: clip(msg.hint, 200),
         comment, post: { caption: clip(msg.post && msg.post.caption, 800), author: clip(msg.post && msg.post.author, 80) }, voice,
       });
       if (r && r.ok && (r.drafts || []).length && await historyOn()) {

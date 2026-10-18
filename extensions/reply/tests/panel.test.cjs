@@ -8,6 +8,7 @@ const { FB, IG } = require('./fixtures.cjs');
     window.chrome = { runtime: { sendMessage: (m, cb) => { window.__msgs.push(m); const c = window.__cfg; setTimeout(() => {
       if (m.type === 'getState') cb(c.state);
       else if (m.type === 'draft') cb(typeof c.draft === 'function' ? c.draft(m) : c.draft);
+      else if (m.type === 'setCount') cb({ ok: true });
       else if (m.type === 'setProfile') { c.state = { ...c.state, profiles: { ...c.state.profiles, active: m.id } }; cb({ ok: true }); }
       else if (m.type === 'addSample') cb({ ok: true, count: 4 });
       else cb({ ok: true });
@@ -33,7 +34,7 @@ const { FB, IG } = require('./fixtures.cjs');
   check('three editable drafts appear and the usage meter updates', (await pg.locator('textarea.dt').count()) === 3 && /4 of 1500/.test(await pg.textContent('.hd')));
   const d1 = (await msgs('draft'))[0];
   check('the request carries the comment, its author, the post caption and the platform (and no tone unless chosen)', d1.comment.text === 'Do you deliver on Sundays?' && d1.comment.author === 'Maya K' && d1.post.caption === 'Fresh sourdough today!' && d1.platform === 'facebook' && d1.tone === undefined && d1.quality === 'standard');
-  check('the saved tone is highlighted by default', /warm/i.test(await pg.locator('.chip.on').textContent()));
+  check('the saved tone is highlighted by default', /warm/i.test(await pg.locator('[data-tone].on').textContent()));
   await pg.locator('[data-tone="playful"]').click(); await pg.waitForSelector('textarea.dt');
   const d2 = (await msgs('draft'))[1];
   check('choosing a tone writes new drafts with that tone', d2.tone === 'playful');
@@ -84,7 +85,7 @@ const { FB, IG } = require('./fixtures.cjs');
   check('profiles: a voice picker appears when there is more than one profile and switching it tells the extension', (await pg.locator('#profile option').count()) === 2 && await (async () => { await pg.selectOption('#profile', 'p2'); await pg.waitForTimeout(150); return (await msgs('setProfile'))[0].id === 'p2'; })());
   check('queue: offers to reply to unanswered comments, with the count', /Reply to unanswered comments \(2\)/.test(await pg.textContent('#qstart')));
   await pg.click('#qstart'); await pg.waitForTimeout(80);
-  check('queue: explains that it uses drafts, one at a time, and that the person sends', /one reply at a time/.test(await pg.textContent('.q')) && /up to 2 of your drafts/.test(await pg.textContent('.bd')));
+  check('queue: explains that it uses drafts, one at a time, and that the person sends', /at a time/.test(await pg.textContent('.q')) && /up to 6 of your drafts/.test(await pg.textContent('.bd')));
   await pg.click('#qgo'); await pg.waitForSelector('textarea.dt');
   check('queue: starts with the first comment and shows the position', /Queue 1 of 2/.test(await pg.textContent('.bd')) && (await msgs('draft')).length === 1 && (await msgs('draft'))[0].comment.author === 'maya.k');
   await pg.keyboard.press('Alt+Digit2'); await pg.waitForTimeout(500);
@@ -100,5 +101,17 @@ const { FB, IG } = require('./fixtures.cjs');
   check('nothing found: the panel says so and offers "Report a problem" instead of staying silent', /No comments found/.test(await pg.textContent('.bd')) && !!(await pg.$('.bd #report')));
   const diag = await pg.evaluate(() => JSON.stringify(AuroraReplyAdapters.diagnose()));
   check('the report holds page facts only (no names, no comment text)', /"replyLabels":0/.test(diag) && !/Maya|Tom/.test(diag));
+
+  // choose 1-3 replies, report via Telegram or email
+  await open('https://www.facebook.com/sunrisebakery/posts/1', FB, { state: STATE, draft: OK });
+  await pg.click('button.pill'); await pg.locator('[data-draft="0"]').click(); await pg.waitForSelector('textarea.dt');
+  check('replies per comment: three by default, and the first request asks for three', (await msgs('draft'))[0].count === 3 && /uses 3 drafts/.test(await pg.textContent('.bd')));
+  await pg.locator('[data-count="1"]').click(); await pg.waitForTimeout(80);
+  check('choosing 1 is remembered, says it uses 1 draft, and the next request asks for one', /uses 1 draft\b/.test(await pg.textContent('.bd')) && (await msgs('setCount'))[0].count === 1 && await (async () => { await pg.click('#again'); await pg.waitForSelector('textarea.dt'); return (await msgs('draft')).pop().count === 1; })());
+  await pg.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; });
+  await pg.click('#report'); await pg.waitForTimeout(80);
+  check('report a problem offers Telegram and email', !!(await pg.$('#repTg')) && !!(await pg.$('#repMail')));
+  await pg.click('#repTg'); await pg.waitForTimeout(100);
+  check('the Telegram button opens the Aurora Studios Report channel and says the details are copied', (await pg.evaluate(() => window.__opened[0])) === 'https://t.me/+GqmNSvnMJxhhMzJh' && /Telegram is opening/.test(await pg.textContent('.bd')));
   await b.close(); done();
 })();

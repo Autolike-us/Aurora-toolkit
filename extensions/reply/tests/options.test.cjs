@@ -12,10 +12,10 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
 
   const b = await launch(); const ctx = await b.newContext({ viewport: { width: 1000, height: 1100 } }); const pg = await ctx.newPage(); pg.on('pageerror', (e) => { throw e; });
   const stub = () => {
-    const store = { prefs: { onboarded: true, seen: '0.3.0', theme: 'light', history: true } }; window.__store = store; window.__msgs = [];
+    const store = { prefs: { onboarded: true, seen: '0.3.1', theme: 'light', history: true } }; window.__store = store; window.__msgs = [];
     window.chrome = {
       storage: { local: { get: async (k) => { const o = {}; [].concat(k).forEach((x) => { if (x in store) o[x] = store[x]; }); return o; }, set: async (o) => Object.assign(store, o) } },
-      runtime: { getManifest: () => ({ version: '0.3.0' }), openOptionsPage: () => { window.__msgs.push('opts'); }, sendMessage: (m, cb) => { window.__msgs.push(m); setTimeout(() => {
+      runtime: { getManifest: () => ({ version: '0.3.1' }), openOptionsPage: () => { window.__msgs.push('opts'); }, sendMessage: (m, cb) => { window.__msgs.push(m); setTimeout(() => {
         if (m.type === 'status') cb(store.licenseKey === 'AUR-GOOD-GOOD-GOOD' ? { ok: true, status: 'active', usage: { used: 12, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } } : { ok: false, message: 'License key not found. Check it on your Aurora account page.' });
         else if (m.type === 'draft') cb({ ok: true, drafts: [{ text: 'Sundays are pick-up only 🥖' }, { text: 'Tue–Sat we deliver!' }, { text: 'DM us your address.' }], flag: 'none', note: '', usage: { used: 13, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } });
         else if (m.type === 'getState') cb({ ok: true, hasKey: !!store.licenseKey, voiceReady: !!(store.voice && store.voice.samples && store.voice.samples.length), usage: store.usage || null });
@@ -60,6 +60,7 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   check('overview: activity chart has 14 bars and platform split lists 3 platforms', (await pg.locator('#bars i').count()) === 14 && (await pg.locator('#split .hbar').count()) === 3 && (await pg.locator('#recent .h').count()) === 3);
   check('overview: shows the three supported platforms and that DMs are not supported', (await pg.locator('#plats .plat').count()) === 3 && /private messages/.test(await pg.textContent('#view-overview')));
   check('light theme: the sidebar is light too', await pg.evaluate(() => { const c = getComputedStyle(document.querySelector('.side')).backgroundColor.match(/\d+/g).map(Number); return c[0] > 240 && c[1] > 240; }));
+  check('overview: advertises the other Aurora tools (Extract free + the three studios)', (await pg.locator('#more .plat').count()) === 4 && /Aurora Extract/.test(await pg.textContent('#more')) && /3-day trial/.test(await pg.textContent('#more')));
   check('the default theme is light', (await pg.evaluate(() => document.documentElement.dataset.theme)) === 'light');
   await pg.screenshot({ path: path.join(OUT, 'overview.png'), fullPage: true });
   await nav('history');
@@ -104,12 +105,12 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   pg.once('dialog', (d) => d.accept()); await pg.click('#pdel'); await pg.waitForTimeout(300);
   check('profiles: deleting returns to the remaining profile', (await pg.locator('#profile option').count()) === 1 && (await pg.inputValue('#name')) === 'Sunrise Bakery');
   await nav('help');
-  check('help: shortcuts, FAQ and contact are there, with a mail link to support', /Alt/.test(await pg.textContent('#view-help')) && (await pg.getAttribute('#mailBtn', 'href')).startsWith('mailto:support@getaurorastudios.com') && (await pg.locator('.faq details').count()) >= 3);
+  check('help: shortcuts, FAQ and contact are there, with a mail link to support', /Alt/.test(await pg.textContent('#view-help')) && (await pg.getAttribute('#mailBtn', 'href')).startsWith('mailto:support@getaurorastudios.com') && (await pg.getAttribute('#tgBtn', 'href')) === 'https://t.me/+GqmNSvnMJxhhMzJh' && (await pg.locator('.faq details').count()) >= 3);
   await pg.evaluate(() => { window.__store.prefs = { onboarded: true, seen: '0.2.2', theme: 'light', history: true }; });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.prefs = { onboarded: true, seen: '0.2.2', theme: 'light', history: true }; });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
   await nav('overview');
-  check("what's new: shown once after an update, and goes away when dismissed", !(await pg.isHidden('#whatsNew')) && /0\.3\.0/.test(await pg.textContent('#whatsNew')) && await (async () => { await pg.click('#wnDismiss'); await pg.waitForTimeout(100); return (await pg.isHidden('#whatsNew')) && (await pg.evaluate(() => window.__store.prefs.seen)) === '0.3.0'; })());
+  check("what's new: shown once after an update, and goes away when dismissed", !(await pg.isHidden('#whatsNew')) && /0\.3\.1/.test(await pg.textContent('#whatsNew')) && await (async () => { await pg.click('#wnDismiss'); await pg.waitForTimeout(100); return (await pg.isHidden('#whatsNew')) && (await pg.evaluate(() => window.__store.prefs.seen)) === '0.3.1'; })());
   await pg.evaluate(() => { window.__store.prefs = {}; });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.prefs = {}; });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);

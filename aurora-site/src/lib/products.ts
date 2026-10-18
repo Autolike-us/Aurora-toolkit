@@ -76,3 +76,24 @@ export const EXTRACT = {
     ],
   },
 };
+
+/** Aurora Reply — AI comment replies in the owner's own voice (early access). */
+export const REPLY = {
+  name: 'Aurora Reply',
+  tagline: 'Answer your Facebook, Instagram and TikTok comments in your own voice — in seconds. You read, edit and press Send.',
+  steps: [
+    { n: '01', title: 'Open a post', text: 'A black ✦ Reply button appears in the corner of any post with comments.' },
+    { n: '02', title: 'Pick a comment', text: 'Press “Draft a reply” and choose how many options you want — 1, 2 or 3.' },
+    { n: '03', title: 'Use it, then send', text: 'The reply lands in that comment’s reply box. Edit it, and press Send yourself.' },
+  ],
+  features: [
+    { icon: '🎙️', title: 'Sounds like you', text: 'Teach it your voice once with a few of your own replies, your tone and your business facts. It never invents prices or promises.' },
+    { icon: '1️⃣', title: 'Choose 1, 2 or 3 options', text: 'Need just one reply? Ask for one and use fewer drafts. Want choice? Get three.' },
+    { icon: '▶️', title: 'Reply to unanswered comments', text: 'Work through the comments nobody has answered, one at a time. You approve every reply.' },
+    { icon: '⚡', title: 'Quick replies', text: 'Save your answers to common questions — one click, instant and free.' },
+    { icon: '🕓', title: 'History of everything', text: 'Search, favourite, copy, reuse and export every draft. Stored on your computer only.' },
+    { icon: '🏷️', title: 'Several brands', text: 'Voice profiles for each brand or account. Switch in a click.' },
+    { icon: '🌍', title: 'Your language', text: 'Replies in the language of the comment. Comments are found in French, Spanish, German, Portuguese, Japanese and many more.' },
+    { icon: '🛡️', title: 'Always your call', text: 'Flags spam and sensitive comments. It never presses Send and never reads private messages.' },
+  ],
+};

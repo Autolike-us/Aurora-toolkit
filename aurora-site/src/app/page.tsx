@@ -9,6 +9,8 @@ import { COMMON_FEATURES } from '@/lib/products';
 import { TRIAL_DAYS } from '@/lib/pricing';
 import { EXTRACT } from '@/lib/products';
 import { ExtractIcon } from '@/components/ExtractIcon';
+import Image from 'next/image';
+import { SUPPORT } from '@/lib/support';
 
 export default function Home() {
   return (
@@ -57,6 +59,21 @@ export default function Home() {
           <div className="act">
             <a className="btn primary lg" href={EXTRACT.zip} download>Download free <span className="arrow">↓</span></a>
             <Link className="linkarrow" href="/extract">See what it collects ↗</Link>
+          </div>
+        </div>
+      </div></section>
+
+      <section className="block" id="reply" style={{ paddingTop: 0 }}><div className="wrap">
+        <div className="replybanner">
+          <Image src="/reply-icon.png" alt="" width={84} height={84} />
+          <div className="txt">
+            <span className="eyebrow" style={{ marginBottom: 8, color: '#fbbf24' }}>New · Early access</span>
+            <h2>Aurora Reply</h2>
+            <p>Answer your Facebook, Instagram and TikTok comments in your own voice. Choose 1, 2 or 3 reply options, edit, and press Send yourself — it never posts for you.</p>
+          </div>
+          <div className="act">
+            <Link className="btn primary lg" href="/reply">See Aurora Reply <span className="arrow">↗</span></Link>
+            <a className="linkarrow" href={SUPPORT.telegram} target="_blank" rel="noopener noreferrer">Ask for early access ↗</a>
           </div>
         </div>
       </div></section>

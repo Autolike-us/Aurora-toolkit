@@ -69,6 +69,9 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     check('the footer links to the Telegram channel, support page and extractor', (await page.locator(`footer.site a[href="${TG}"]`).count()) === 1 && (await page.locator('footer.site a[href="/support/"]').count()) === 1 && (await page.locator('footer.site a[href="/extract/"]').count()) === 1);
     await page.goto(site + '/support/');
     check('the support page offers the Telegram channel and the support email', (await page.getAttribute(`a[href="${TG}"]`, 'href')) === TG && /support@getaurorastudios.com/.test(await page.textContent('main')));
+    await page.goto(site + '/reply/');
+    check('Aurora Reply has its own page with the steps, the features, the privacy promise and the Telegram link', /Aurora/.test(await page.textContent('h1')) && (await page.locator('.rstep').count()) === 3 && (await page.locator('.rfeat .rf').count()) === 8 && /never presses Send/.test(await page.textContent('.rcallout')) && (await page.locator(`a[href="${TG}"]`).count()) >= 1);
+    check('the nav and the footer link to Aurora Reply, and the home page advertises it', (await page.locator('header.nav a[href="/reply/"]').count()) === 1 && (await page.locator('footer.site a[href="/reply/"]').count()) === 1 && await (async () => { await page.goto(site + '/'); return (await page.locator('#reply .replybanner').count()) === 1; })());
     await page.goto(site + '/download/');
     check('the download page offers the free extension without needing an account', (await page.locator('.freebanner a[download]').count()) === 1);
     await page.goto(site + '/legal/privacy/');
@@ -95,7 +98,7 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     const og = await page.request.get(site + '/og.png');
     check('the social-preview image exists and is a PNG', og.ok() && (await og.body()).slice(1, 4).toString() === 'PNG');
     const mob = await (await browser.newContext({ viewport: { width: 390, height: 800 } })).newPage();
-    for (const u of ['/', '/pricing/', '/support/', '/extract/', '/download/', '/signup/']) { await mob.goto(site + u); check(`no sideways scrolling on a phone: ${u}`, await mob.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)); }
+    for (const u of ['/', '/pricing/', '/support/', '/extract/', '/reply/', '/download/', '/signup/']) { await mob.goto(site + u); check(`no sideways scrolling on a phone: ${u}`, await mob.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)); }
     console.log('\n' + passed + ' e2e checks passed');
   } finally { await browser.close(); srv.kill(); }
 })().catch(e => { console.error(e); srv.kill(); process.exit(1); });

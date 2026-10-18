@@ -59,12 +59,12 @@ function reply_used(string $key): int
     $r = q_one('SELECT n FROM reply_usage WHERE k = ? AND ym = ?', [hash('sha256', $key), reply_ym()]);
     return $r ? (int) $r['n'] : 0;
 }
-function reply_count_one(string $key): void
+function reply_count(string $key, int $n): void
 {
     reply_ensure_table();
     $h = hash('sha256', $key);
-    $st = q('UPDATE reply_usage SET n = n + 1, updated_at = ? WHERE k = ? AND ym = ?', [now(), $h, reply_ym()]);
-    if ($st->rowCount() === 0) q('INSERT INTO reply_usage (k, ym, n, updated_at) VALUES (?,?,1,?)', [$h, reply_ym(), now()]);
+    $st = q('UPDATE reply_usage SET n = n + ?, updated_at = ? WHERE k = ? AND ym = ?', [$n, now(), $h, reply_ym()]);
+    if ($st->rowCount() === 0) q('INSERT INTO reply_usage (k, ym, n, updated_at) VALUES (?,?,?,?)', [$h, reply_ym(), $n, now()]);
 }
 function reply_resets_at(): string { return gmdate('Y-m-d\T00:00:00\Z', strtotime('first day of next month 00:00:00 UTC')); }
 function reply_usage_block(string $key, int $quota): array { return ['used' => reply_used($key), 'limit' => $quota, 'resetsAt' => reply_resets_at()]; }
@@ -84,7 +84,7 @@ function reply_input(array $b): array
         'name' => reply_clean($v['name'] ?? '', 80), 'facts' => reply_clean($v['about'] ?? '', 1500), 'avoid' => reply_clean($v['avoid'] ?? '', 400),
         'tone' => $tone2, 'emoji' => in_array($v['emoji'] ?? '', ['none', 'few', 'some'], true) ? $v['emoji'] : 'few',
         'length' => ($v['length'] ?? '') === 'medium' ? 'medium' : 'short', 'language' => reply_clean($v['language'] ?? 'auto', 40) ?: 'auto', 'samples' => $samples,
-        'hint' => reply_clean($b['hint'] ?? '', 200),
+        'hint' => reply_clean($b['hint'] ?? '', 200), 'count' => max(1, min(3, (int) ($b['count'] ?? 3))),
     ];
 }
 
@@ -95,10 +95,11 @@ function reply_prompt(array $in): array
     $emoji = ['none' => 'Do not use emoji.', 'few' => 'Use at most one emoji, and only if it fits the voice.', 'some' => 'Emoji are welcome, a few at most.'][$in['emoji']];
     $len = $in['length'] === 'medium' ? 'Each reply: 1–3 short sentences, under 400 characters.' : 'Each reply: one or two short sentences, under 220 characters.';
     $lang = strtolower($in['language']) === 'auto' ? 'Reply in the same language as the comment.' : 'Reply in ' . $in['language'] . '.';
+    $cw = [1 => 'one', 2 => 'two', 3 => 'three'][$in['count']]; $rw = $in['count'] === 1 ? 'reply' : 'replies';
     $system = <<<TXT
 You are a ghostwriter who drafts replies to public comments on {$in['platform']} for the account owner. A human will read, edit and send the reply — you never post anything.
 
-Write exactly three different draft replies, in the owner's voice: tone "{$in['tone']}". {$emoji} {$len} {$lang}
+Write exactly {$cw} different draft {$rw}, in the owner's voice: tone "{$in['tone']}". {$emoji} {$len} {$lang}
 Match the style of the owner's past replies when they are given (length, warmth, punctuation, how they greet and sign off).
 
 Rules:
@@ -114,11 +115,11 @@ TXT;
     if ($in['post'] !== '' || $in['owner'] !== '') $parts[] = "<post_{$n}>\nBy: {$in['owner']}\n{$in['post']}\n</post_{$n}>";
     $parts[] = "<comment_{$n}>\nFrom: " . ($in['commenter'] ?: 'a follower') . "\n{$in['comment']}\n</comment_{$n}>";
     if ($in['hint'] !== '') $parts[] = "<owner_hint_{$n}>\n{$in['hint']}\n</owner_hint_{$n}>";
-    return [$system, "Draft three replies to the comment below.\n\n" . implode("\n\n", $parts)];
+    return [$system, "Draft {$cw} {$rw} to the comment below.\n\n" . implode("\n\n", $parts)];
 }
 
 /** One call to the Messages API (raw HTTP: the hosting plan has no Composer). Returns [ok, data|message, httpStatusForClient]. */
-function reply_call_claude(string $system, string $user, string $model): array
+function reply_call_claude(string $system, string $user, string $model, int $count = 3): array
 {
     $key = (string) cfg('anthropic_api_key', '');
     if ($key === '') return [false, 'Aurora Reply is not switched on yet. Please try again later.', 503];
@@ -142,5 +143,5 @@ function reply_call_claude(string $system, string $user, string $model): array
     foreach ($d['drafts'] as $x) { $t = reply_clean($x['text'] ?? '', 700); if ($t !== '') $drafts[] = ['text' => $t]; }
     if (!$drafts) return [false, 'Could not write a reply this time. Please try again.', 502];
     $flag = in_array($d['flag'] ?? 'none', ['none', 'spam', 'abusive', 'sensitive'], true) ? $d['flag'] : 'none';
-    return [true, ['drafts' => array_slice($drafts, 0, 3), 'flag' => $flag, 'note' => reply_clean($d['note'] ?? '', 240), 'tokens' => ['in' => (int) ($j['usage']['input_tokens'] ?? 0), 'out' => (int) ($j['usage']['output_tokens'] ?? 0)]], 200];
+    return [true, ['drafts' => array_slice($drafts, 0, $count), 'flag' => $flag, 'note' => reply_clean($d['note'] ?? '', 240), 'tokens' => ['in' => (int) ($j['usage']['input_tokens'] ?? 0), 'out' => (int) ($j['usage']['output_tokens'] ?? 0)]], 200];
 }

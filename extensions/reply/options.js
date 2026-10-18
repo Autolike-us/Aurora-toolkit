@@ -11,7 +11,7 @@ const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tik
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
 const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-const CHANGELOG = [{ v: '0.3.0', title: 'Reply to all unanswered comments, more languages, voice profiles', items: ['Reply to unanswered comments one by one — you approve each reply and press Send yourself', 'Finds comments in French, Spanish, German, Portuguese, Japanese and many more languages', 'Voice profiles for people who run several brands', 'Keyboard shortcuts (Alt+R, Alt+1/2/3, Alt+G, Alt+N)', 'A quick tour, and a “Report a problem” button when comments can’t be found']}];
+const CHANGELOG = [{ v: '0.3.1', title: 'Choose 1, 2 or 3 replies, report bugs on Telegram', items: ['Choose how many replies to write per comment (1, 2 or 3) — each reply counts as one draft, so pick 1 to use fewer', 'Report a problem on Telegram (fastest) or by email', 'Discover the other Aurora tools from your dashboard']}, { v: '0.3.0', title: 'Reply to all unanswered comments, more languages, voice profiles', items: ['Reply to unanswered comments one by one — you approve each reply and press Send yourself', 'Finds comments in French, Spanish, German, Portuguese, Japanese and many more languages', 'Voice profiles for people who run several brands', 'Keyboard shortcuts (Alt+R, Alt+1/2/3, Alt+G, Alt+N)', 'A quick tour, and a “Report a problem” button when comments can’t be found']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -31,7 +31,10 @@ function go(view) {
 
 /* ---------- overview ---------- */
 const PLATFORMS = [['facebook', 'Facebook', 'Posts, Pages and Reels comments', 'https://www.facebook.com/'], ['instagram', 'Instagram', 'Post and Reels comments', 'https://www.instagram.com/'], ['tiktok', 'TikTok', 'Video comments', 'https://www.tiktok.com/']];
+const MORE = [['Aurora Extract', 'FREE', 'Collect public data from Facebook, Instagram & TikTok to a spreadsheet — plus a free profile health check.', 'https://getaurorastudios.com/extract/', '📥'], ['Aurora for Facebook', '3-day trial', 'React, comment, share and follow at a human pace.', 'https://getaurorastudios.com/products/facebook/', '👍'], ['Aurora for Instagram', '3-day trial', 'Like, comment and follow through profiles, hashtags and more.', 'https://getaurorastudios.com/products/instagram/', '📸'], ['Aurora for TikTok', '3-day trial', 'Like, comment and follow across creators and hashtags.', 'https://getaurorastudios.com/products/tiktok/', '🎵']];
+function renderMore() { $('#more').innerHTML = MORE.map(([n, tag, d, url, ic]) => `<a class="plat" href="${url}" target="_blank" rel="noopener"><span style="font-size:26px">${ic}</span><b>${esc(n)} <span class="st ins" style="font-size:10.5px">${esc(tag)}</span></b><span class="note">${esc(d)}</span></a>`).join(''); }
 function renderPlatforms() {
+  renderMore();
   const by = {}; S.history.forEach((x) => { by[x.platform] = (by[x.platform] || 0) + 1; });
   $('#plats').innerHTML = PLATFORMS.map(([id, n, d, url]) => `<a class="plat" href="${url}" target="_blank" rel="noopener"><span class="badge ${PLAT[id][1]}">${n}</span><b>${d}</b><span class="note">✓ Supported${by[id] ? ` · ${by[id]} draft${by[id] > 1 ? 's' : ''} so far` : ''}</span></a>`).join('');
 }
@@ -131,13 +134,13 @@ function renderQuick() {
 function renderTones() { $('#tones').innerHTML = TONES.map(([id, l]) => `<button type="button" class="chip ${(S.voice.tone || 'friendly') === id ? 'on' : ''}" data-t="${id}">${l}</button>`).join(''); }
 function readForm() {
   const samples = $('#samples').value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 20).map((s) => s.slice(0, 300));
-  S.voice = { ...S.voice, name: $('#name').value.trim(), samples, about: $('#about').value.trim(), emoji: $('#emoji').value, length: $('#length').value, language: $('#language').value.trim() || 'auto', avoid: $('#avoid').value.trim() };
+  S.voice = { ...S.voice, name: $('#name').value.trim(), samples, about: $('#about').value.trim(), emoji: $('#emoji').value, count: +$('#count').value || 3, length: $('#length').value, language: $('#language').value.trim() || 'auto', avoid: $('#avoid').value.trim() };
   $('#sampleCount').textContent = samples.length ? `${samples.length} example${samples.length === 1 ? '' : 's'} saved (up to 20).` : 'Add 5–20 of your own replies for the best match.';
 }
 function fillVoice() {
   const v = S.voice;
   $('#name').value = v.name || ''; $('#samples').value = (v.samples || []).join('\n'); $('#about').value = v.about || '';
-  $('#emoji').value = v.emoji || 'few'; $('#length').value = v.length || 'short'; $('#language').value = v.language && v.language !== 'auto' ? v.language : ''; $('#avoid').value = v.avoid || '';
+  $('#emoji').value = v.emoji || 'few'; $('#count').value = String(v.count || 3); $('#length').value = v.length || 'short'; $('#language').value = v.language && v.language !== 'auto' ? v.language : ''; $('#avoid').value = v.avoid || '';
   readForm(); renderTones();
 }
 function queueSave() { readForm(); clearTimeout(saveTimer); saveTimer = setTimeout(async () => { await set({ voice: S.voice }); $('#saved').classList.add('on'); setTimeout(() => $('#saved').classList.remove('on'), 1400); renderOverview(); }, 500); }
@@ -228,7 +231,7 @@ async function load() {
   $('#pnew').addEventListener('click', async () => { const n = prompt('Name for the new profile (for example the brand name):', ''); if (!n || !n.trim()) return; readForm(); await set({ voice: S.voice }); await AuroraProfiles.create(n.trim()); await afterProfileChange(); toast('Profile created — fill in its voice below'); });
   $('#pren').addEventListener('click', async () => { const cur = S.profiles.items.find((p) => p.id === S.profiles.active); const n = prompt('Rename profile:', cur ? cur.label : ''); if (!n || !n.trim()) return; await AuroraProfiles.rename(S.profiles.active, n.trim()); await renderProfiles(); });
   $('#pdel').addEventListener('click', async () => { if (!confirm('Delete this voice profile?')) return; await AuroraProfiles.remove(S.profiles.active); await afterProfileChange(); toast('Profile deleted'); });
-  for (const id of ['name', 'samples', 'about', 'emoji', 'length', 'language', 'avoid']) $('#' + id).addEventListener('input', queueSave);
+  for (const id of ['name', 'samples', 'about', 'emoji', 'count', 'length', 'language', 'avoid']) $('#' + id).addEventListener('input', queueSave);
   $('#tones').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; S.voice.tone = b.dataset.t; renderTones(); queueSave(); });
   $('#check').addEventListener('click', checkKey);
 
@@ -260,7 +263,7 @@ async function load() {
     const text = $('#tryText').value.trim(); if (!text) { $('#tryNote').textContent = 'Paste a comment first.'; return; }
     readForm(); await set({ voice: S.voice });
     $('#try').disabled = true; $('#tryNote').textContent = 'Writing…'; $('#tryOut').innerHTML = '';
-    const r = await ask('draft', { platform: 'test', comment: { text, author: 'Try it' }, post: { caption: '', author: S.voice.name || '' } });
+    const r = await ask('draft', { platform: 'test', comment: { text, author: 'Try it' }, post: { caption: '', author: S.voice.name || '' }, count: S.voice.count || 3 });
     $('#try').disabled = false;
     if (!r.ok) { $('#tryNote').innerHTML = `<span class="bad"></span>`; $('#tryNote').firstChild.textContent = r.message || 'Something went wrong.'; return; }
     $('#tryNote').textContent = r.flag && r.flag !== 'none' ? `Flag: ${r.flag}. ${r.note || ''}` : '';

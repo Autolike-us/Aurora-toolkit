@@ -36,6 +36,8 @@
     <div class="card"><h2>Last 14 days</h2><p class="sub">Drafts written per day.</p><div class="bars" id="bars"></div><div class="axis" id="axis"></div></div>
     <div class="card"><h2>Where you reply</h2><p class="sub">Share of your drafts by platform.</p><div id="split"></div></div>
   </div>
+  <div class="card"><h2>More from Aurora</h2><p class="sub">Tools for a more intentional social workflow, from the same team.</p>
+    <div class="grid g2" id="more"></div></div>
   <div class="card"><div class="row" style="justify-content:space-between"><div><h2>Recent replies</h2><p class="sub" style="margin:0">Your last few drafts and what you used.</p></div><button class="btn sm" data-go="history" style="flex:0 0 auto">See all history →</button></div><div id="recent" style="margin-top:14px"></div></div>
 </section>
 
@@ -79,15 +81,16 @@
     <label class="f">Tone</label><div class="chips" id="tones"></div>
     <div class="row">
       <div><label class="f">Emoji</label><select id="emoji"><option value="none">None</option><option value="few">A few</option><option value="some">Some</option></select></div>
+      <div><label class="f">Replies per comment</label><select id="count"><option value="1">1 (uses 1 draft)</option><option value="2">2 (uses 2 drafts)</option><option value="3">3 (uses 3 drafts)</option></select></div>
       <div><label class="f">Length</label><select id="length"><option value="short">Short (1–2 sentences)</option><option value="medium">Medium (up to 3 sentences)</option></select></div>
       <div><label class="f">Language</label><input type="text" id="language" maxlength="40" placeholder="auto (same as the comment)"></div>
     </div>
     <label class="f">Never say or do <small>(optional)</small></label><textarea id="avoid" maxlength="400" style="min-height:60px" placeholder="e.g. never promise a discount; never use slang"></textarea>
   </div>
   <div class="card">
-    <h2>✦ Try it</h2><p class="sub">Paste any comment to see what it would draft. This counts as one draft and appears in History.</p>
+    <h2>✦ Try it</h2><p class="sub">Paste any comment to see what it would draft. Each reply written counts as one draft and appears in History.</p>
     <textarea id="tryText" style="min-height:70px" placeholder="e.g. Do you deliver on Sundays?"></textarea>
-    <div class="row" style="margin-top:12px"><button class="btn p" id="try" style="flex:0 0 auto">✦ Draft 3 replies</button><span class="note" id="tryNote" style="flex:1 1 200px"></span></div>
+    <div class="row" style="margin-top:12px"><button class="btn p" id="try" style="flex:0 0 auto">✦ Draft replies</button><span class="note" id="tryNote" style="flex:1 1 200px"></span></div>
     <div id="tryOut"></div>
   </div>
 </section>
@@ -97,7 +100,7 @@
   <header><h1>Help &amp; support</h1><p class="lead">A quick tour, shortcuts, answers and a way to reach us.</p></header>
   <div class="grid g2">
     <div class="card"><h2>Quick tour</h2><p class="sub">See where the ✦ Reply button appears and how a reply gets into the box.</p><button class="btn p" id="tourBtn">▶ Start the tour</button></div>
-    <div class="card"><h2>Contact us</h2><p class="sub">Questions, ideas, or something not working?</p><div class="row"><a class="btn" id="mailBtn" href="mailto:support@getaurorastudios.com" style="flex:0 0 auto;text-decoration:none">✉ Email support</a><button class="btn" id="diagBtn" style="flex:0 0 auto">Copy problem details</button></div><p class="note" id="diagNote" style="margin:10px 0 0"></p></div>
+    <div class="card"><h2>Contact us</h2><p class="sub">Questions, ideas or a bug? Join <b>Aurora Studios Report</b> on Telegram (fastest) or email us.</p><div class="row"><a class="btn p" id="tgBtn" href="https://t.me/+GqmNSvnMJxhhMzJh" target="_blank" rel="noopener" style="flex:0 0 auto;text-decoration:none">💬 Telegram channel</a><a class="btn" id="mailBtn" href="mailto:support@getaurorastudios.com" style="flex:0 0 auto;text-decoration:none">✉ Email support</a><button class="btn" id="diagBtn" style="flex:0 0 auto">Copy problem details</button></div><p class="note" id="diagNote" style="margin:10px 0 0"></p></div>
   </div>
   <div class="card"><h2>Keyboard shortcuts</h2><p class="sub">On Facebook, Instagram and TikTok pages. They only open and fill things — nothing is ever sent for you.</p>
     <table class="keys"><tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Open or close the ✦ Reply panel</td></tr><tr><td><kbd>Alt</kbd> + <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>Insert draft 1, 2 or 3 into the comment's reply box</td></tr><tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Write new drafts for the same comment</td></tr><tr><td><kbd>Alt</kbd> + <kbd>N</kbd></td><td>Next comment in the unanswered-comments queue</td></tr><tr><td><kbd>Esc</kbd></td><td>Close the panel (when you are inside it)</td></tr></table></div>
@@ -105,7 +108,7 @@
     <details><summary>Why does it not send the reply for me?</summary><p>On purpose. You read and send every reply yourself — it keeps you in control and keeps your account safe.</p></details>
     <details><summary>Nothing happens when I click “Use this reply”</summary><p>If the site's reply box can't be found, the reply is copied instead — click Reply on that comment and paste it. If it keeps happening, press “Report a problem” in the panel so we can fix it.</p></details>
     <details><summary>My account is not in English</summary><p>Comments are found in English, French, Spanish, Portuguese, German, Italian, Dutch, Japanese, Chinese, Korean, Arabic, Russian, Turkish and more. Drafts are written in the language of the comment, or the language you set in My voice.</p></details>
-    <details><summary>What counts as a draft?</summary><p>Each time it writes three replies for a comment — including “Try it” and “Write new ones”. Quick replies are free.</p></details>
+    <details><summary>What counts as a draft?</summary><p>Each reply it writes counts as one. You choose 1, 2 or 3 replies per comment — pick 1 to use fewer. “Try it” and “Write new ones” count too. Quick replies are free.</p></details>
   </div>
 </section>
 
