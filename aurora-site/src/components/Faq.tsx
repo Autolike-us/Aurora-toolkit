@@ -6,6 +6,8 @@ export const FAQ: { q: string; a: string }[] = [
   { q: 'Will Aurora guarantee growth, or keep my accounts safe?', a: 'No tool can promise either. Aurora paces actions like a person, previews before it sends anything and stops on warnings or captchas — but Facebook, Instagram and TikTok restrict automated activity, so use sensible limits and read our platform disclaimer.' },
   { q: 'Does Aurora need my social passwords?', a: 'No. It runs inside your own browser, in the tab where you are already signed in. It never asks for or stores your social-network passwords, and your tasks and history stay in your browser.' },
   { q: 'Which browsers are supported?', a: 'Google Chrome and Chromium browsers (Edge, Brave) on desktop. Install from the Chrome Web Store where available, or use the private download in about a minute.' },
+  { q: 'Is there a free extension?', a: 'Yes — Aurora Extract is a free 3-in-1 extension that collects public data from Facebook, Instagram and TikTok (profiles, groups, Marketplace, posts, comments, followers and more) and downloads photos and videos. No account needed. See the Free extractor page.' },
+  { q: 'Where do I report a bug or ask for a feature?', a: 'Join our Telegram channel “Aurora Studios Report” — it covers every Aurora extension and this website — or email support@getaurorastudios.com. Use the Copy debug report button inside the extension and paste it there.' },
   { q: 'Can I use it on more than one computer?', a: 'One license works on up to 3 browsers, so you can use it on your laptop and desktop.' },
 ];
 

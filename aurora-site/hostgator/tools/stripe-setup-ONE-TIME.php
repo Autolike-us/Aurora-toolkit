@@ -57,10 +57,11 @@ try {
 
     if ((string) cfg('stripe_portal_config', '') === '') {
         $c = stripe_call('POST', '/v1/billing_portal/configurations', ['business_profile[headline]' => 'Manage your Aurora subscription',
+            'business_profile[privacy_policy_url]' => site_url() . '/legal/privacy/', 'business_profile[terms_of_service_url]' => site_url() . '/legal/terms/',
             'features[invoice_history][enabled]' => 'true', 'features[payment_method_update][enabled]' => 'true',
             'features[subscription_cancel][enabled]' => 'true', 'features[subscription_cancel][mode]' => 'at_period_end']);
         save_cfg($cfgPath, 'stripe_portal_config', (string) $c['id']);
         echo "Billing portal set up ({$c['id']}): customers can update their card, see invoices and cancel (access lasts to the period end).\n";
     } else echo "A billing portal is already configured. Skipping.\n";
     echo "\nDone. Now DELETE stripe-setup-ONE-TIME.php from public_html/api/ and the aurora-config.php.bak-... copies (they hold your secrets).\n";
-} catch (Throwable $e) { echo 'FAILED: ' . $e->getMessage() . "\n(Check that the secret key is the full secret key, not the publishable key, and that it is for the mode shown above.)\n"; }
+} catch (Throwable $e) { echo 'FAILED: ' . $e->getMessage() . "\n(Check that the secret key is the full secret key, not the publishable key, and that it is for the mode shown above. If it names the customer portal: in Stripe go to Settings > Billing > Customer portal, press Activate/Save once, then open this page again.)\n"; }

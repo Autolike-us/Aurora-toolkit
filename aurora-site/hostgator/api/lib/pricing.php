@@ -18,4 +18,4 @@ function offer_active(?DateTimeImmutable $now = null): bool
     $now = $now ?? new DateTimeImmutable('now', new DateTimeZone('UTC'));
     return $now >= launch_start() && $now < launch_end();
 }
-function plan_products(string $plan): array { return $plan === 'bundle' ? PRODUCTS : (in_array($plan, PRODUCTS, true) ? [$plan] : []); }
+function plan_products(string $plan): array { return $plan === 'bundle' ? PRODUCTS : (in_array($plan, ['reply', 'reply_pro'], true) ? ['reply'] : (in_array($plan, PRODUCTS, true) ? [$plan] : [])); }

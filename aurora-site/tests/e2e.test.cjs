@@ -52,6 +52,54 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     check('once PayPal is configured only the PayPal button is offered (no card button)', (await page.locator('.priceband .pricecard button:has-text("card")').count()) === 0);
     await page.click('.priceband .pricecard button:has-text("PayPal")'); await page.waitForSelector('.msg.err');
     console.log('MSG', await page.textContent('.msg.err')); check('checkout shows a friendly message when the payment provider cannot be reached', /temporarily unavailable/i.test(await page.textContent('.msg.err')));
+    // ---- free extension + Telegram support channel
+    const TG = 'https://t.me/+GqmNSvnMJxhhMzJh';
+    await page.goto(site + '/extract/');
+    check('the Aurora Extract page presents the free extension with a direct download link', /Aurora\s*Extract/.test(await page.textContent('h1')) && (await page.getAttribute('a[download]', 'href')) === '/downloads/aurora-extract-latest.zip' && /Free/.test(await page.textContent('.freetag')));
+    check('the Extract page leads with "Add to Chrome" pointing to the live Chrome Web Store listing, with the zip as a backup', (await page.locator('a.btn.primary.lg[href^="https://chromewebstore.google.com/detail/aurora-extract"]').count()) === 1 && /fdccaoajonfafbjjjoaobjohdgcflefb/.test(await page.getAttribute('a.btn.primary.lg', 'href')) && !/planned/i.test(await page.textContent('#install')));
+    const zres = await page.request.get(site + '/downloads/aurora-extract-latest.zip');
+    const buf = await zres.body();
+    check('the download is a real zip containing the extension manifest', zres.ok() && buf.slice(0, 2).toString() === 'PK' && buf.includes(Buffer.from('manifest.json')));
+    check('the bundled extension includes the Health check (core/audit.js) and the page shows the current version', buf.includes(Buffer.from('core/audit.js')) && /v0\.4\.0/.test(await page.textContent('.cta')));
+    check('the extract page features the Health check: five checks, a sample report image that loads, and it is linked from the top', (await page.locator('#health .auditx-item').count()) === 5 && (await page.locator('#health img').evaluate((i) => i.complete && i.naturalWidth > 500)) && (await page.locator('.xhero a[href="#health"]').count()) === 1);
+    check('the extract FAQ explains the Health check and says it uses no AI service', /Health check/.test(await page.textContent('main')) && /no AI service/.test(await page.textContent('main')));
+    check('the extract page lists all three platforms and the export formats', (await page.locator('.xcard').count()) === 3 && /Excel/.test(await page.textContent('.xexports')));
+    await page.goto(site + '/');
+    check('the home page features the free extension with an Add to Chrome button for the live store listing', (await page.locator('#free a[href^="https://chromewebstore.google.com/detail/aurora-extract"]').count()) === 1 && /Aurora Extract/.test(await page.textContent('#free')));
+    check('the nav links to the free extractor', await page.locator('header.nav a[href="/extract/"]').count() === 1);
+    check('the footer links to the Telegram channel, support page and extractor', (await page.locator(`footer.site a[href="${TG}"]`).count()) === 1 && (await page.locator('footer.site a[href="/support/"]').count()) === 1 && (await page.locator('footer.site a[href="/extract/"]').count()) === 1);
+    await page.goto(site + '/support/');
+    check('the support page offers the Telegram channel and the support email', (await page.getAttribute(`a[href="${TG}"]`, 'href')) === TG && /support@getaurorastudios.com/.test(await page.textContent('main')));
+    await page.goto(site + '/reply/');
+    check('Aurora Reply has its own page with the steps, the features, the privacy promise and the Telegram link', /Aurora/.test(await page.textContent('h1')) && (await page.locator('.rstep').count()) === 3 && (await page.locator('.rfeat .rf').count()) === 8 && /never presses Send/.test(await page.textContent('.rcallout')) && (await page.locator(`a[href="${TG}"]`).count()) >= 1);
+    check('the nav and the footer link to Aurora Reply, and the home page advertises it', (await page.locator('header.nav a[href="/reply/"]').count()) === 1 && (await page.locator('footer.site a[href="/reply/"]').count()) === 1 && await (async () => { await page.goto(site + '/'); return (await page.locator('#reply .replybanner').count()) === 1; })());
+    await page.goto(site + '/download/');
+    check('the download page offers the free extension without needing an account', (await page.locator('.freebanner a[download]').count()) === 1);
+    await page.goto(site + '/legal/privacy/');
+    check('the privacy policy covers the free extension and no longer names old providers', /Aurora Extract/.test(await page.textContent('main')) && !/Supabase|Vercel/.test(await page.textContent('main')));
+    // ---- theme switch, social-preview tags, robots/sitemap, mobile fit
+    await page.goto(site + '/');
+    check('the site starts in the LIGHT theme', await page.evaluate(() => document.documentElement.dataset.theme === undefined && getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() === '#fbf9f6'));
+    check('the header has a theme switch with an accessible name', /dark theme/i.test(await page.getAttribute('[data-theme-toggle]', 'aria-label')));
+    await page.click('[data-theme-toggle]');
+    check('clicking it switches to dark, remembers the choice, and the colours really change', await page.evaluate(() => document.documentElement.dataset.theme === 'dark' && localStorage.getItem('aurora-theme') === 'dark' && getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() === '#0f0d19' && getComputedStyle(document.body).color !== 'rgb(29, 26, 38)'));
+    await page.goto(site + '/pricing/');
+    check('the dark choice persists on other pages and after navigation (no flash back to light)', await page.evaluate(() => document.documentElement.dataset.theme === 'dark') && /light theme/i.test(await page.getAttribute('[data-theme-toggle]', 'aria-label')));
+    const contrast = await page.evaluate(() => { const v = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(); const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }; const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }; return ['--ink', '--muted', '--faint', '--accent'].map((t) => cr(v(t), v('--paper'))); });
+    check('dark theme text colours meet 4.5:1 contrast on the page background', contrast.every((c) => c >= 4.5));
+    await page.click('[data-theme-toggle]');
+    check('switching back returns to light and remembers it', await page.evaluate(() => document.documentElement.dataset.theme === undefined && localStorage.getItem('aurora-theme') === 'light'));
+    const lightContrast = await page.evaluate(() => { const v = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(); const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }; const cr = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }; return ['--ink', '--muted', '--faint', '--accent'].map((t) => cr(v(t), v('--paper'))); });
+    check('light theme text colours meet 4.5:1 contrast too (small grey text fixed)', lightContrast.every((c) => c >= 4.5));
+    await page.goto(site + '/extract/');
+    check('pages carry a canonical link and a social-preview image on the real domain', /^https:\/\/getaurorastudios\.com\/extract\/$/.test(await page.getAttribute('link[rel=canonical]', 'href')) && /^https:\/\/getaurorastudios\.com\/og\.png$/.test(await page.getAttribute('meta[property="og:image"]', 'content')) && (await page.getAttribute('meta[name="twitter:card"]', 'content')) === 'summary_large_image');
+    const robots = await (await page.request.get(site + '/robots.txt')).text(), smap = await (await page.request.get(site + '/sitemap.xml')).text();
+    check('robots.txt hides account/API pages and points at the sitemap', /Disallow: \/account\//.test(robots) && /Sitemap: https:\/\/getaurorastudios\.com\/sitemap\.xml/.test(robots));
+    check('the sitemap lists the public pages including the free extractor and support', /\/extract\//.test(smap) && /\/support\//.test(smap) && /\/pricing\//.test(smap) && !/\/account\//.test(smap));
+    const og = await page.request.get(site + '/og.png');
+    check('the social-preview image exists and is a PNG', og.ok() && (await og.body()).slice(1, 4).toString() === 'PNG');
+    const mob = await (await browser.newContext({ viewport: { width: 390, height: 800 } })).newPage();
+    for (const u of ['/', '/pricing/', '/support/', '/extract/', '/reply/', '/download/', '/signup/']) { await mob.goto(site + u); check(`no sideways scrolling on a phone: ${u}`, await mob.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)); }
     console.log('\n' + passed + ' e2e checks passed');
   } finally { await browser.close(); srv.kill(); }
 })().catch(e => { console.error(e); srv.kill(); process.exit(1); });
