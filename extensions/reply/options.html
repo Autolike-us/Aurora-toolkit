@@ -1,19 +1,69 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aurora Reply — settings</title><link rel="stylesheet" href="ui.css"></head>
-<body><div class="wrap">
-  <div class="top"><img src="icons/icon128.png" alt=""><div><h1>Aurora <span class="g">Reply</span></h1></div></div>
-  <p class="lead">Drafts replies to your comments in <b>your</b> voice. You read, edit and send every reply yourself — nothing is ever posted for you.</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aurora Reply — dashboard</title><link rel="stylesheet" href="ui.css"></head>
+<body><div class="app">
+<aside class="side">
+  <div class="brand"><img src="icons/icon128.png" alt=""><div><b>Aurora <span class="g">Reply</span></b><small>Dashboard</small></div></div>
+  <nav>
+    <button class="nav on" data-view="overview"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Overview</button>
+    <button class="nav" data-view="history"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>History <span class="n" id="navHist">0</span></button>
+    <button class="nav" data-view="quick"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Quick replies</button>
+    <button class="nav" data-view="voice"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>My voice</button>
+    <button class="nav" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings &amp; key</button>
+  </nav>
+  <div class="sidefoot"><b id="sideUse">Not connected</b><div class="meter"><i id="sideBar" style="width:0"></i></div><div class="t" id="sideNote">Add your key in Settings</div></div>
+</aside>
 
-  <section class="card" id="licenseCard">
-    <h2>1 · Your Aurora Reply key</h2><p class="sub">Paste the key from your Aurora account page (it looks like AUR-XXXX-XXXX-XXXX).</p>
-    <div class="row"><input type="text" id="key" placeholder="AUR-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="flex:3 1 260px"><button class="btn p" id="check" style="flex:1 1 120px">Save &amp; check</button></div>
-    <div id="keyStatus" class="note" style="margin-top:10px"></div>
-    <p class="note" style="margin:10px 0 0">No key yet? Aurora Reply is in early access — email <b>support@getaurorastudios.com</b> and we will set you up.</p>
-    <div id="meter" hidden><div class="meter"><i id="meterBar"></i></div><div class="note" id="meterText"></div></div>
-  </section>
+<main class="main">
+<!-- ============ OVERVIEW ============ -->
+<section class="view" id="view-overview">
+  <div class="hero">
+    <div class="grow"><h1 id="hello">Welcome</h1><p id="heroSub">Open any post on Facebook, Instagram or TikTok and press <b>✦ Reply</b> in the corner. You read, edit and send every reply yourself.</p></div>
+    <div class="ring" id="ring"><div><b id="ringNum">0%</b><small>of this month</small></div></div>
+  </div>
+  <div class="card" id="setupCard"><h2>Get set up <span class="note" id="setupCount"></span></h2><p class="sub">Three quick steps and you are ready.</p>
+    <ul class="steps" id="setup"></ul></div>
+  <div class="grid g4" style="margin-bottom:18px">
+    <div class="stat"><i>✦</i><b id="stDrafts">0</b><span>Drafts this month</span></div>
+    <div class="stat"><i>💬</i><b id="stIns">0</b><span>Replies you used</span></div>
+    <div class="stat"><i>⏱️</i><b id="stTime">0 min</b><span>Time saved (est.)</span></div>
+    <div class="stat"><i>✏️</i><b id="stEdit">–</b><span>Edited before sending</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h2>Last 14 days</h2><p class="sub">Drafts written per day.</p><div class="bars" id="bars"></div><div class="axis" id="axis"></div></div>
+    <div class="card"><h2>Where you reply</h2><p class="sub">Share of your drafts by platform.</p><div id="split"></div></div>
+  </div>
+  <div class="card"><div class="row" style="justify-content:space-between"><div><h2>Recent replies</h2><p class="sub" style="margin:0">Your last few drafts and what you used.</p></div><button class="btn sm" data-go="history" style="flex:0 0 auto">See all history →</button></div><div id="recent" style="margin-top:14px"></div></div>
+</section>
 
-  <section class="card">
-    <div class="row" style="justify-content:space-between"><div><h2>2 · Your voice</h2><p class="sub" style="margin:0">The more it knows about you, the more the replies sound like you. Saved automatically.</p></div><span class="saved" id="saved">Saved ✓</span></div>
-    <label class="f">Your name or brand <small>(optional)</small></label><input type="text" id="name" maxlength="80" placeholder="e.g. Sunrise Bakery">
+<!-- ============ HISTORY ============ -->
+<section class="view" id="view-history" hidden>
+  <header><h1>History</h1><p class="lead">Everything Aurora Reply drafted for you. It is stored only in this browser — never on our server.</p></header>
+  <div class="tools">
+    <input type="search" id="hq" placeholder="Search comments and replies…">
+    <select id="hplat"><option value="">All platforms</option><option value="facebook">Facebook</option><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="test">Try it</option></select>
+    <select id="hstat"><option value="">Any status</option><option value="inserted">Used</option><option value="copied">Copied</option><option value="drafted">Not used</option></select>
+    <button class="chip" id="hfav">★ Favourites</button>
+    <button class="btn sm" id="hcsv">Export CSV</button><button class="btn sm danger" id="hclear">Clear all</button>
+  </div>
+  <div id="hlist"></div><div class="note" id="hmore"></div>
+</section>
+
+<!-- ============ QUICK REPLIES ============ -->
+<section class="view" id="view-quick" hidden>
+  <header><h1>Quick replies</h1><p class="lead">Your own saved answers for questions you get again and again. One click in the panel — instant and free, no draft used.</p></header>
+  <div class="card"><h2>Add a quick reply</h2>
+    <div class="row"><div style="flex:1 1 180px"><label class="f" style="margin-top:0">Title</label><input type="text" id="qtitle" maxlength="40" placeholder="e.g. Shipping"></div></div>
+    <label class="f">Reply</label><textarea id="qtext" maxlength="600" style="min-height:76px" placeholder="We ship worldwide — free over $50. Order at example.com 😊"></textarea>
+    <div class="row" style="margin-top:12px"><button class="btn p" id="qadd" style="flex:0 0 auto">＋ Add quick reply</button><span class="note" id="qnote" style="flex:1 1 200px"></span></div>
+    <div class="note" style="margin-top:14px">Quick start:</div><div class="chips" id="qstarters" style="margin-top:6px"></div>
+  </div>
+  <div id="qlist"></div>
+</section>
+
+<!-- ============ VOICE ============ -->
+<section class="view" id="view-voice" hidden>
+  <header><div class="row" style="justify-content:space-between"><div><h1>My voice</h1><p class="lead">The more it knows about you, the more the replies sound like you. Saved automatically.</p></div><span class="saved" id="saved" style="flex:0 0 auto">Saved ✓</span></div></header>
+  <div class="card">
+    <label class="f" style="margin-top:0">Your name or brand <small>(optional)</small></label><input type="text" id="name" maxlength="80" placeholder="e.g. Sunrise Bakery">
     <label class="f">Past replies you liked <small>(one per line, up to 20 — paste real replies you wrote)</small></label>
     <textarea id="samples" placeholder="Thank you Sam! See you Saturday 🥖&#10;Great question — we're open until 3pm!"></textarea><div class="note" id="sampleCount"></div>
     <label class="f">About you &amp; facts it may use <small>(hours, prices, delivery, links — it will never invent anything beyond this)</small></label>
@@ -25,22 +75,38 @@
       <div><label class="f">Language</label><input type="text" id="language" maxlength="40" placeholder="auto (same as the comment)"></div>
     </div>
     <label class="f">Never say or do <small>(optional)</small></label><textarea id="avoid" maxlength="400" style="min-height:60px" placeholder="e.g. never promise a discount; never use slang"></textarea>
-  </section>
-
-  <section class="card">
-    <h2>3 · Try it</h2><p class="sub">Paste any comment to see what it would draft. This counts as one draft.</p>
+  </div>
+  <div class="card">
+    <h2>✦ Try it</h2><p class="sub">Paste any comment to see what it would draft. This counts as one draft and appears in History.</p>
     <textarea id="tryText" style="min-height:70px" placeholder="e.g. Do you deliver on Sundays?"></textarea>
     <div class="row" style="margin-top:12px"><button class="btn p" id="try" style="flex:0 0 auto">✦ Draft 3 replies</button><span class="note" id="tryNote" style="flex:1 1 200px"></span></div>
     <div id="tryOut"></div>
-  </section>
+  </div>
+</section>
 
-  <section class="card priv">
+<!-- ============ SETTINGS ============ -->
+<section class="view" id="view-settings" hidden>
+  <header><h1>Settings &amp; key</h1><p class="lead">Your key, how it looks, and your data.</p></header>
+  <div class="card" id="licenseCard">
+    <h2>Your Aurora Reply key</h2><p class="sub">Paste the key from your Aurora account page (it looks like AUR-XXXX-XXXX-XXXX).</p>
+    <div class="row"><input type="text" id="key" placeholder="AUR-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="flex:3 1 260px"><button class="btn p" id="check" style="flex:1 1 120px">Save &amp; check</button></div>
+    <div id="keyStatus" class="note" style="margin-top:10px"></div>
+    <p class="note" style="margin:10px 0 0">No key yet? Aurora Reply is in early access — email <b>support@getaurorastudios.com</b> and we will set you up.</p>
+    <div id="meter" hidden><div class="meter"><i id="meterBar"></i></div><div class="note" id="meterText"></div></div>
+  </div>
+  <div class="card"><h2>Appearance</h2><p class="sub">Choose how the dashboard looks.</p>
+    <div class="seg" id="theme"><button data-th="auto">Auto</button><button data-th="light">Light</button><button data-th="dark">Dark</button></div></div>
+  <div class="card"><h2>History</h2><p class="sub">Keep a private log of your drafts in this browser (newest 500).</p>
+    <div class="seg" id="histToggle"><button data-h="on">On</button><button data-h="off">Off</button></div>
+    <div class="row" style="margin-top:14px"><button class="btn sm" id="export" style="flex:0 0 auto">Download everything (JSON)</button><button class="btn sm danger" id="wipe" style="flex:0 0 auto">Delete all my data</button></div></div>
+  <div class="card priv">
     <h2>Your privacy</h2>
     <ul class="note">
       <li><b>You stay in control.</b> Aurora Reply only reads a comment when you ask for a draft, and it never presses Send.</li>
-      <li><b>What is sent:</b> the comment you chose, the post's caption, and your voice settings above go to Aurora's server, which asks an AI service (Anthropic) to write the drafts. Nothing else on the page is read.</li>
-      <li><b>What is kept:</b> your voice settings stay in this browser. Our server keeps only a count of drafts for your key — not the comments or the replies.</li>
+      <li><b>What is sent:</b> the comment you chose, the post's caption, and your voice settings go to Aurora's server, which asks an AI service (Anthropic) to write the drafts. Nothing else on the page is read.</li>
+      <li><b>What is kept:</b> your voice, history and quick replies stay in this browser. Our server keeps only a count of drafts for your key — not the comments or the replies.</li>
       <li><b>Please:</b> don't use it on private messages. It is built for public comments. Replies are suggestions — check them before you send, and follow each platform's rules.</li>
     </ul>
-  </section>
-</div><script src="options.js"></script></body></html>
+  </div>
+</section>
+</main></div><div class="toast" id="toast" hidden></div><script src="options.js"></script></body></html>

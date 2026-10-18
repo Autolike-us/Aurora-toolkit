@@ -24,11 +24,14 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   };
   const page = async (file, html = true) => { await pg.route('**/*', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: read(file).replace(/<link rel="stylesheet" href="ui.css">/, '<style>' + read('ui.css') + '</style>').replace(/<script src="[^"]*"><\/script>/, '').replace(/<img src="icons\/[^"]*"[^>]*>/g, '') })); await pg.goto('https://x.test/' + file); await pg.evaluate(stub); await pg.addScriptTag({ content: read(file.replace('.html', '.js')) }); await pg.waitForTimeout(200); };
   await page('options.html');
+  const nav = async (v) => { await pg.click(`.nav[data-view=${v}]`); await pg.waitForTimeout(60); };
+  await nav('settings');
   check('settings: starts with a friendly "add your key" state', /Add your key to start/.test(await pg.textContent('#keyStatus')) && (await pg.isHidden('#meter')));
   await pg.fill('#key', 'aur-bad0-bad0-bad0'); await pg.click('#check'); await pg.waitForTimeout(150);
   check('settings: a wrong key shows the server\'s message', /not found/i.test(await pg.textContent('#keyStatus')) && (await pg.evaluate(() => window.__store.licenseKey)) === 'AUR-BAD0-BAD0-BAD0');
   await pg.fill('#key', 'AUR-GOOD-GOOD-GOOD'); await pg.click('#check'); await pg.waitForTimeout(150);
   check('settings: a good key shows "accepted" and the monthly usage meter', /accepted/i.test(await pg.textContent('#keyStatus')) && !(await pg.isHidden('#meter')) && /12 of 1500/.test(await pg.textContent('#meterText')) && /November 1/.test(await pg.textContent('#meterText')));
+  await nav('voice');
   await pg.fill('#name', 'Sunrise Bakery'); await pg.fill('#samples', 'Thank you Sam! See you Saturday 🥖\n\nGreat question — we are open until 3pm!\n'); await pg.fill('#about', 'Open Tue–Sun 7am–3pm.');
   await pg.click('#tones [data-t="playful"]'); await pg.selectOption('#emoji', 'some'); await pg.selectOption('#length', 'medium'); await pg.fill('#language', 'Spanish'); await pg.fill('#avoid', 'never promise a discount');
   await pg.waitForTimeout(900);
@@ -41,11 +44,51 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   const tryMsg = await pg.evaluate(() => window.__msgs.filter((m) => m.type === 'draft')[0]);
   check('settings: "Try it" shows three drafts and updates the meter', (await pg.locator('#tryOut .draft').count()) === 3 && tryMsg.comment.text === 'Do you deliver on Sundays?' && /13 of 1500/.test(await pg.textContent('#meterText')));
   await pg.screenshot({ path: path.join(OUT, 'options.png'), fullPage: true });
+  await nav('overview');
+  check('overview: greets by name, shows usage ring and stats', /Sunrise Bakery/.test(await pg.textContent('#hello')) && /1%|13/.test(await pg.textContent('#stDrafts') + await pg.textContent('#ringNum')));
+  await pg.evaluate(() => { const n = Date.now(); window.__store.history = [
+    { id: 'a', ts: n - 3600e3, platform: 'instagram', author: 'maya.k', comment: 'Do you deliver on Sundays?', drafts: ['Sundays are pick-up only 🥖', 'No Sunday delivery.', 'Pick-up on Sundays!'], chosen: 'Sundays are pick-up only, see you! 🥖', action: 'inserted', edited: true, tone: 'warm' },
+    { id: 'b', ts: n - 2 * 86400e3, platform: 'facebook', author: 'Tom B', comment: 'How much for a loaf?', drafts: ['$4 a loaf', '$4!', 'About $4'], chosen: '$4 a loaf', action: 'copied' },
+    { id: 'c', ts: n - 5 * 86400e3, platform: 'tiktok', author: 'chef_ann', comment: 'Recipe please', drafts: ['It is in my bio!', 'Check my bio', 'Link in bio'], chosen: '', action: 'drafted' } ]; });
+  await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.history = [
+    { id: 'a', ts: Date.now() - 3600e3, platform: 'instagram', author: 'maya.k', comment: 'Do you deliver on Sundays?', drafts: ['Sundays are pick-up only 🥖', 'No Sunday delivery.', 'Pick-up on Sundays!'], chosen: 'Sundays are pick-up only, see you! 🥖', action: 'inserted', edited: true, tone: 'warm' },
+    { id: 'b', ts: Date.now() - 2 * 86400e3, platform: 'facebook', author: 'Tom B', comment: 'How much for a loaf?', drafts: ['$4 a loaf', '$4!', 'About $4'], chosen: '$4 a loaf', action: 'copied' },
+    { id: 'c', ts: Date.now() - 5 * 86400e3, platform: 'tiktok', author: 'chef_ann', comment: 'Recipe please', drafts: ['It is in my bio!', 'Check my bio', 'Link in bio'], chosen: '', action: 'drafted' } ];
+    window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; window.__store.usage = { used: 13, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' }; window.__store.voice = { name: 'Sunrise Bakery', samples: ['Thanks!'] }; });
+  await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
+  check('overview: stats come from history (2 replies used, 100% edited) and the setup card is done', (await pg.textContent('#stIns')) === '2' && (await pg.textContent('#stEdit')) === '100%' && (await pg.isHidden('#setupCard')));
+  check('overview: activity chart has 14 bars and platform split lists 3 platforms', (await pg.locator('#bars i').count()) === 14 && (await pg.locator('#split .hbar').count()) === 3 && (await pg.locator('#recent .h').count()) === 3);
+  await pg.screenshot({ path: path.join(OUT, 'overview.png'), fullPage: true });
+  await nav('history');
+  check('history: lists every draft with status badges and the nav count', (await pg.locator('#hlist .h').count()) === 3 && (await pg.textContent('#navHist')) === '3' && /Used · edited/.test(await pg.textContent('#hlist .h')) );
+  await pg.fill('#hq', 'loaf'); await pg.waitForTimeout(80);
+  check('history: search finds by comment text', (await pg.locator('#hlist .h').count()) === 1 && /Tom B/.test(await pg.textContent('#hlist')));
+  await pg.fill('#hq', ''); await pg.selectOption('#hplat', 'tiktok'); await pg.waitForTimeout(80);
+  check('history: platform filter works', (await pg.locator('#hlist .h').count()) === 1);
+  await pg.selectOption('#hplat', ''); await pg.selectOption('#hstat', 'inserted'); await pg.waitForTimeout(80);
+  check('history: status filter works', (await pg.locator('#hlist .h').count()) === 1);
+  await pg.selectOption('#hstat', ''); await pg.locator('#hlist .h').first().locator('[data-act=fav]').click(); await pg.waitForTimeout(80);
+  check('history: starring saves a favourite and the favourites filter shows it', (await pg.evaluate(() => window.__store.history[0].fav)) === true && (await (async () => { await pg.click('#hfav'); await pg.waitForTimeout(60); return (await pg.locator('#hlist .h').count()) === 1; })()));
+  await pg.click('#hfav'); await pg.locator('#hlist .h').nth(2).locator('[data-act=quick]').click(); await pg.waitForTimeout(80);
+  check('history: "Save as quick reply" adds it to Quick replies', (await pg.evaluate(() => (window.__store.quick || []).length)) === 1);
+  await pg.screenshot({ path: path.join(OUT, 'history.png'), fullPage: true });
+  await pg.once('dialog', (d) => d.accept()); await pg.locator('#hlist .h').nth(1).locator('[data-act=del]').click(); await pg.waitForTimeout(80);
+  check('history: delete removes one entry', (await pg.evaluate(() => window.__store.history.length)) === 2);
+  await nav('quick');
+  await pg.click('#qstarters [data-starter="1"]'); await pg.click('#qadd'); await pg.waitForTimeout(80);
+  check('quick replies: a starter can be added, and the list shows both', (await pg.locator('#qlist .qr').count()) === 2 && /Shipping/.test(await pg.textContent('#qlist')));
+  await pg.screenshot({ path: path.join(OUT, 'quick.png'), fullPage: true });
+  await pg.locator('#qlist .qr [data-qact=del]').first().click(); await pg.waitForTimeout(60);
+  check('quick replies: delete works', (await pg.locator('#qlist .qr').count()) === 1);
+  await nav('settings'); await pg.click('#theme [data-th=dark]'); await pg.click('#histToggle [data-h=off]'); await pg.waitForTimeout(80);
+  check('settings: dark theme and history-off are remembered', (await pg.evaluate(() => document.documentElement.dataset.theme)) === 'dark' && (await pg.evaluate(() => window.__store.prefs.history)) === false);
+  await pg.screenshot({ path: path.join(OUT, 'settings-dark.png'), fullPage: true });
+  await pg.click('#theme [data-th=light]');
   check('settings: no sideways scrolling on a narrow window', await (async () => { await pg.setViewportSize({ width: 380, height: 900 }); return pg.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1); })());
 
   await pg.unroute('**/*'); await pg.setViewportSize({ width: 340, height: 420 });
   await page('popup.html');
-  check('popup: shows the steps and "Ready" once a key is saved', /Open a post/.test(await pg.textContent('.steps')) && /Add your key/.test(await pg.textContent('#st')));
+  check('popup: shows the steps and "Ready" once a key is saved', /Open a post/.test(await pg.textContent('.how')) && /Add your key/.test(await pg.textContent('#st')));
   await pg.evaluate(() => { window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; window.__store.usage = { used: 12, limit: 1500 }; });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; window.__store.usage = { used: 12, limit: 1500 }; }); await pg.addScriptTag({ content: read('popup.js') }); await pg.waitForTimeout(150);
   check('popup: with a key it says Ready and shows usage', /Ready/.test(await pg.textContent('#st')) && /12 of 1500/.test(await pg.textContent('#st')));

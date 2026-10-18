@@ -10,7 +10,7 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['direct', 'Direct']];
 
-  const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '' };
+  const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '', hid: '', quick: [], qmark: {} };
 
   /* ---------- shell ---------- */
   const host = document.createElement('div');
@@ -19,32 +19,32 @@
   const root = host.attachShadow({ mode: 'open' });
   root.innerHTML = `<style>
     :host{all:initial}*{box-sizing:border-box}
-    .w{font:14px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1b1838;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-    .pill{display:flex;align-items:center;gap:9px;border:0;cursor:pointer;color:#fff;font:700 14px system-ui,sans-serif;padding:11px 16px 11px 12px;border-radius:999px;background:linear-gradient(120deg,#6d28d9,#4f46e5 55%,#0ea5e9);box-shadow:0 12px 30px rgba(79,70,229,.45)}
-    .pill i{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.22);font-style:normal}
-    .pill b{background:#fff;color:#4f46e5;border-radius:99px;padding:1px 8px;font-size:12px}
-    .panel{width:392px;max-width:calc(100vw - 24px);max-height:min(78vh,720px);display:flex;flex-direction:column;background:#fff;border:1px solid rgba(40,30,110,.14);border-radius:20px;box-shadow:0 30px 70px rgba(30,20,90,.35);overflow:hidden}
-    .hd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(40,30,110,.1);background:linear-gradient(120deg,rgba(109,40,217,.08),rgba(14,165,233,.08))}
-    .hd .lg{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#6d28d9,#4f46e5 55%,#0ea5e9);display:grid;place-items:center;color:#fff;font-size:16px}
-    .hd h1{margin:0;font-size:15px;flex:1}.hd small{display:block;font-weight:500;color:#6c6890;font-size:12px}
-    .x{border:0;background:none;font-size:20px;cursor:pointer;color:#6c6890;border-radius:8px;width:30px;height:30px}.x:hover{background:rgba(40,30,110,.08)}
+    .w{font:14px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1a1612;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+    .pill{display:flex;align-items:center;gap:9px;border:1px solid rgba(251,191,36,.45);cursor:pointer;color:#fbbf24;font:700 14px system-ui,sans-serif;padding:11px 16px 11px 12px;border-radius:999px;background:#16120d;box-shadow:0 12px 30px rgba(20,12,4,.45)}
+    .pill i{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#f97316,#fbbf24);color:#16120d;font-style:normal}
+    .pill b{background:#f97316;color:#16120d;border-radius:99px;padding:1px 8px;font-size:12px}
+    .panel{width:392px;max-width:calc(100vw - 24px);max-height:min(78vh,720px);display:flex;flex-direction:column;background:#fff;border:1px solid rgba(40,25,10,.14);border-radius:20px;box-shadow:0 30px 70px rgba(40,25,10,.35);overflow:hidden}
+    .hd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(40,25,10,.1);background:linear-gradient(120deg,#16120d,#2a1d0e)}
+    .hd .lg{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#f97316,#fbbf24);display:grid;place-items:center;color:#16120d;font-size:16px}
+    .hd h1{margin:0;font-size:15px;flex:1;color:#fff}.hd small{display:block;font-weight:500;color:#cdbfae;font-size:12px}
+    .x{border:0;background:none;font-size:20px;cursor:pointer;color:#cdbfae;border-radius:8px;width:30px;height:30px}.x:hover{background:rgba(255,255,255,.12)}
     .bd{padding:14px 16px;overflow:auto;display:grid;gap:12px}
     .bar{display:flex;gap:8px;flex-wrap:wrap}
-    button.b{font:600 13px system-ui,sans-serif;border:1px solid rgba(40,30,110,.16);background:#fff;color:#1b1838;border-radius:10px;padding:7px 12px;cursor:pointer}
-    button.b:hover{border-color:#6d28d9;color:#6d28d9}button.b.p{border:0;color:#fff;background:linear-gradient(120deg,#6d28d9,#4f46e5 60%,#0ea5e9)}button.b.p:hover{color:#fff;filter:brightness(1.08)}button.b:disabled{opacity:.55;cursor:default}
-    .c{border:1px solid rgba(40,30,110,.12);border-radius:14px;padding:11px 12px;display:grid;gap:8px;background:#fbfaff}.c:hover{border-color:#6d28d9}
-    .c .a{font-weight:700;font-size:13px}.c .t{color:#3b3763;font-size:13.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-    .q{border-left:3px solid #6d28d9;padding:4px 0 4px 10px;color:#3b3763;font-size:13.5px}.q b{display:block;font-size:12px;color:#6c6890}
-    .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid rgba(40,30,110,.16);background:#fff;border-radius:99px;padding:4px 11px;font:600 12.5px system-ui,sans-serif;cursor:pointer;color:#3b3763}.chip.on{background:#6d28d9;border-color:#6d28d9;color:#fff}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#3b3763}.row label{display:flex;gap:6px;align-items:center;cursor:pointer}
-    input.h{width:100%;border:1px solid rgba(40,30,110,.18);border-radius:10px;padding:8px 10px;font:13px system-ui,sans-serif}
-    .d{border:1.5px solid rgba(40,30,110,.14);border-radius:14px;padding:10px;display:grid;gap:8px}.d:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.14)}
-    textarea.dt{width:100%;border:0;resize:none;font:14px/1.45 system-ui,sans-serif;color:#1b1838;outline:none;min-height:46px;background:transparent}
-    .note{font-size:12.5px;color:#6c6890}.warn{background:#fff4dd;border:1px solid #f1d28a;border-radius:12px;padding:9px 12px;font-size:13px;color:#5c4400}
+    button.b{font:600 13px system-ui,sans-serif;border:1px solid rgba(40,25,10,.16);background:#fff;color:#1a1612;border-radius:10px;padding:7px 12px;cursor:pointer}
+    button.b:hover{border-color:#f97316;color:#f97316}button.b.p{border:0;color:#1a1209;background:linear-gradient(120deg,#f97316,#fbbf24)}button.b.p:hover{color:#1a1209;filter:brightness(1.08)}button.b:disabled{opacity:.55;cursor:default}
+    .c{border:1px solid rgba(40,25,10,.12);border-radius:14px;padding:11px 12px;display:grid;gap:8px;background:#fffaf3}.c:hover{border-color:#f97316}
+    .c .a{font-weight:700;font-size:13px}.c .t{color:#3d342b;font-size:13.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .q{border-left:3px solid #f97316;padding:4px 0 4px 10px;color:#3d342b;font-size:13.5px}.q b{display:block;font-size:12px;color:#7a7066}
+    .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid rgba(40,25,10,.16);background:#fff;border-radius:99px;padding:4px 11px;font:600 12.5px system-ui,sans-serif;cursor:pointer;color:#3d342b}.chip.on{background:#f97316;border-color:#f97316;color:#1a1209}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#3d342b}.row label{display:flex;gap:6px;align-items:center;cursor:pointer}
+    input.h{width:100%;border:1px solid rgba(40,25,10,.18);border-radius:10px;padding:8px 10px;font:13px system-ui,sans-serif}
+    .d{border:1.5px solid rgba(40,25,10,.14);border-radius:14px;padding:10px;display:grid;gap:8px}.d:focus-within{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.14)}
+    textarea.dt{width:100%;border:0;resize:none;font:14px/1.45 system-ui,sans-serif;color:#1a1612;outline:none;min-height:46px;background:transparent}
+    .note{font-size:12.5px;color:#7a7066}.warn{background:#fff4dd;border:1px solid #f1d28a;border-radius:12px;padding:9px 12px;font-size:13px;color:#5c4400}
     .err{background:#ffe9ea;border:1px solid #f3b4b8;border-radius:12px;padding:9px 12px;font-size:13px;color:#7a1820}.ok{background:#e4f8ee;border:1px solid #a7e3c4;border-radius:12px;padding:9px 12px;font-size:13px;color:#0d5b36}
-    .sk{height:62px;border-radius:14px;background:linear-gradient(90deg,#efedf9,#f8f7fe,#efedf9);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
-    .ft{padding:10px 16px;border-top:1px solid rgba(40,30,110,.1);font-size:12px;color:#6c6890;display:flex;justify-content:space-between;gap:10px}
-    a.l{color:#4f46e5;cursor:pointer;text-decoration:underline}
+    .sk{height:62px;border-radius:14px;background:linear-gradient(90deg,#fdeedd,#fff8ee,#fdeedd);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
+    .ft{padding:10px 16px;border-top:1px solid rgba(40,25,10,.1);font-size:12px;color:#7a7066;display:flex;justify-content:space-between;gap:10px}
+    a.l{color:#c2410c;cursor:pointer;text-decoration:underline}
   </style><div class="w" id="w"></div>`;
   const W = root.getElementById('w');
 
@@ -73,6 +73,7 @@
         if (S.error) body += `<div class="err">${esc(S.error.message)}${S.error.status === 'no_key' || S.error.status === 'invalid' || S.error.status === 'wrong_plan' ? ' <a class="l" id="optKey">Open settings</a>' : ''}</div>`;
         if (S.flag !== 'none') body += `<div class="warn"><b>${{ spam: 'This looks like spam.', abusive: 'This looks abusive.', sensitive: 'This one may need you personally.' }[S.flag]}</b> ${esc(S.note)}</div>`;
         body += S.drafts.map((d, i) => `<div class="d"><textarea class="dt" data-t="${i}" rows="2">${esc(d)}</textarea><div class="bar"><button class="b p" data-use="${i}">Use this reply</button><button class="b" data-copy="${i}">Copy</button><button class="b" data-save="${i}" title="Add to the examples of how you write">＋ My style</button></div></div>`).join('');
+        if (S.quick.length) body += `<div class="note">⚡ Your quick replies</div><div class="chips">${S.quick.slice(0, 8).map((q, i) => `<button class="chip" data-quick="${i}" title="${esc(q.text)}">${esc(q.title)}</button>`).join('')}</div>`;
         if (S.drafts.length || S.error) body += `<div class="bar"><button class="b" id="again">↻ Write new ones</button></div>`;
       }
     }
@@ -83,8 +84,8 @@
 
   /* ---------- actions ---------- */
   function scan() { S.comments = A.findComments(); if (S.sel && !document.contains(S.sel.el)) S.sel = null; }
-  async function refreshState() { S.state = await ask('getState'); if (S.state && S.state.usage) S.usage = S.state.usage; }
-  function highlight(el, on) { if (!el) return; el.style.outline = on ? '2px solid #6d28d9' : ''; el.style.outlineOffset = on ? '2px' : ''; }
+  async function refreshState() { const q = await ask('quickList'); S.quick = (q && q.quick) || []; S.state = await ask('getState'); if (S.state && S.state.usage) S.usage = S.state.usage; }
+  function highlight(el, on) { if (!el) return; el.style.outline = on ? '2px solid #f97316' : ''; el.style.outlineOffset = on ? '2px' : ''; }
 
   async function draft(c) {
     S.sel = c; S.view = 'draft'; S.loading = true; S.error = null; S.drafts = []; S.flag = 'none'; S.note = ''; S.done = ''; render();
@@ -93,23 +94,25 @@
     const r = await ask('draft', { platform: A.platformId(), tone: S.tone || undefined, quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: { text: c.text, author: c.author }, post });
     S.loading = false;
     if (r.usage) S.usage = r.usage;
-    if (r.ok) { S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status };
+    if (r.ok) { S.hid = r.historyId || ''; S.qmark = {}; S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status };
     render();
   }
+  function logUse(action, text, i) { if (S.hid) ask('histUpdate', { id: S.hid, action, chosen: text, quick: !!S.qmark[i] }); }
   async function use(i) {
     const text = (root.querySelector(`[data-t="${i}"]`) || {}).value || S.drafts[i];
     const c = S.sel; if (!c) return;
     const box = await A.openReply(c);
     if (box && A.setText(box, text)) {
+      logUse('inserted', text, i);
       S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; S.open = false; S.view = 'list'; render();
       toast(S.done); try { box.focus(); } catch (_) {}
     } else {
-      try { await navigator.clipboard.writeText(text); S.done = 'Could not find the reply box, so the reply is copied. Click Reply on that comment and paste it (Ctrl+V).'; } catch (_) { S.done = 'Could not find the reply box. Select the text above, copy it, and paste it into the comment yourself.'; }
+      try { await navigator.clipboard.writeText(text); logUse('copied', text, i); S.done = 'Could not find the reply box, so the reply is copied. Click Reply on that comment and paste it (Ctrl+V).'; } catch (_) { S.done = 'Could not find the reply box. Select the text above, copy it, and paste it into the comment yourself.'; }
       render();
     }
   }
   let tt; function toast(msg) {
-    let t = root.getElementById('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'font:600 13px system-ui,sans-serif;background:#0d5b36;color:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 12px 30px rgba(0,0,0,.25);max-width:340px'; W.appendChild(t); }
+    let t = root.getElementById('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'font:600 13px system-ui,sans-serif;background:#16120d;border:1px solid rgba(251,191,36,.5);color:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 12px 30px rgba(0,0,0,.25);max-width:340px'; W.appendChild(t); }
     t.textContent = msg; clearTimeout(tt); tt = setTimeout(() => t.remove(), 6000);
   }
 
@@ -135,11 +138,12 @@
     else if (t.id === 'optKey' || t.id === 'optVoice') ask('openOptions');
     else if (t.dataset.draft != null) draft(S.comments[+t.dataset.draft]);
     else if (t.dataset.tone) { S.tone = t.dataset.tone; render(); if (S.drafts.length || S.error) draft(S.sel); }
+    else if (t.dataset.quick != null) { const q = S.quick[+t.dataset.quick]; if (q) { const m = {}; Object.keys(S.qmark).forEach((k) => { m[+k + 1] = S.qmark[k]; }); S.qmark = m; S.qmark[0] = true; S.drafts = [q.text, ...S.drafts]; render(); } }
     else if (t.dataset.use != null) use(+t.dataset.use);
-    else if (t.dataset.copy != null) { try { await navigator.clipboard.writeText(root.querySelector(`[data-t="${t.dataset.copy}"]`).value); t.textContent = 'Copied ✓'; } catch (_) { t.textContent = 'Select & copy'; } }
+    else if (t.dataset.copy != null) { try { await navigator.clipboard.writeText(root.querySelector(`[data-t="${t.dataset.copy}"]`).value); t.textContent = 'Copied ✓'; logUse('copied', root.querySelector(`[data-t="${t.dataset.copy}"]`).value, +t.dataset.copy); } catch (_) { t.textContent = 'Select & copy'; } }
     else if (t.dataset.save != null) { const r = await ask('addSample', { text: root.querySelector(`[data-t="${t.dataset.save}"]`).value }); t.textContent = r.ok ? `Saved (${r.count}) ✓` : 'Could not save'; }
   });
-  W.addEventListener('input', (e) => { if (e.target.id === 'hint') S.hint = e.target.value; if (e.target.classList.contains('dt')) grow(e.target); if (e.target.id === 'best') S.quality = e.target.checked; });
+  W.addEventListener('input', (e) => { if (e.target.id === 'hint') S.hint = e.target.value; if (e.target.classList.contains('dt')) { grow(e.target); const i = +e.target.dataset.t; if (S.drafts[i] != null) S.drafts[i] = e.target.value; } if (e.target.id === 'best') S.quality = e.target.checked; });
   W.addEventListener('change', (e) => { if (e.target.id === 'best') S.quality = e.target.checked; });
   W.addEventListener('mouseover', (e) => { const c = e.target.closest('.c'); if (c && S.comments[+c.dataset.i]) highlight(S.comments[+c.dataset.i].el, true); });
   W.addEventListener('mouseout', (e) => { const c = e.target.closest('.c'); if (c && S.comments[+c.dataset.i]) highlight(S.comments[+c.dataset.i].el, false); });

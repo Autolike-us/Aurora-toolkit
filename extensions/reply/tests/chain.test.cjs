@@ -24,8 +24,8 @@ const cleanup = () => pids.forEach((p) => { try { process.kill(p, 'SIGTERM'); } 
   await ctx.route('https://www.instagram.com/**', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: IG }));
 
   const opts = await ctx.newPage(); await opts.goto(`chrome-extension://${id}/options.html`);
-  await opts.fill('#key', 'AUR-CHAI-NTST-0001'); await opts.fill('#samples', 'Thank you Sam! See you Saturday 🥖'); await opts.fill('#about', 'Loaf £4. Open Tue–Sun.'); await opts.waitForTimeout(700);
-  await opts.click('#check'); await opts.waitForFunction(() => /accepted/i.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
+  await opts.click('.nav[data-view=settings]'); await opts.fill('#key', 'AUR-CHAI-NTST-0001'); await opts.click('.nav[data-view=voice]'); await opts.fill('#samples', 'Thank you Sam! See you Saturday 🥖'); await opts.fill('#about', 'Loaf £4. Open Tue–Sun.'); await opts.waitForTimeout(700);
+  await opts.click('.nav[data-view=settings]'); await opts.click('#check'); await opts.waitForFunction(() => /accepted/i.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
   need(/0 of 2/.test(await opts.textContent('#meterText')), 'the real PHP server accepts the key (CORS and payload fine) and reports 0 of 2 drafts used');
 
   const page = await ctx.newPage(); await page.goto('https://www.instagram.com/p/ABC/'); await page.waitForSelector('button.pill', { timeout: 8000 });

@@ -29,17 +29,28 @@ async function api(path, body) {
 
 const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 
+/* History lives only in this browser (newest 500). The server never sees it. */
+const HIST_MAX = 500;
+let histQueue = Promise.resolve();
+const withHistory = (fn) => (histQueue = histQueue.then(async () => { const h = await get('history', []); const out = await fn(h); await set({ history: h.slice(0, HIST_MAX) }); return out; }).catch(() => {}));
+const historyOn = async () => ((await get('prefs', {})).history !== false);
+
 chrome.runtime.onMessage.addListener((msg, _sender, send) => {
   if (!msg || msg.aurora !== 'reply') return;
   (async () => {
     if (msg.type === 'draft') {
       const voice = await get('voice', {});
-      send(await api('/reply/draft', {
+      const comment = { text: clip(msg.comment && msg.comment.text, 1000), author: clip(msg.comment && msg.comment.author, 80) };
+      const r = await api('/reply/draft', {
         platform: msg.platform, tone: msg.tone, quality: msg.quality, hint: clip(msg.hint, 200),
-        comment: { text: clip(msg.comment && msg.comment.text, 1000), author: clip(msg.comment && msg.comment.author, 80) },
-        post: { caption: clip(msg.post && msg.post.caption, 800), author: clip(msg.post && msg.post.author, 80) },
-        voice,
-      }));
+        comment, post: { caption: clip(msg.post && msg.post.caption, 800), author: clip(msg.post && msg.post.author, 80) }, voice,
+      });
+      if (r && r.ok && (r.drafts || []).length && await historyOn()) {
+        const id = 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        await withHistory((h) => { h.unshift({ id, ts: Date.now(), platform: clip(msg.platform, 20), author: comment.author, comment: comment.text, drafts: r.drafts.map((d) => clip(d.text, 700)), chosen: '', action: 'drafted', tone: msg.tone || voice.tone || '', flag: r.flag || 'none' }); });
+        r.historyId = id;
+      }
+      send(r);
     } else if (msg.type === 'status') send(await api('/reply/status', {}));
     else if (msg.type === 'openOptions') { chrome.runtime.openOptionsPage(); send({ ok: true }); }
     else if (msg.type === 'getState') send({ ok: true, hasKey: !!(await get('licenseKey', '')).trim(), voiceReady: !!(((await get('voice', {})).samples || []).length || ((await get('voice', {})).about || '').trim()), usage: await get('usage', null), voice: await get('voice', {}) });

@@ -26,10 +26,11 @@ const ok = (m) => console.log('PASS ' + m); const need = (c, m) => { if (!c) { c
   await sw.evaluate((p) => chrome.storage.local.set({ apiBase: 'http://127.0.0.1:' + p + '/api' }), srv.address().port);
   await ctx.route('https://www.instagram.com/**', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: IG }));
 
-  const opts = await ctx.newPage(); await opts.goto(`chrome-extension://${id}/options.html`);
+  const opts = await ctx.newPage(); await opts.goto(`chrome-extension://${id}/options.html#voice`);
+  await opts.waitForFunction(() => /Add your key/.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
   need(/Add your key/.test(await opts.textContent('#keyStatus')), 'settings page opens');
   await opts.fill('#samples', 'Thank you Sam! See you Saturday 🥖\nGreat question — we are open until 3pm!'); await opts.fill('#about', 'Loaf £4. Open Tue–Sun.'); await opts.click('#tones [data-t="warm"]');
-  await opts.fill('#key', 'AUR-GOOD-GOOD-GOOD'); await opts.click('#check'); await opts.waitForFunction(() => /accepted/i.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
+  await opts.click('.nav[data-view=settings]'); await opts.fill('#key', 'AUR-GOOD-GOOD-GOOD'); await opts.click('#check'); await opts.waitForFunction(() => /accepted/i.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
   need(/1 of 1500/.test(await opts.textContent('#meterText')), 'a key is checked against the server and the usage shows');
   await opts.waitForTimeout(800);
   const stored = await sw.evaluate(() => chrome.storage.local.get(['voice', 'licenseKey', 'installId']));
@@ -48,6 +49,6 @@ const ok = (m) => console.log('PASS ' + m); const need = (c, m) => { if (!c) { c
   await opts.fill('#key', 'AUR-BAD0-BAD0-BAD0'); await opts.click('#check'); await opts.waitForFunction(() => /not found/i.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
   need(true, 'a wrong key is refused with the server\'s message');
   const pop = await ctx.newPage(); await pop.goto(`chrome-extension://${id}/popup.html`); await pop.waitForTimeout(400);
-  need(/Open a post/.test(await pop.textContent('.steps')), 'the toolbar popup opens');
+  need(/Open a post/.test(await pop.textContent('.how')), 'the toolbar popup opens');
   await ctx.close(); srv.close(); console.log('\nreal-extension smoke passed');
 })().catch((e) => { console.error('FAIL', e.message); process.exit(1); });

@@ -92,21 +92,40 @@
   /* ---------- the reply box ---------- */
   const isEditable = (el) => !!el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.type || '')) || el.isContentEditable);
   A.editables = (scope) => Array.from((scope || document).querySelectorAll('textarea, input, [contenteditable="true"], [contenteditable=""], [role="textbox"]')).filter((e) => isEditable(e) && visible(e));
-  const GLOBAL = { instagram: ['form textarea', 'textarea[placeholder*="comment" i]'], tiktok: ['[data-e2e="comment-input"] [contenteditable="true"]', '[class*="CommentInput"] [contenteditable="true"]'], facebook: ['[contenteditable="true"][role="textbox"]'] };
-  function findBox(c, before) {
+  const valOf = (e) => (e.tagName === 'TEXTAREA' || e.tagName === 'INPUT' ? e.value : e.textContent) || '';
+  /** Did clicking Reply really switch a box into "replying to this comment"? Never accepts the plain main box. */
+  function findBox(c, snap) {
     const act = document.activeElement;
-    if (isEditable(act) && visible(act) && !before.has(act)) return act;
-    for (let el = c.el, i = 0; el && i < 5; el = el.parentElement, i++) { const n = A.editables(el).filter((e) => !before.has(e)); if (n.length) return n[n.length - 1]; }
-    if (isEditable(act) && visible(act)) return act;
-    for (const s of GLOBAL[A.platformId()] || []) { const e = Array.from(document.querySelectorAll(s)).filter(visible); if (e.length) return e[e.length - 1]; }
+    const fresh = (e) => !snap.before.has(e);
+    if (isEditable(act) && visible(act) && fresh(act)) return act;
+    for (let el = c.el, i = 0; el && i < 5; el = el.parentElement, i++) { const n = A.editables(el).filter(fresh); if (n.length) return n[n.length - 1]; }
+    if (isEditable(act) && visible(act)) {
+      const v = valOf(act), hint = (act.getAttribute('placeholder') || '') + ' ' + (act.getAttribute('aria-label') || '') + ' ' + (act.getAttribute('aria-placeholder') || '');
+      const mention = /^\s*@\S/.test(v) || (act.querySelector && !!act.querySelector('a, [contenteditable="false"], [data-lexical-mention]'));
+      const changed = v !== snap.vals.get(act), focusedNow = snap.active !== act;
+      if (mention || /repl/i.test(hint) || (changed && v.trim()) || (focusedNow && A.platformId() === 'tiktok')) return act;
+    }
     return null;
   }
-  /** Click the comment's own Reply button and wait for the box to appear. Never sends anything. */
-  A.openReply = async (c, { wait = 3000 } = {}) => {
-    const before = new Set(A.editables());
+  function realClick(el) {
+    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
+    for (const t of ['pointerover', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+      try { el.dispatchEvent(t.startsWith('pointer') ? new PointerEvent(t, { ...o, pointerType: 'mouse', isPrimary: true }) : new MouseEvent(t, o)); } catch (_) {}
+    }
+  }
+  /** Click the comment's own Reply button and wait until that comment's reply box is ready. Returns null when it can't be sure
+      (so nothing ever lands in the main comment box by mistake). Never sends anything. */
+  A.openReply = async (c, { wait = 3500 } = {}) => {
+    const eds = A.editables();
+    const snap = { before: new Set(eds), vals: new Map(eds.map((e) => [e, valOf(e)])), active: document.activeElement };
     try { c.el.scrollIntoView({ block: 'center' }); } catch (_) {}
+    await sleep(150);
     try { c.btn.click(); } catch (_) {}
-    for (let t = 0; t < wait; t += 100) { await sleep(100); const box = findBox(c, before); if (box) return box; }
+    for (let t = 0, retried = false; t < wait; t += 100) {
+      await sleep(100);
+      const box = findBox(c, snap); if (box) return box;
+      if (!retried && t >= 1000) { retried = true; realClick(c.btn); }
+    }
     return null;
   };
   /** Put text in the box the way a person typing would (frameworks listen for input events). Keeps an @mention the site added. */

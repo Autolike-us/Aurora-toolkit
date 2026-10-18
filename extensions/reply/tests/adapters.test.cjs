@@ -31,6 +31,10 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('Instagram: Reply fills the main box, keeping the @mention Instagram added', igIns.ok && igIns.v === '@tom_b About £4 — thanks for asking!', JSON.stringify(igIns));
   check('Instagram: nothing was sent', igIns.ev.length === 0);
 
+  await load('https://www.instagram.com/p/ABC/', IG.replace(/document\.addEventListener\('click'[^\n]*/, ''));
+  const dead = await pg.evaluate(async () => { document.getElementById('box').focus(); const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c, { wait: 1800 }); return { box: box === null, v: document.getElementById('box').value }; });
+  check('when Reply does nothing, the main comment box is never used (falls back to copy)', dead.box && dead.v === '', JSON.stringify(dead));
+
   await load('https://www.tiktok.com/@chef/video/1', TT);
   cs = await find();
   check('TikTok: finds the comments', cs.length === 2 && cs[0].author === 'maya.k' && cs[0].text === 'Recipe please!!' && cs[1].text === 'Which flour do you use?', JSON.stringify(cs));
