@@ -11,7 +11,7 @@ const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tik
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
 const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-const CHANGELOG = [{ v: '0.3.1', title: 'Choose 1, 2 or 3 replies, report bugs on Telegram', items: ['Choose how many replies to write per comment (1, 2 or 3) — each reply counts as one draft, so pick 1 to use fewer', 'Report a problem on Telegram (fastest) or by email', 'Discover the other Aurora tools from your dashboard']}, { v: '0.3.0', title: 'Reply to all unanswered comments, more languages, voice profiles', items: ['Reply to unanswered comments one by one — you approve each reply and press Send yourself', 'Finds comments in French, Spanish, German, Portuguese, Japanese and many more languages', 'Voice profiles for people who run several brands', 'Keyboard shortcuts (Alt+R, Alt+1/2/3, Alt+G, Alt+N)', 'A quick tour, and a “Report a problem” button when comments can’t be found']}];
+const CHANGELOG = [{ v: '0.3.2', title: 'Free trial, free plan and reply packs', items: ['Your plan and remaining replies are shown in the dashboard and in the panel', 'New accounts get a 3-day full trial, then 10 free replies every month', 'Need more? A “Get more replies” link appears when you run out']}, { v: '0.3.1', title: 'Choose 1, 2 or 3 replies, report bugs on Telegram', items: ['Choose how many replies to write per comment (1, 2 or 3) — each reply counts as one draft, so pick 1 to use fewer', 'Report a problem on Telegram (fastest) or by email', 'Discover the other Aurora tools from your dashboard']}, { v: '0.3.0', title: 'Reply to all unanswered comments, more languages, voice profiles', items: ['Reply to unanswered comments one by one — you approve each reply and press Send yourself', 'Finds comments in French, Spanish, German, Portuguese, Japanese and many more languages', 'Voice profiles for people who run several brands', 'Keyboard shortcuts (Alt+R, Alt+1/2/3, Alt+G, Alt+N)', 'A quick tour, and a “Report a problem” button when comments can’t be found']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -73,7 +73,15 @@ function renderOverview() {
   // recent
   $('#recent').innerHTML = h.length ? h.slice(0, 4).map((x) => entryHTML(x, true)).join('') : emptyHTML('💬', 'No replies yet', 'Open a post on Facebook, Instagram or TikTok and press ✦ Reply.');
   // side
-  $('#sideUse').textContent = u ? `${u.used} of ${u.limit} drafts` : S.hasKey ? 'Key saved' : 'Not connected';
+  const PN = { trial: 'Free trial', free: 'Free plan', subscription: 'Subscription' };
+  $('#sideUse').textContent = u ? (u.plan ? `${PN[u.plan] || ''} · ${u.plan === 'trial' ? u.dayLeft + ' left today' : u.used + ' of ' + u.limit}` : `${u.used} of ${u.limit} drafts`) + (u.packs ? ` · +${u.packs}` : '') : S.hasKey ? 'Key saved' : 'Not connected';
+  const pc = $('#planCard');
+  if (u && (u.plan === 'trial' || u.plan === 'free')) {
+    pc.hidden = false;
+    pc.innerHTML = u.plan === 'trial'
+      ? `<div style="font-size:26px">🎁</div><div class="grow"><b>Your free trial ends ${esc(new Date(u.trialEndsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }))}</b>Full features for 3 days (${u.dayLeft} replies left today). After that you keep ${10} free replies every month — or get more.</div><a class="btn p" href="https://getaurorastudios.com/reply/" target="_blank" rel="noopener" style="text-decoration:none">See plans ↗</a>`
+      : `<div style="font-size:26px">✦</div><div class="grow"><b>Free plan · ${Math.max(0, u.limit - u.used)} of ${u.limit} replies left this month${u.packs ? ` (+${u.packs} from your packs)` : ''}</b>Need more? Buy a reply pack, or subscribe for heavy use.</div><a class="btn p" href="https://getaurorastudios.com/reply/" target="_blank" rel="noopener" style="text-decoration:none">Get more replies ↗</a>`;
+  } else pc.hidden = true;
   $('#sideBar').style.width = pct + '%';
   $('#sideNote').textContent = u && u.resetsAt ? 'Renews ' + new Date(u.resetsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : S.hasKey ? 'Press “Save & check” to refresh' : 'Add your key in Settings';
 }
@@ -150,7 +158,7 @@ function meter(u) {
   if (u) S.usage = u;
   if (!u) { $('#meter').hidden = true; return; }
   $('#meter').hidden = false; $('#meterBar').style.width = Math.min(100, Math.round((u.used / Math.max(1, u.limit)) * 100)) + '%';
-  $('#meterText').textContent = `${u.used} of ${u.limit} drafts used this month · renews ${new Date(u.resetsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`;
+  $('#meterText').textContent = `${u.plan ? (u.plan === 'trial' ? u.dayLeft + ' trial replies left today · ' : '') + u.used + ' of ' + u.limit + ' replies used' : u.used + ' of ' + u.limit + ' drafts used this month'}${u.packs ? ' · +' + u.packs + ' pack replies' : ''} · renews ${new Date(u.resetsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`;
   renderOverview();
 }
 function status(kind, text) { $('#keyStatus').innerHTML = `<span class="pill ${kind}">${text.replace(/[<>&]/g, '')}</span>`; }

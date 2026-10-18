@@ -19,7 +19,7 @@ function route_reply_status(): void
 {
     header('Access-Control-Allow-Origin: *');
     [$key, $e] = reply_auth();
-    json_out(['ok' => true, 'status' => $e['status'], 'who' => $e['who'], 'usage' => reply_usage_block($key, $e['quota'])]);
+    json_out(['ok' => true, 'status' => $e['status'], 'who' => $e['who'], 'plan' => $e['plan'] ?? 'access', 'usage' => reply_usage_block($key, $e['quota'], $e)]);
 }
 
 /** One to three drafts for one comment. Each reply written counts as one draft, and only once it has been written. */
@@ -29,13 +29,43 @@ function route_reply_draft(): void
     [$key, $e, $b] = reply_auth();
     $in = reply_input($b);
     if ($in['comment'] === '') json_out(['ok' => false, 'status' => 'empty', 'message' => 'There is no comment text to reply to.'], 400);
-    if (reply_used($key) >= $e['quota']) json_out(['ok' => false, 'status' => 'quota', 'message' => 'You have used all ' . $e['quota'] . ' drafts for this month. They renew on ' . gmdate('F j', strtotime(reply_resets_at())) . '.', 'usage' => reply_usage_block($key, $e['quota'])], 402);
-    $in['count'] = min($in['count'], max(1, $e['quota'] - reply_used($key))); // never write more replies than are left this month
+    $avail = reply_allow_left($key, $e) + reply_packs_left($e['userId'] ?? null);
+    if ($avail <= 0) {
+        $renew = gmdate('F j', strtotime(reply_resets_at()));
+        $plan = $e['plan'] ?? 'access';
+        $msg = $plan === 'trial' ? 'You have used today\'s ' . $e['dayCap'] . ' trial replies. Come back tomorrow, or get more replies at getaurorastudios.com/reply.'
+            : ($plan === 'free' ? 'You have used your ' . $e['quota'] . ' free replies for this month. They renew on ' . $renew . ' — or get more replies at getaurorastudios.com/reply.'
+            : 'You have used all ' . $e['quota'] . ' drafts for this month. They renew on ' . $renew . '.');
+        json_out(['ok' => false, 'status' => 'quota', 'message' => $msg, 'upgrade' => in_array($plan, ['trial', 'free'], true) ? 'https://getaurorastudios.com/reply/' : null, 'usage' => reply_usage_block($key, $e['quota'], $e)], 402);
+    }
+    $in['count'] = min($in['count'], $avail); // never write more replies than are left
     $best = ($b['quality'] ?? '') === 'best';
     $model = $best ? (string) cfg('reply_model_best', 'claude-sonnet-5-5') : (string) cfg('reply_model', 'claude-haiku-5-5');
     [$system, $user] = reply_prompt($in);
     [$ok, $res, $http] = reply_call_claude($system, $user, $model, $in['count']);
     if (!$ok) json_out(['ok' => false, 'status' => 'upstream', 'message' => $res], $http);
-    reply_count($key, count($res['drafts']));
-    json_out(['ok' => true, 'drafts' => $res['drafts'], 'flag' => $res['flag'], 'note' => $res['note'], 'model' => $model, 'usage' => reply_usage_block($key, $e['quota'])]);
+    $n = count($res['drafts']); reply_charge($key, $e, $n); reply_log_cost($e['plan'] ?? 'access', $model, $res['tokens'] ?? [], $n);
+    json_out(['ok' => true, 'drafts' => $res['drafts'], 'flag' => $res['flag'], 'note' => $res['note'], 'model' => $model, 'plan' => $e['plan'] ?? 'access', 'usage' => reply_usage_block($key, $e['quota'], $e)]);
+}
+
+/** Owner-only cost report. Needs a key from aurora-master-keys.json with "admin": true. */
+function route_reply_admin(): void
+{
+    header('Access-Control-Allow-Origin: *');
+    $b = body(); $key = strtoupper(trim((string) ($b['key'] ?? '')));
+    rate_limit('reply-admin:' . client_ip(), 20, 3600);
+    $m = preg_match('/^AUR-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/', $key) ? master_license($key) : null;
+    if (!$m || empty($m['admin'])) json_out(['ok' => false, 'message' => 'Not allowed.'], 403);
+    reply_ensure_table();
+    $months = [];
+    foreach (q_all('SELECT * FROM reply_cost ORDER BY ym DESC, model ASC') as $r) {
+        [$pin, $pout] = reply_price($r['model']);
+        $cost = ($r['tok_in'] * $pin + $r['tok_out'] * $pout) / 1e6;
+        $m2 = &$months[$r['ym']]; $m2 = $m2 ?? ['ym' => $r['ym'], 'requests' => 0, 'replies' => 0, 'tokensIn' => 0, 'tokensOut' => 0, 'costUsd' => 0.0, 'byPlan' => [], 'byModel' => []];
+        $m2['requests'] += (int) $r['reqs']; $m2['replies'] += (int) $r['replies']; $m2['tokensIn'] += (int) $r['tok_in']; $m2['tokensOut'] += (int) $r['tok_out']; $m2['costUsd'] += $cost;
+        $m2['byPlan'][$r['plan']] = ($m2['byPlan'][$r['plan']] ?? 0) + (int) $r['replies']; $m2['byModel'][$r['model']] = ($m2['byModel'][$r['model']] ?? 0) + (int) $r['replies'];
+        unset($m2);
+    }
+    foreach ($months as &$mo) { $mo['costUsd'] = round($mo['costUsd'], 4); $mo['costPerReplyUsd'] = $mo['replies'] ? round($mo['costUsd'] / $mo['replies'], 6) : 0; $mo['avgTokensInPerRequest'] = $mo['requests'] ? (int) round($mo['tokensIn'] / $mo['requests']) : 0; $mo['avgTokensOutPerRequest'] = $mo['requests'] ? (int) round($mo['tokensOut'] / $mo['requests']) : 0; }
+    json_out(['ok' => true, 'months' => array_values($months)]);
 }

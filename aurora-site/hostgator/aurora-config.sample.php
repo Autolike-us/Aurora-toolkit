@@ -32,6 +32,11 @@ return [
     'reply_monthly_quota' => 1500,              // drafts per key per month (an access code can override with "quota")
     'reply_beta_all_licenses' => false,         // true = every active/trial Aurora license may try Reply...
     'reply_beta_quota' => 100,                  // ...with this many drafts a month
+    // Plans mode: set to true to switch on the 3-day trial, the free monthly allowance, reply packs and subscriptions for real customers.
+    'reply_plans' => false,
+    'reply_trial_total' => 150, 'reply_trial_daily' => 50,   // trial: replies in total / per day (3 days)
+    'reply_free_monthly' => 10,                              // after the trial: free replies every month
+    'reply_pro_quota' => 5000,                               // bigger subscription: replies per month ('reply_monthly_quota' is the standard one)
 
     'paypal_env' => 'sandbox',               // 'live' when ready
     'paypal_client_id' => '', 'paypal_client_secret' => '', 'paypal_webhook_id' => '',

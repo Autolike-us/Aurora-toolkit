@@ -113,5 +113,13 @@ const { FB, IG } = require('./fixtures.cjs');
   check('report a problem offers Telegram and email', !!(await pg.$('#repTg')) && !!(await pg.$('#repMail')));
   await pg.click('#repTg'); await pg.waitForTimeout(100);
   check('the Telegram button opens the Aurora Studios Report channel and says the details are copied', (await pg.evaluate(() => window.__opened[0])) === 'https://t.me/+GqmNSvnMJxhhMzJh' && /Telegram is opening/.test(await pg.textContent('.bd')));
+
+  // free plan: usage wording and the "get more replies" link
+  await open('https://www.facebook.com/sunrisebakery/posts/1', FB, { state: STATE, draft: { ok: false, status: 'quota', message: 'You have used your 10 free replies for this month. They renew on November 1 — or get more replies at getaurorastudios.com/reply.', upgrade: 'https://getaurorastudios.com/reply/', usage: { used: 10, limit: 10, plan: 'free', packs: 0 } } });
+  await pg.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; });
+  await pg.click('button.pill'); await pg.locator('[data-draft="0"]').click(); await pg.waitForSelector('.err');
+  check('free plan: the panel header says "Free plan · 10 of 10 replies used" and the error offers "Get more replies"', /Free plan · 10 of 10 replies used/.test(await pg.textContent('.hd')) && !!(await pg.$('#upgrade')));
+  await pg.click('#upgrade'); await pg.waitForTimeout(80);
+  check('"Get more replies" opens the Aurora Reply page', (await pg.evaluate(() => window.__opened[0])) === 'https://getaurorastudios.com/reply/');
   await b.close(); done();
 })();

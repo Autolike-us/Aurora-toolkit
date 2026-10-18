@@ -23,7 +23,7 @@ file_put_contents("$tmp/config.php", '<?php return ' . var_export([
     'site_url' => "http://127.0.0.1:$port", 'launch_date' => gmdate('Y-m-d', time() - 86400), 'db_dsn' => "sqlite:$tmp/db.sqlite",
     'mail_driver' => 'file', 'mail_log' => "$tmp/mail.log", 'license_private_key' => $privPem, 'releases_dir' => "$tmp/releases",
     'stripe_webhook_secret' => 'whsec_test',
-    'anthropic_api_key' => 'sk-ant-test-key', 'anthropic_base_url' => "http://127.0.0.1:$mport", 'reply_monthly_quota' => 5,
+    'anthropic_api_key' => 'sk-ant-test-key', 'anthropic_base_url' => "http://127.0.0.1:$mport", 'reply_monthly_quota' => 5, 'reply_plans' => true,
 ], true) . ';');
 
 $cmd = sprintf('AURORA_CONFIG=%s php -S 127.0.0.1:%d %s > %s 2>&1 & echo $!', escapeshellarg("$tmp/config.php"), $port, escapeshellarg("$root/api/index.php"), escapeshellarg("$tmp/server.log"));
@@ -184,6 +184,7 @@ file_put_contents("$tmp/aurora-master-keys.json", json_encode([
     'AUR-MSTR-BBBB-2222' => ['note' => 'tiktok tester', 'until' => null, 'products' => ['tiktok']],
     'AUR-MSTR-CCCC-3333' => ['note' => 'old', 'until' => gmdate('Y-m-d', time() - 86400 * 2), 'products' => null],
     'AUR-REPL-AAAA-1111' => ['note' => 'reply tester', 'until' => null, 'products' => ['reply'], 'quota' => 7],
+    'AUR-MSTR-ADMN-0000' => ['note' => 'owner admin', 'until' => null, 'products' => null, 'admin' => true],
     'AUR-REPL-BBBB-2222' => ['note' => 'reply count tester', 'until' => null, 'products' => ['reply'], 'quota' => 4],
 ]));
 $rbody = fn(array $o = []) => array_replace_recursive(['key' => 'AUR-REPL-AAAA-1111', 'installId' => 'install-reply-1', 'platform' => 'instagram',
@@ -227,6 +228,42 @@ $s = call('POST', '/reply/status', ['key' => 'AUR-MSTR-AAAA-1111', 'installId' =
 $big = $ow(['comment' => ['text' => str_repeat('word ', 600)], 'voice' => ['samples' => array_fill(0, 40, str_repeat('sample ', 80)), 'about' => str_repeat('fact ', 800)]]); $allr = $reqs(); $lastr = end($allr); $ub = (string) ($lastr['body']['messages'][0]['content'] ?? '');
 check('Reply: very long inputs are cut down to safe sizes before they are sent', $big['status'] === 200 && strlen($ub) < 9000 && substr_count($ub, "\n- ") <= 12);
 $r = call('POST', '/reply/draft', $rbody(['key' => 'AUR-MSTR-AAAA-1111', 'installId' => 'abc'])); check('Reply: a too-short install id is rejected', $r['status'] === 400);
+
+// ---- Aurora Reply plans: trial, free allowance, packs, subscription, cost report ----
+$mkuser = function (string $id, string $lk) use ($pdo) {
+    $pdo->prepare('INSERT INTO users (id, email, password_hash, email_verified_at, created_at) VALUES (?,?,?,?,?)')->execute([$id, "$id@example.com", 'x', gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s')]);
+    $pdo->prepare('INSERT INTO licenses (id, user_id, license_key, trial_started_at, trial_ends_at, created_at) VALUES (?,?,?,?,?,?)')->execute([$id . 'L', $id, $lk, gmdate('Y-m-d H:i:s', time() - 86400 * 40), gmdate('Y-m-d H:i:s', time() - 86400 * 37), gmdate('Y-m-d H:i:s')]);
+};
+$mkuser('rplan1', 'AUR-PLAN-AAAA-0001');
+$pr = fn(string $k, array $o = []) => call('POST', '/reply/draft', $rbody(array_replace_recursive(['key' => $k], $o)));
+$ps = fn(string $k) => call('POST', '/reply/status', ['key' => $k, 'installId' => 'install-plan-1']);
+$r = $ps('AUR-PLAN-AAAA-0001');
+check('Reply plans: a customer whose studios trial ended still gets a fresh 3-day Reply trial (150 replies, 50 a day)', ($r['json']['plan'] ?? '') === 'trial' && ($r['json']['usage']['limit'] ?? 0) === 150 && ($r['json']['usage']['dayLeft'] ?? 0) === 50 && !empty($r['json']['usage']['trialEndsAt']));
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: a trial request writes three replies and counts three', ($r['json']['ok'] ?? false) && count($r['json']['drafts']) === 3 && ($r['json']['usage']['used'] ?? 0) === 3 && ($r['json']['usage']['dayLeft'] ?? 0) === 47 && ($r['json']['plan'] ?? '') === 'trial');
+$pdo->exec("UPDATE reply_usage_day SET n = 49");
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: near the daily trial cap only the last reply is written', ($r['json']['ok'] ?? false) && count($r['json']['drafts']) === 1);
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: at the daily cap the person is told to come back tomorrow or get more replies', $r['status'] === 402 && ($r['json']['status'] ?? '') === 'quota' && strpos($r['json']['message'], "today") !== false && !empty($r['json']['upgrade']));
+$pdo->exec("UPDATE reply_accounts SET trial_started_at = '" . gmdate('Y-m-d H:i:s', time() - 86400 * 5) . "'"); $pdo->exec("DELETE FROM reply_usage_day");
+$r = $ps('AUR-PLAN-AAAA-0001'); check('Reply plans: after the trial the free plan gives 10 replies a month', ($r['json']['plan'] ?? '') === 'free' && ($r['json']['usage']['limit'] ?? 0) === 10);
+$pdo->exec("UPDATE reply_usage SET n = 0");
+foreach ([1, 2, 3] as $i) $pr('AUR-PLAN-AAAA-0001');
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: the free allowance runs out exactly at 10 (the last request is cut to one reply)', ($r['json']['ok'] ?? false) && count($r['json']['drafts']) === 1 && ($r['json']['usage']['used'] ?? 0) === 10);
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: then a calm message with the renewal date and the link to get more replies', $r['status'] === 402 && strpos($r['json']['message'], 'free replies') !== false && strpos($r['json']['message'], 'renew') !== false && ($r['json']['upgrade'] ?? '') === 'https://getaurorastudios.com/reply/');
+$pdo->prepare('INSERT INTO reply_packs (id, user_id, replies_total, replies_left, expires_at, source, created_at) VALUES (?,?,?,?,?,?,?)')->execute(['pk1', 'rplan1', 5, 5, gmdate('Y-m-d H:i:s', time() + 86400 * 300), 'test', gmdate('Y-m-d H:i:s')]);
+$r = $ps('AUR-PLAN-AAAA-0001'); check('Reply plans: a pack shows up beside the free allowance', ($r['json']['usage']['packs'] ?? 0) === 5);
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: when the allowance is gone, replies come out of the pack (the monthly count does not move)', ($r['json']['ok'] ?? false) && count($r['json']['drafts']) === 3 && ($r['json']['usage']['used'] ?? 0) === 10 && ($r['json']['usage']['packs'] ?? 0) === 2);
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: the pack is never overdrawn (cut to the two replies left), then it is empty', ($r['json']['ok'] ?? false) && count($r['json']['drafts']) === 2 && ($r['json']['usage']['packs'] ?? -1) === 0);
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: with the pack empty the request is refused', $r['status'] === 402);
+$pdo->exec("UPDATE reply_packs SET replies_left = 4, expires_at = '" . gmdate('Y-m-d H:i:s', time() - 3600) . "'");
+$r = $ps('AUR-PLAN-AAAA-0001'); check('Reply plans: an expired pack no longer counts', ($r['json']['usage']['packs'] ?? -1) === 0);
+$mkuser('rplan2', 'AUR-PLAN-BBBB-0002');
+$pdo->prepare('INSERT INTO subscriptions (id, user_id, provider, provider_sub_id, plan, status, current_period_end, launch_price, cancel_at_period_end, updated_at, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)')->execute(['sub1', 'rplan2', 'paypal', 'I-TEST', 'reply', 'active', gmdate('Y-m-d H:i:s', time() + 86400 * 20), 0, 0, gmdate('Y-m-d H:i:s'), gmdate('Y-m-d H:i:s')]);
+$r = $ps('AUR-PLAN-BBBB-0002'); check('Reply plans: a Reply subscription gives the monthly allowance (5 in these tests) and no trial', ($r['json']['plan'] ?? '') === 'subscription' && ($r['json']['usage']['limit'] ?? 0) === 5 && !isset($r['json']['usage']['dayLeft']));
+$pdo->exec("UPDATE subscriptions SET plan = 'reply_pro'"); $r = $ps('AUR-PLAN-BBBB-0002'); check('Reply plans: the bigger plan has the bigger allowance', ($r['json']['usage']['limit'] ?? 0) === 5000);
+$pdo->exec("UPDATE subscriptions SET status = 'canceled', current_period_end = '" . gmdate('Y-m-d H:i:s', time() - 86400) . "'"); $r = $ps('AUR-PLAN-BBBB-0002'); check('Reply plans: when a subscription has ended the person falls back to the trial/free plan', in_array($r['json']['plan'] ?? '', ['trial', 'free'], true));
+$r = call('POST', '/reply/admin', ['key' => 'AUR-MSTR-AAAA-1111', 'installId' => 'x']); check('Reply cost report: refused for a key that is not marked admin', $r['status'] === 403);
+$r = call('POST', '/reply/admin', ['key' => 'AUR-MSTR-ADMN-0000', 'installId' => 'x']); $mo = $r['json']['months'][0] ?? [];
+check('Reply cost report: shows replies, tokens, estimated dollars and the cost of one reply for the month', $r['status'] === 200 && ($mo['replies'] ?? 0) > 5 && ($mo['tokensIn'] ?? 0) > 0 && ($mo['costUsd'] ?? 0) > 0 && ($mo['costPerReplyUsd'] ?? 0) > 0 && isset($mo['byPlan']['trial']) && isset($mo['byPlan']['free']) && isset($mo['byModel']['claude-haiku-5-5']), $mo);
 
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);

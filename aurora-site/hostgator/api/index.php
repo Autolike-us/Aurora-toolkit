@@ -21,7 +21,7 @@ $path = '/' . trim((string) preg_replace('#^.*?/api/#', '', (string) parse_url($
 $path = rtrim($path, '/');
 
 if ($method === 'OPTIONS') {
-    if ($path === '/license/verify' || $path === '/reply/draft' || $path === '/reply/status') { header('Access-Control-Allow-Origin: *'); header('Access-Control-Allow-Methods: POST, OPTIONS'); header('Access-Control-Allow-Headers: Content-Type'); }
+    if ($path === '/license/verify' || $path === '/reply/draft' || $path === '/reply/status' || $path === '/reply/admin') { header('Access-Control-Allow-Origin: *'); header('Access-Control-Allow-Methods: POST, OPTIONS'); header('Access-Control-Allow-Headers: Content-Type'); }
     http_response_code(204);
     exit;
 }
@@ -33,7 +33,7 @@ $routes = [
     'GET /billing/providers' => 'route_providers', 'POST /checkout' => 'route_checkout', 'POST /billing/sync' => 'route_billing_sync', 'POST /billing/portal' => 'route_portal', 'POST /billing/cancel' => 'route_cancel',
     'POST /webhooks/stripe' => 'route_webhook_stripe', 'POST /webhooks/paypal' => 'route_webhook_paypal',
     'POST /license/verify' => 'route_license_verify', 'GET /download' => 'route_download',
-    'POST /reply/draft' => 'route_reply_draft', 'POST /reply/status' => 'route_reply_status',
+    'POST /reply/draft' => 'route_reply_draft', 'POST /reply/status' => 'route_reply_status', 'POST /reply/admin' => 'route_reply_admin',
 ];
 $handler = $routes["$method $path"] ?? null;
 if (!$handler) { http_response_code(404); echo json_encode(['ok' => false, 'error' => 'Not found.']); exit; }

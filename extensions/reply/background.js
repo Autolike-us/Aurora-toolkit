@@ -22,7 +22,7 @@ async function api(path, body) {
     let j = {}; try { j = await r.json(); } catch (_) {}
     if (j && j.usage) await set({ usage: j.usage, usageAt: Date.now() });
     if (r.ok && j.ok) return j;
-    return { ok: false, status: j.status || 'error', message: j.message || j.error || 'Something went wrong. Please try again.', usage: j.usage };
+    return { ok: false, status: j.status || 'error', message: j.message || j.error || 'Something went wrong. Please try again.', usage: j.usage, upgrade: j.upgrade || null };
   } catch (e) {
     return { ok: false, status: 'network', message: e && e.name === 'AbortError' ? 'That took too long. Please try again.' : 'Could not reach Aurora. Check your internet connection and try again.' };
   } finally { clearTimeout(timer); }

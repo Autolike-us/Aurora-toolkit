@@ -49,7 +49,13 @@
   const W = root.getElementById('w');
 
   /* ---------- rendering ---------- */
-  function usageText() { const u = S.usage; return u ? `${u.used} of ${u.limit} drafts used this month` : 'Drafts in your voice'; }
+  function usageText() {
+    const u = S.usage; if (!u) return 'Drafts in your voice';
+    if (!u.plan) return `${u.used} of ${u.limit} drafts used this month`;
+    const name = { trial: 'Free trial', free: 'Free plan', subscription: 'Subscription' }[u.plan] || '';
+    const left = u.plan === 'trial' ? `${u.dayLeft} left today` : `${u.used} of ${u.limit} replies used`;
+    return `${name} · ${left}${u.packs ? ` · +${u.packs} pack` : ''}`;
+  }
   function render() {
     const n = S.comments.length;
     if (!S.open) { host.style.display = ''; W.innerHTML = `<button class="pill" id="open"><i>✦</i>Reply${n ? ` <b>${n}</b>` : ''}</button>`; return; }
@@ -78,7 +84,7 @@
       body += `<input class="h" id="hint" maxlength="200" placeholder="Optional: what should the reply say? e.g. thank them and mention Saturday" value="${esc(S.hint)}"><div class="row"><span>Replies:</span><div class="chips">${[1, 2, 3].map((k) => `<button class="chip ${nReplies() === k ? 'on' : ''}" data-count="${k}">${k}</button>`).join('')}</div><span class="note">uses ${nReplies()} draft${nReplies() > 1 ? 's' : ''}</span></div><div class="row"><label><input type="checkbox" id="best" ${S.quality ? 'checked' : ''}> Best quality (slower)</label></div>`;
       if (S.loading) body += `<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="note">Writing ${nReplies() === 1 ? 'a reply' : nReplies() + ' replies'} in your voice…</div>`;
       else {
-        if (S.error) body += `<div class="err">${esc(S.error.message)}${S.error.status === 'no_key' || S.error.status === 'invalid' || S.error.status === 'wrong_plan' ? ' <a class="l" id="optKey">Open settings</a>' : ''}</div>`;
+        if (S.error) body += `<div class="err">${esc(S.error.message)}${S.error.status === 'no_key' || S.error.status === 'invalid' || S.error.status === 'wrong_plan' ? ' <a class="l" id="optKey">Open settings</a>' : ''}${S.error.upgrade ? ' <a class="l" id="upgrade">Get more replies ↗</a>' : ''}</div>`;
         if (S.flag !== 'none') body += `<div class="warn"><b>${{ spam: 'This looks like spam.', abusive: 'This looks abusive.', sensitive: 'This one may need you personally.' }[S.flag]}</b> ${esc(S.note)}</div>`;
         body += S.drafts.map((d, i) => `<div class="d"><textarea class="dt" data-t="${i}" rows="2">${esc(d)}</textarea><div class="bar"><button class="b p" data-use="${i}">Use this reply</button><button class="b" data-copy="${i}">Copy</button><button class="b" data-save="${i}" title="Add to the examples of how you write">＋ My style</button></div></div>`).join('');
         if (S.quick.length) body += `<div class="note">⚡ Your quick replies</div><div class="chips">${S.quick.slice(0, 8).map((q, i) => `<button class="chip" data-quick="${i}" title="${esc(q.text)}">${esc(q.title)}</button>`).join('')}</div>`;
@@ -125,7 +131,7 @@
     const r = await ask('draft', { platform: A.platformId(), tone: S.tone || undefined, quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: { text: c.text, author: c.author }, post, count: nReplies() });
     S.loading = false;
     if (r.usage) S.usage = r.usage;
-    if (r.ok) { S.hid = r.historyId || ''; S.qmark = {}; S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status };
+    if (r.ok) { S.hid = r.historyId || ''; S.qmark = {}; S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status, upgrade: r.upgrade || '' };
     render();
   }
   function logUse(action, text, i) { if (S.hid) ask('histUpdate', { id: S.hid, action, chosen: text, quick: !!S.qmark[i] }); }
@@ -166,6 +172,7 @@
     else if (t.id === 'pick') pickOn();
     else if (t.id === 'back') { S.view = 'list'; S.queue = null; S.error = null; render(); }
     else if (t.id === 'again') draft(S.sel);
+    else if (t.id === 'upgrade') window.open((S.error && S.error.upgrade) || 'https://getaurorastudios.com/reply/', '_blank', 'noopener');
     else if (t.id === 'report') report();
     else if (t.id === 'repTg') reportVia('tg');
     else if (t.id === 'repMail') reportVia('mail');
