@@ -334,3 +334,11 @@ html[data-theme="dark"] input:focus,html[data-theme="dark"] button:focus-visible
 .replybanner .txt{flex:1;min-width:260px}.replybanner h2{font-size:34px;margin:0 0 6px;color:#fff}.replybanner p{color:#e7dccd;margin:0;max-width:640px}.replybanner .act{display:grid;gap:12px;justify-items:start}.replybanner .linkarrow{color:#fbbf24}.replybanner img{border-radius:20px}
 .nav nav .newtag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1a1209;background:linear-gradient(110deg,#f97316,#fbbf24);border-radius:99px;padding:2px 8px;margin-left:5px;vertical-align:middle}
 @media (max-width:900px){.rgrid,.rdash,.rcallout{grid-template-columns:1fr}}
+
+/* nav: one tidy line */
+.nav .wrap{gap:20px}
+.nav nav{gap:22px;margin-left:8px;white-space:nowrap}.nav nav a{white-space:nowrap;display:inline-flex;align-items:center;gap:2px}
+.nav .right{white-space:nowrap;gap:16px;flex:none}.nav .right .btn,.nav .right .link{white-space:nowrap}
+.nav nav .freetag,.nav nav .newtag{margin-left:6px}
+@media(max-width:1180px){.nav nav{gap:16px;font-size:13.5px}.nav .hide-md{display:none!important}}
+@media(max-width:1000px){.nav nav a.hide-lg{display:none!important}}
