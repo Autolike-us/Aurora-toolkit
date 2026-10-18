@@ -1,0 +1,46 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aurora Reply — settings</title><link rel="stylesheet" href="ui.css"></head>
+<body><div class="wrap">
+  <div class="top"><img src="icons/icon128.png" alt=""><div><h1>Aurora <span class="g">Reply</span></h1></div></div>
+  <p class="lead">Drafts replies to your comments in <b>your</b> voice. You read, edit and send every reply yourself — nothing is ever posted for you.</p>
+
+  <section class="card" id="licenseCard">
+    <h2>1 · Your Aurora Reply key</h2><p class="sub">Paste the key from your Aurora account page (it looks like AUR-XXXX-XXXX-XXXX).</p>
+    <div class="row"><input type="text" id="key" placeholder="AUR-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="flex:3 1 260px"><button class="btn p" id="check" style="flex:1 1 120px">Save &amp; check</button></div>
+    <div id="keyStatus" class="note" style="margin-top:10px"></div>
+    <p class="note" style="margin:10px 0 0">No key yet? Aurora Reply is in early access — email <b>support@getaurorastudios.com</b> and we will set you up.</p>
+    <div id="meter" hidden><div class="meter"><i id="meterBar"></i></div><div class="note" id="meterText"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="row" style="justify-content:space-between"><div><h2>2 · Your voice</h2><p class="sub" style="margin:0">The more it knows about you, the more the replies sound like you. Saved automatically.</p></div><span class="saved" id="saved">Saved ✓</span></div>
+    <label class="f">Your name or brand <small>(optional)</small></label><input type="text" id="name" maxlength="80" placeholder="e.g. Sunrise Bakery">
+    <label class="f">Past replies you liked <small>(one per line, up to 20 — paste real replies you wrote)</small></label>
+    <textarea id="samples" placeholder="Thank you Sam! See you Saturday 🥖&#10;Great question — we're open until 3pm!"></textarea><div class="note" id="sampleCount"></div>
+    <label class="f">About you &amp; facts it may use <small>(hours, prices, delivery, links — it will never invent anything beyond this)</small></label>
+    <textarea id="about" maxlength="1500" placeholder="Open Tue–Sun 7am–3pm. Delivery Tue–Sat only. Order at example.com/order"></textarea>
+    <label class="f">Tone</label><div class="chips" id="tones"></div>
+    <div class="row">
+      <div><label class="f">Emoji</label><select id="emoji"><option value="none">None</option><option value="few">A few</option><option value="some">Some</option></select></div>
+      <div><label class="f">Length</label><select id="length"><option value="short">Short (1–2 sentences)</option><option value="medium">Medium (up to 3 sentences)</option></select></div>
+      <div><label class="f">Language</label><input type="text" id="language" maxlength="40" placeholder="auto (same as the comment)"></div>
+    </div>
+    <label class="f">Never say or do <small>(optional)</small></label><textarea id="avoid" maxlength="400" style="min-height:60px" placeholder="e.g. never promise a discount; never use slang"></textarea>
+  </section>
+
+  <section class="card">
+    <h2>3 · Try it</h2><p class="sub">Paste any comment to see what it would draft. This counts as one draft.</p>
+    <textarea id="tryText" style="min-height:70px" placeholder="e.g. Do you deliver on Sundays?"></textarea>
+    <div class="row" style="margin-top:12px"><button class="btn p" id="try" style="flex:0 0 auto">✦ Draft 3 replies</button><span class="note" id="tryNote" style="flex:1 1 200px"></span></div>
+    <div id="tryOut"></div>
+  </section>
+
+  <section class="card priv">
+    <h2>Your privacy</h2>
+    <ul class="note">
+      <li><b>You stay in control.</b> Aurora Reply only reads a comment when you ask for a draft, and it never presses Send.</li>
+      <li><b>What is sent:</b> the comment you chose, the post's caption, and your voice settings above go to Aurora's server, which asks an AI service (Anthropic) to write the drafts. Nothing else on the page is read.</li>
+      <li><b>What is kept:</b> your voice settings stay in this browser. Our server keeps only a count of drafts for your key — not the comments or the replies.</li>
+      <li><b>Please:</b> don't use it on private messages. It is built for public comments. Replies are suggestions — check them before you send, and follow each platform's rules.</li>
+    </ul>
+  </section>
+</div><script src="options.js"></script></body></html>
