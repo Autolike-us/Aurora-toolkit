@@ -17,7 +17,7 @@ export default function Download() {
       <article className="freebanner" style={{ marginTop: 30 }}>
         <ExtractIcon size={72} />
         <div className="txt"><span className="eyebrow" style={{ marginBottom: 6 }}><span className="freetag">Free</span> No account needed</span><h3 style={{ fontSize: 26 }}>Aurora Extract</h3><p>The free 3-in-1 data extractor for Facebook, Instagram and TikTok — now with a built-in profile health check. Same install steps below.</p></div>
-        <div className="act"><a className="btn primary" href={EXTRACT.zip} download>Download free · v{EXTRACT.version}</a><Link className="linkarrow" href="/extract">Details ↗</Link></div>
+        <div className="act"><a className="btn primary" href={EXTRACT.store} target="_blank" rel="noopener noreferrer">Add to Chrome — free ↗</a><a className="btn" href={EXTRACT.zip} download>Download zip · v{EXTRACT.version}</a><Link className="linkarrow" href="/extract">Details ↗</Link></div>
       </article>
 
       <div className="products" style={{ marginTop: 34 }}>

@@ -57,7 +57,7 @@ export default function Home() {
             <p>{EXTRACT.tagline} One extension for all three platforms — profiles, groups, Marketplace, posts, comments, followers and more. Export to CSV, Excel or JSON. Now with a free profile health check.</p>
           </div>
           <div className="act">
-            <a className="btn primary lg" href={EXTRACT.zip} download>Download free <span className="arrow">↓</span></a>
+            <a className="btn primary lg" href={EXTRACT.store} target="_blank" rel="noopener noreferrer">Add to Chrome — free <span className="arrow">↗</span></a>
             <Link className="linkarrow" href="/extract">See what it collects ↗</Link>
           </div>
         </div>

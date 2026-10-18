@@ -56,6 +56,8 @@ export const EXTRACT = {
   name: 'Aurora Extract',
   version: '0.4.0',
   zip: '/downloads/aurora-extract-latest.zip',
+  /** The live Chrome Web Store listing. */
+  store: 'https://chromewebstore.google.com/detail/aurora-extract-%E2%80%94-facebook/fdccaoajonfafbjjjoaobjohdgcflefb',
   tagline: 'Collect public data from Facebook, Instagram and TikTok — and download the photos and videos — into a clean spreadsheet.',
   platforms: [
     { id: 'facebook' as const, items: ['Pages & profiles with public email, phone and website', 'Group members and group info', 'Group, page and profile posts with photos and videos', 'Comments, people who commented, people who reacted', 'Friends, followers and following lists', 'Marketplace listings, prices, sellers and photos'] },

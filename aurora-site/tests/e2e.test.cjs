@@ -56,6 +56,7 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     const TG = 'https://t.me/+GqmNSvnMJxhhMzJh';
     await page.goto(site + '/extract/');
     check('the Aurora Extract page presents the free extension with a direct download link', /Aurora\s*Extract/.test(await page.textContent('h1')) && (await page.getAttribute('a[download]', 'href')) === '/downloads/aurora-extract-latest.zip' && /Free/.test(await page.textContent('.freetag')));
+    check('the Extract page leads with "Add to Chrome" pointing to the live Chrome Web Store listing, with the zip as a backup', (await page.locator('a.btn.primary.lg[href^="https://chromewebstore.google.com/detail/aurora-extract"]').count()) === 1 && /fdccaoajonfafbjjjoaobjohdgcflefb/.test(await page.getAttribute('a.btn.primary.lg', 'href')) && !/planned/i.test(await page.textContent('#install')));
     const zres = await page.request.get(site + '/downloads/aurora-extract-latest.zip');
     const buf = await zres.body();
     check('the download is a real zip containing the extension manifest', zres.ok() && buf.slice(0, 2).toString() === 'PK' && buf.includes(Buffer.from('manifest.json')));
@@ -64,7 +65,7 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     check('the extract FAQ explains the Health check and says it uses no AI service', /Health check/.test(await page.textContent('main')) && /no AI service/.test(await page.textContent('main')));
     check('the extract page lists all three platforms and the export formats', (await page.locator('.xcard').count()) === 3 && /Excel/.test(await page.textContent('.xexports')));
     await page.goto(site + '/');
-    check('the home page features the free extension with a download button', (await page.locator('#free a[download]').count()) === 1 && /Aurora Extract/.test(await page.textContent('#free')));
+    check('the home page features the free extension with an Add to Chrome button for the live store listing', (await page.locator('#free a[href^="https://chromewebstore.google.com/detail/aurora-extract"]').count()) === 1 && /Aurora Extract/.test(await page.textContent('#free')));
     check('the nav links to the free extractor', await page.locator('header.nav a[href="/extract/"]').count() === 1);
     check('the footer links to the Telegram channel, support page and extractor', (await page.locator(`footer.site a[href="${TG}"]`).count()) === 1 && (await page.locator('footer.site a[href="/support/"]').count()) === 1 && (await page.locator('footer.site a[href="/extract/"]').count()) === 1);
     await page.goto(site + '/support/');

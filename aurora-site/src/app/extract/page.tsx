@@ -20,7 +20,7 @@ const FAQ_X = [
   { q: 'What is the Health check?', a: 'Aurora Audit is built into Aurora Extract. Open a profile or page, choose Health check, and it reads the bio, link and contact details plus the latest 10, 20 or 30 posts. You get a 0–100 score with a grade, a breakdown of five areas and a short list of the fixes that would raise your score most. You can copy the summary or export it to CSV, Excel or JSON.' },
   { q: 'Does the Health check use AI or send my profile anywhere?', a: 'No. The score is calculated on your own computer with simple, transparent rules — nothing is uploaded and there is no AI service involved. The benchmarks (for example how often to post) are rough guide values, not rules, and every niche is different.' },
   { q: 'Will it get my account in trouble?', a: 'Platforms restrict automated activity. Aurora Extract reads pages at a human pace (Gentle, Normal or Fast — Gentle is the kindest) and stops on warnings, but no tool can promise your account will never be limited. Read our platform disclaimer and use it responsibly.' },
-  { q: 'How do I install it?', a: 'Download the zip, unzip it into a folder you keep, open chrome://extensions, switch on Developer mode, press Load unpacked and pick the folder. It takes about a minute. A Chrome Web Store listing is planned.' },
+  { q: 'How do I install it?', a: 'The easiest way is the Chrome Web Store: open the listing, press Add to Chrome and pin the sparkle icon. Prefer to install it yourself? Download the zip, unzip it into a folder you keep, open chrome://extensions, switch on Developer mode, press Load unpacked and pick the folder. Both give you the same extension.' },
   { q: 'Something did not extract correctly. What now?', a: 'Press “Copy debug report” inside the extension and post it in our Telegram channel (or email it). Facebook, Instagram and TikTok change their pages often and these reports are how we keep up.' },
 ];
 
@@ -33,8 +33,9 @@ export default function ExtractPage() {
         <h1>Aurora <em>Extract</em></h1>
         <p className="lead">{EXTRACT.tagline} One extension, three platforms — pick one, open a page, press start. <a href="#health" style={{ textDecoration: 'underline' }}>New: a free profile health check.</a></p>
         <div className="cta">
-          <a className="btn primary lg" href={EXTRACT.zip} download>Download free · v{EXTRACT.version} <span className="arrow">↓</span></a>
-          <a className="demo" href="#install"><span className="play">▶</span>How to install</a>
+          <a className="btn primary lg" href={EXTRACT.store} target="_blank" rel="noopener noreferrer">Add to Chrome — it’s free <span className="arrow">↗</span></a>
+          <a className="btn lg" href={EXTRACT.zip} download>Download zip · v{EXTRACT.version} <span className="arrow">↓</span></a>
+          <a className="demo" href="#install"><span className="play">▶</span>Install options</a>
         </div>
         <p className="fine">Chrome and Chromium browsers (Edge, Brave) on desktop · No account needed · Your data never leaves your computer</p>
       </div></section>
@@ -90,11 +91,12 @@ export default function ExtractPage() {
       <section className="block" id="install" style={{ paddingTop: 10 }}><div className="wrap">
         <h2 style={{ fontSize: 32, marginBottom: 18 }}>Install in about a minute</h2>
         <div className="dlsteps">
-          <div className="step-card"><h3>Download &amp; unzip</h3><p className="muted" style={{ marginTop: 8 }}>Press <b>Download free</b> and unzip the file into a folder you will keep.</p></div>
-          <div className="step-card"><h3>Load it in Chrome</h3><p className="muted" style={{ marginTop: 8 }}>Open <code>chrome://extensions</code>, switch on <b>Developer mode</b>, press <b>Load unpacked</b> and pick the folder.</p></div>
-          <div className="step-card"><h3>Pin &amp; go</h3><p className="muted" style={{ marginTop: 8 }}>Pin the sparkle icon, open Facebook, Instagram or TikTok, and click it.</p></div>
+          <div className="step-card"><h3>Add it from the Chrome Web Store</h3><p className="muted" style={{ marginTop: 8 }}>Press <b>Add to Chrome</b> on the listing and confirm. Chrome keeps it up to date for you.</p><p style={{ marginTop: 12 }}><a className="btn primary" href={EXTRACT.store} target="_blank" rel="noopener noreferrer">Add to Chrome <span className="arrow">↗</span></a></p></div>
+          <div className="step-card"><h3>Pin the sparkle icon</h3><p className="muted" style={{ marginTop: 8 }}>Click the puzzle icon in Chrome and pin <b>Aurora Extract</b> so it is always one click away.</p></div>
+          <div className="step-card"><h3>Open a page &amp; go</h3><p className="muted" style={{ marginTop: 8 }}>Open Facebook, Instagram or TikTok, click the sparkle, and pick what to collect.</p></div>
         </div>
-        <p className="note" style={{ marginTop: 22 }}>Updating? Download the new zip, replace the folder’s files and press the reload icon on <code>chrome://extensions</code>.</p>
+        <details className="faq" style={{ marginTop: 22 }}><summary style={{ cursor: 'pointer', fontWeight: 700 }}>Prefer to install it yourself? Use the zip</summary>
+          <p className="muted" style={{ marginTop: 10 }}>Press <a href={EXTRACT.zip} download style={{ textDecoration: 'underline' }}>Download zip</a>, unzip it into a folder you will keep, open <code>chrome://extensions</code>, switch on <b>Developer mode</b>, press <b>Load unpacked</b> and pick the folder. To update, download the new zip, replace the folder’s files and press the reload icon.</p></details>
       </div></section>
 
       <section className="block" style={{ paddingTop: 10 }}><div className="wrap">
