@@ -26,7 +26,7 @@ const ok = (m) => console.log('PASS ' + m); const need = (c, m) => { if (!c) { c
   await sw.evaluate((p) => chrome.storage.local.set({ apiBase: 'http://127.0.0.1:' + p + '/api' }), srv.address().port);
   await ctx.route('https://www.instagram.com/**', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: IG }));
 
-  const opts = await ctx.newPage(); await opts.goto(`chrome-extension://${id}/options.html#voice`);
+  const opts = await ctx.newPage(); await opts.goto(`chrome-extension://${id}/options.html#voice`); await opts.waitForSelector('[data-tour=skip]', { timeout: 8000 }); await opts.click('[data-tour=skip]');
   await opts.waitForFunction(() => /Add your key/.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
   need(/Add your key/.test(await opts.textContent('#keyStatus')), 'settings page opens');
   await opts.fill('#samples', 'Thank you Sam! See you Saturday 🥖\nGreat question — we are open until 3pm!'); await opts.fill('#about', 'Loaf £4. Open Tue–Sun.'); await opts.click('#tones [data-t="warm"]');

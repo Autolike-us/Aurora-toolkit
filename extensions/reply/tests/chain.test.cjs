@@ -23,7 +23,7 @@ const cleanup = () => pids.forEach((p) => { try { process.kill(p, 'SIGTERM'); } 
   await sw.evaluate((p) => chrome.storage.local.set({ apiBase: 'http://127.0.0.1:' + p + '/api' }), aport);
   await ctx.route('https://www.instagram.com/**', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: IG }));
 
-  const opts = await ctx.newPage(); await opts.goto(`chrome-extension://${id}/options.html`);
+  const opts = await ctx.newPage(); await opts.goto(`chrome-extension://${id}/options.html`); await opts.waitForSelector('[data-tour=skip]', { timeout: 8000 }); await opts.click('[data-tour=skip]');
   await opts.click('.nav[data-view=settings]'); await opts.fill('#key', 'AUR-CHAI-NTST-0001'); await opts.click('.nav[data-view=voice]'); await opts.fill('#samples', 'Thank you Sam! See you Saturday 🥖'); await opts.fill('#about', 'Loaf £4. Open Tue–Sun.'); await opts.waitForTimeout(700);
   await opts.click('.nav[data-view=settings]'); await opts.click('#check'); await opts.waitForFunction(() => /accepted/i.test(document.querySelector('#keyStatus').textContent), null, { timeout: 8000 });
   need(/0 of 2/.test(await opts.textContent('#meterText')), 'the real PHP server accepts the key (CORS and payload fine) and reports 0 of 2 drafts used');
