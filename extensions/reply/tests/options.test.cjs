@@ -12,17 +12,17 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
 
   const b = await launch(); const ctx = await b.newContext({ viewport: { width: 1000, height: 1100 } }); const pg = await ctx.newPage(); pg.on('pageerror', (e) => { throw e; });
   const stub = () => {
-    const store = {}; window.__store = store; window.__msgs = [];
+    const store = { prefs: { onboarded: true, seen: '0.3.0', theme: 'light', history: true } }; window.__store = store; window.__msgs = [];
     window.chrome = {
       storage: { local: { get: async (k) => { const o = {}; [].concat(k).forEach((x) => { if (x in store) o[x] = store[x]; }); return o; }, set: async (o) => Object.assign(store, o) } },
-      runtime: { openOptionsPage: () => { window.__msgs.push('opts'); }, sendMessage: (m, cb) => { window.__msgs.push(m); setTimeout(() => {
+      runtime: { getManifest: () => ({ version: '0.3.0' }), openOptionsPage: () => { window.__msgs.push('opts'); }, sendMessage: (m, cb) => { window.__msgs.push(m); setTimeout(() => {
         if (m.type === 'status') cb(store.licenseKey === 'AUR-GOOD-GOOD-GOOD' ? { ok: true, status: 'active', usage: { used: 12, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } } : { ok: false, message: 'License key not found. Check it on your Aurora account page.' });
         else if (m.type === 'draft') cb({ ok: true, drafts: [{ text: 'Sundays are pick-up only 🥖' }, { text: 'Tue–Sat we deliver!' }, { text: 'DM us your address.' }], flag: 'none', note: '', usage: { used: 13, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } });
         else if (m.type === 'getState') cb({ ok: true, hasKey: !!store.licenseKey, voiceReady: !!(store.voice && store.voice.samples && store.voice.samples.length), usage: store.usage || null });
         else cb({ ok: true }); }, 20); } },
     };
   };
-  const page = async (file, html = true) => { await pg.route('**/*', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: read(file).replace(/<link rel="stylesheet" href="ui.css">/, '<style>' + read('ui.css') + '</style>').replace(/<script src="[^"]*"><\/script>/, '').replace(/<img src="icons\/[^"]*"[^>]*>/g, '') })); await pg.goto('https://x.test/' + file); await pg.evaluate(stub); await pg.addScriptTag({ content: read(file.replace('.html', '.js')) }); await pg.waitForTimeout(200); };
+  const page = async (file, html = true) => { await pg.route('**/*', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: read(file).replace(/<link rel="stylesheet" href="ui.css">/, '<style>' + read('ui.css') + '</style>').replace(/<script src="[^"]*"><\/script>/g, '').replace(/<img src="icons\/[^"]*"[^>]*>/g, '') })); await pg.goto('https://x.test/' + file); await pg.evaluate(stub); if (file === 'options.html') await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read(file.replace('.html', '.js')) }); await pg.waitForTimeout(200); };
   await page('options.html');
   const nav = async (v) => { await pg.click(`.nav[data-view=${v}]`); await pg.waitForTimeout(60); };
   await nav('settings');
@@ -55,7 +55,7 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
     { id: 'b', ts: Date.now() - 2 * 86400e3, platform: 'facebook', author: 'Tom B', comment: 'How much for a loaf?', drafts: ['$4 a loaf', '$4!', 'About $4'], chosen: '$4 a loaf', action: 'copied' },
     { id: 'c', ts: Date.now() - 5 * 86400e3, platform: 'tiktok', author: 'chef_ann', comment: 'Recipe please', drafts: ['It is in my bio!', 'Check my bio', 'Link in bio'], chosen: '', action: 'drafted' } ];
     window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; window.__store.usage = { used: 13, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' }; window.__store.voice = { name: 'Sunrise Bakery', samples: ['Thanks!'] }; });
-  await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
+  await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
   check('overview: stats come from history (2 replies used, 100% edited) and the setup card is done', (await pg.textContent('#stIns')) === '2' && (await pg.textContent('#stEdit')) === '100%' && (await pg.isHidden('#setupCard')));
   check('overview: activity chart has 14 bars and platform split lists 3 platforms', (await pg.locator('#bars i').count()) === 14 && (await pg.locator('#split .hbar').count()) === 3 && (await pg.locator('#recent .h').count()) === 3);
   check('overview: shows the three supported platforms and that DMs are not supported', (await pg.locator('#plats .plat').count()) === 3 && /private messages/.test(await pg.textContent('#view-overview')));
@@ -75,7 +75,7 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   await pg.click('#hfav'); await pg.locator('#hlist .h').nth(2).locator('[data-act=quick]').click(); await pg.waitForTimeout(80);
   check('history: "Save as quick reply" adds it to Quick replies', (await pg.evaluate(() => (window.__store.quick || []).length)) === 1);
   await pg.screenshot({ path: path.join(OUT, 'history.png'), fullPage: true });
-  await pg.once('dialog', (d) => d.accept()); await pg.locator('#hlist .h').nth(1).locator('[data-act=del]').click(); await pg.waitForTimeout(80);
+  await pg.locator('#hlist .h').nth(1).locator('[data-act=del]').click(); await pg.waitForTimeout(80);
   check('history: delete removes one entry', (await pg.evaluate(() => window.__store.history.length)) === 2);
   await nav('quick');
   await pg.click('#qstarters [data-starter="1"]'); await pg.click('#qadd'); await pg.waitForTimeout(80);
@@ -88,6 +88,42 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   await pg.screenshot({ path: path.join(OUT, 'settings-dark.png'), fullPage: true });
   await pg.click('#theme [data-th=light]');
   check('settings: no sideways scrolling on a narrow window', await (async () => { await pg.setViewportSize({ width: 380, height: 900 }); return pg.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1); })());
+
+
+  // ---- v0.3: profiles, tour, what's new, help
+  await nav('voice');
+  check('profiles: starts with one profile ("Main") and cannot delete the last one', (await pg.locator('#profile option').count()) === 1 && (await pg.isDisabled('#pdel')));
+  await pg.fill('#name', 'Sunrise Bakery'); await pg.waitForTimeout(700);
+  pg.once('dialog', (d) => d.accept('Harbor Coffee')); await pg.click('#pnew'); await pg.waitForTimeout(300);
+  check('profiles: a new profile starts with an empty voice and becomes active', (await pg.locator('#profile option').count()) === 2 && (await pg.inputValue('#name')) === '' && /Harbor Coffee/.test(await pg.textContent('#profile')));
+  await pg.fill('#name', 'Harbor Coffee Co.'); await pg.waitForTimeout(700);
+  await pg.selectOption('#profile', { label: 'Main' }); await pg.waitForTimeout(300);
+  check('profiles: switching brings back the other voice, and the live voice follows', (await pg.inputValue('#name')) === 'Sunrise Bakery' && (await pg.evaluate(() => window.__store.voice.name)) === 'Sunrise Bakery');
+  await pg.selectOption('#profile', { label: 'Harbor Coffee' }); await pg.waitForTimeout(300);
+  check('profiles: the other profile kept what was typed', (await pg.inputValue('#name')) === 'Harbor Coffee Co.');
+  pg.once('dialog', (d) => d.accept()); await pg.click('#pdel'); await pg.waitForTimeout(300);
+  check('profiles: deleting returns to the remaining profile', (await pg.locator('#profile option').count()) === 1 && (await pg.inputValue('#name')) === 'Sunrise Bakery');
+  await nav('help');
+  check('help: shortcuts, FAQ and contact are there, with a mail link to support', /Alt/.test(await pg.textContent('#view-help')) && (await pg.getAttribute('#mailBtn', 'href')).startsWith('mailto:support@getaurorastudios.com') && (await pg.locator('.faq details').count()) >= 3);
+  await pg.evaluate(() => { window.__store.prefs = { onboarded: true, seen: '0.2.2', theme: 'light', history: true }; });
+  await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.prefs = { onboarded: true, seen: '0.2.2', theme: 'light', history: true }; });
+  await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
+  await nav('overview');
+  check("what's new: shown once after an update, and goes away when dismissed", !(await pg.isHidden('#whatsNew')) && /0\.3\.0/.test(await pg.textContent('#whatsNew')) && await (async () => { await pg.click('#wnDismiss'); await pg.waitForTimeout(100); return (await pg.isHidden('#whatsNew')) && (await pg.evaluate(() => window.__store.prefs.seen)) === '0.3.0'; })());
+  await pg.evaluate(() => { window.__store.prefs = {}; });
+  await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.prefs = {}; });
+  await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
+  check('tour: a brand-new install opens the welcome tour', !(await pg.isHidden('#tour')) && /Welcome/.test(await pg.textContent('#tour')));
+  await pg.screenshot({ path: path.join(OUT, 'tour1.png') });
+  await pg.click('[data-tour=next]'); await pg.waitForTimeout(80);
+  check('tour: step 2 shows where the ✦ Reply button appears', /bottom-right/.test(await pg.textContent('#tour')) && (await pg.locator('.mockpill').count()) === 1);
+  await pg.screenshot({ path: path.join(OUT, 'tour2.png') });
+  await pg.click('[data-tour=next]'); await pg.click('[data-tour=next]'); await pg.waitForTimeout(80);
+  check('tour: the last step says the person presses Send', /You press Send/.test(await pg.textContent('#tour')));
+  await pg.click('[data-tour=done]'); await pg.waitForTimeout(100);
+  check('tour: finishing closes it and it does not come back', (await pg.isHidden('#tour')) && (await pg.evaluate(() => window.__store.prefs.onboarded)) === true);
+  const hi = await pg.evaluate(() => { const orig = Date.prototype.getHours; const out = []; for (const h of [8, 14, 20]) { Date.prototype.getHours = () => h; renderOverview(); out.push(document.getElementById('hello').textContent); } Date.prototype.getHours = orig; return out; });
+  check('the greeting follows the time of day: morning, afternoon, evening', /morning/.test(hi[0]) && /afternoon/.test(hi[1]) && /evening/.test(hi[2]), JSON.stringify(hi));
 
   await pg.unroute('**/*'); await pg.setViewportSize({ width: 340, height: 420 });
   await page('popup.html');

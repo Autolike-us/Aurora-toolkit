@@ -10,6 +10,8 @@ const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Pro
 const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tiktok: ['TikTok', 'tt'], test: ['Try it', 'test'] };
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
 const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
+const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
+const CHANGELOG = [{ v: '0.3.0', title: 'Reply to all unanswered comments, more languages, voice profiles', items: ['Reply to unanswered comments one by one — you approve each reply and press Send yourself', 'Finds comments in French, Spanish, German, Portuguese, Japanese and many more languages', 'Voice profiles for people who run several brands', 'Keyboard shortcuts (Alt+R, Alt+1/2/3, Alt+G, Alt+N)', 'A quick tour, and a “Report a problem” button when comments can’t be found']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -166,7 +168,37 @@ async function checkKey() {
   renderOverview();
 }
 
-function renderAll() { renderOverview(); renderHistory(); renderQuick(); }
+
+/* ---------- tour ---------- */
+const TOUR = [
+  { t: 'Welcome to Aurora Reply ✦', d: 'It writes replies to your comments in your own voice. You stay in charge: you read, edit and send every reply yourself.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">💬✨</div>' },
+  { t: 'Open a post, then look bottom-right', d: 'On any Facebook, Instagram or TikTok post with comments, a black <b>✦ Reply</b> button appears in the corner of the page. Click it — or press <kbd>Alt</kbd>+<kbd>R</kbd>.', art: '<div class="mockpage"><div class="cm"><b></b><div style="flex:1"><i style="width:40%"></i><i style="width:85%"></i></div></div><div class="cm"><b style="background:#fb923c"></b><div style="flex:1"><i style="width:32%"></i><i style="width:70%"></i></div></div><div class="mockpill"><u>✦</u>Reply <em>2</em></div></div>' },
+  { t: 'Pick a comment, pick a draft', d: 'Press <b>Draft a reply</b> next to a comment and get three options in your voice. Edit the one you like, then <b>Use this reply</b> — it lands in that comment’s reply box.', art: '<div class="mockpanel"><div class="h">✦ Aurora Reply</div><div class="x"><div class="d">Do you deliver on Sundays?</div><div class="d s">Sundays are pick-up only 🥖</div><div class="u">Use this reply</div></div></div>' },
+  { t: 'You press Send', d: 'Aurora never posts anything. Read it, change what you like, and press Send yourself. Got many comments? Try <b>Reply to unanswered comments</b> and approve them one by one.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">✅</div>' },
+];
+let tourI = 0;
+function showTour(i) {
+  tourI = i; const t = TOUR[i], last = i === TOUR.length - 1;
+  const m = $('#tour'); m.hidden = false;
+  m.innerHTML = `<div class="tour"><div class="art">${t.art}</div><div class="body"><h2>${t.t}</h2><p>${t.d}</p></div><div class="foot"><div class="dots">${TOUR.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div>${i ? '<button class="btn" data-tour="back">Back</button>' : '<button class="btn" data-tour="skip">Skip</button>'}<button class="btn p" data-tour="${last ? 'done' : 'next'}">${last ? 'Got it ✓' : 'Next'}</button></div></div>`;
+}
+async function endTour() { $('#tour').hidden = true; S.prefs.onboarded = true; S.prefs.seen = VERSION; await set({ prefs: S.prefs }); renderOverview(); }
+function renderWhatsNew() {
+  const el = $('#whatsNew'), c = CHANGELOG[0];
+  const show = !!VERSION && S.prefs.onboarded && S.prefs.seen !== VERSION && c;
+  el.hidden = !show; if (!show) return;
+  el.innerHTML = `<div style="font-size:26px">🎉</div><div class="grow"><b>What’s new in Aurora Reply ${esc(VERSION)} — ${esc(c.title)}</b><ul>${c.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div><button class="btn sm" id="wnDismiss">Got it</button>`;
+}
+
+/* ---------- voice profiles ---------- */
+async function renderProfiles() {
+  const l = await AuroraProfiles.list();
+  $('#profile').innerHTML = l.items.map((p) => `<option value="${esc(p.id)}" ${p.id === l.active ? 'selected' : ''}>${esc(p.label)}</option>`).join('');
+  $('#pdel').disabled = l.items.length < 2; S.profiles = l;
+}
+async function afterProfileChange() { S.voice = await get('voice', {}); fillVoice(); await renderProfiles(); renderOverview(); }
+
+function renderAll() { renderOverview(); renderHistory(); renderQuick(); renderWhatsNew(); }
 async function load() {
   S.voice = await get('voice', {}); S.history = await get('history', []); S.quick = await get('quick', []); S.prefs = { theme: 'light', history: true, ...(await get('prefs', {})) };
   S.usage = await get('usage', null); const key = await get('licenseKey', ''); S.hasKey = !!key; return key;
@@ -176,11 +208,26 @@ async function load() {
   const key = await load();
   $('#key').value = key; fillVoice(); applyPrefs(); renderAll(); meter(S.usage);
   if (key) status('warn', 'Saved — press “Save & check” to verify'); else status('warn', 'Add your key to start');
+  await renderProfiles();
   go(location.hash.slice(1) || 'overview');
+  if (!S.prefs.onboarded && !S.hasKey && !S.history.length) showTour(0); else if (!S.prefs.onboarded) { S.prefs.onboarded = true; S.prefs.seen = VERSION; await set({ prefs: S.prefs }); }
+  setInterval(renderOverview, 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) renderOverview(); });
 
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     const n = e.target.closest('[data-view], [data-go]'); if (n) { go(n.dataset.view || n.dataset.go); return; }
+    const tb = e.target.closest('[data-tour]');
+    if (tb) { const a = tb.dataset.tour; if (a === 'next') showTour(tourI + 1); else if (a === 'back') showTour(tourI - 1); else endTour(); return; }
+    if (e.target.id === 'wnDismiss') { S.prefs.seen = VERSION; await set({ prefs: S.prefs }); renderWhatsNew(); }
   });
+  $('#tourBtn').addEventListener('click', () => showTour(0));
+  $('#diagBtn').addEventListener('click', async () => {
+    const info = { extension: VERSION, browser: navigator.userAgent.replace(/\s+/g, ' ').slice(0, 110), keySaved: S.hasKey, usage: S.usage ? `${S.usage.used}/${S.usage.limit}` : null, profiles: (S.profiles && S.profiles.items.length) || 1, history: S.history.length, quickReplies: S.quick.length, theme: S.prefs.theme };
+    try { await navigator.clipboard.writeText('Aurora Reply — problem details (no comments or names)\n' + JSON.stringify(info, null, 1)); $('#diagNote').textContent = 'Copied ✓ — paste it in your email so we can help faster.'; } catch (_) { $('#diagNote').textContent = JSON.stringify(info); }
+  });
+  $('#profile').addEventListener('change', async (e) => { readForm(); await set({ voice: S.voice }); await AuroraProfiles.switchTo(e.target.value); await afterProfileChange(); toast('Switched voice profile'); });
+  $('#pnew').addEventListener('click', async () => { const n = prompt('Name for the new profile (for example the brand name):', ''); if (!n || !n.trim()) return; readForm(); await set({ voice: S.voice }); await AuroraProfiles.create(n.trim()); await afterProfileChange(); toast('Profile created — fill in its voice below'); });
+  $('#pren').addEventListener('click', async () => { const cur = S.profiles.items.find((p) => p.id === S.profiles.active); const n = prompt('Rename profile:', cur ? cur.label : ''); if (!n || !n.trim()) return; await AuroraProfiles.rename(S.profiles.active, n.trim()); await renderProfiles(); });
+  $('#pdel').addEventListener('click', async () => { if (!confirm('Delete this voice profile?')) return; await AuroraProfiles.remove(S.profiles.active); await afterProfileChange(); toast('Profile deleted'); });
   for (const id of ['name', 'samples', 'about', 'emoji', 'length', 'language', 'avoid']) $('#' + id).addEventListener('input', queueSave);
   $('#tones').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; S.voice.tone = b.dataset.t; renderTones(); queueSave(); });
   $('#check').addEventListener('click', checkKey);
@@ -224,10 +271,10 @@ async function load() {
   // settings
   $('#theme').addEventListener('click', async (e) => { const b = e.target.closest('[data-th]'); if (!b) return; S.prefs.theme = b.dataset.th; await set({ prefs: S.prefs }); applyPrefs(); });
   $('#histToggle').addEventListener('click', async (e) => { const b = e.target.closest('[data-h]'); if (!b) return; S.prefs.history = b.dataset.h === 'on'; await set({ prefs: S.prefs }); applyPrefs(); renderHistory(); toast(S.prefs.history ? 'History is on' : 'History is off — nothing new will be saved'); });
-  $('#export').addEventListener('click', async () => { const all = { exportedAt: new Date().toISOString(), voice: S.voice, quickReplies: S.quick, history: S.history }; download('aurora-reply-data.json', JSON.stringify(all, null, 2), 'application/json'); toast('Downloaded'); });
+  $('#export').addEventListener('click', async () => { const all = { exportedAt: new Date().toISOString(), voice: S.voice, profiles: (await get('profiles', {})), quickReplies: S.quick, history: S.history }; download('aurora-reply-data.json', JSON.stringify(all, null, 2), 'application/json'); toast('Downloaded'); });
   $('#wipe').addEventListener('click', async () => {
     if (!confirm('Delete your voice, history and quick replies from this browser? Your key stays.')) return;
-    S.history = []; S.quick = []; S.voice = {}; await set({ history: [], quick: [], voice: {} }); fillVoice(); renderAll(); toast('Everything deleted');
+    S.history = []; S.quick = []; S.voice = {}; await set({ history: [], quick: [] }); await AuroraProfiles.reset(); fillVoice(); await renderProfiles(); renderAll(); toast('Everything deleted');
   });
 
   // live updates when drafts are written on a post in another tab

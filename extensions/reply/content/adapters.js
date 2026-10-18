@@ -6,7 +6,13 @@
   const A = {};
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const txt = (el) => (el ? String(el.innerText || el.textContent || '').trim() : '');
-  const ACTION = /^(like|liked|reply|replied|share|hide|edit|edited|delete|report|pin|pinned|see translation|translate|view( all)? \d+ (more )?repl(y|ies)|view more repl(y|ies)|hide repl(y|ies)|author|top fan|creator|follow|following|verified|just now|yesterday|·|\d+[smhdwy]|\d+\s*(sec|secs|min|mins|hr|hrs|hour|hours|day|days|week|weeks|month|months|year|years)( ago)?|\d+ likes?|\d+ repl(y|ies)|liked by creator|more|\.\.\.|…|[\d.,]+[kKmM]?)$/i;
+  // "Reply" / "Like" in the languages Facebook, Instagram and TikTok are used in. Matched as the whole label, never inside a comment.
+  const REPLY_WORDS = ['reply', 'répondre', 'responder', 'responder', 'antworten', 'rispondi', 'antwoorden', 'reageer', 'svara', 'svar', 'odpowiedz', 'odpowiedź', 'odpovědět', 'odpovedať', 'ответить', 'відповісти', 'yanıtla', 'cevapla', 'balas', 'trả lời', 'ตอบกลับ', 'vastaa', 'răspunde', 'απάντηση', 'válasz', 'valasz', '回复', '回覆', '回應', '返信', '返信する', '답글', '답글 달기', 'ردّ', 'رد', 'الرد', 'השב', 'उत्तर दें', 'जवाब दें', 'উত্তর দিন', 'tanggapi', 'responde', 'respondre', 'répondre', 'reply to', 'respuesta'];
+  const LIKE_WORDS = ['like', 'liked', "j'aime", 'me gusta', 'gefällt mir', 'mi piace', 'curtir', 'curtiu', 'gostar', 'vind ik leuk', 'gilla', 'lubię to', 'нравится', 'подобається', 'beğen', 'suka', 'thích', 'ถูกใจ', 'tykkää', 'μου αρέσει', '赞', '讚', 'いいね', '좋아요', 'أعجبني', 'लाइक'];
+  const escRe = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const REPLY_RE = new RegExp('^\\s*(?:' + REPLY_WORDS.map(escRe).join('|') + ')\\s*$', 'i');
+  const ACTION_BASE = /^(like|liked|reply|replied|share|hide|edit|edited|delete|report|pin|pinned|see translation|translate|view( all)? \d+ (more )?repl(y|ies)|view more repl(y|ies)|hide repl(y|ies)|author|top fan|creator|follow|following|verified|just now|yesterday|·|\d+[smhdwy]|\d+\s*(sec|secs|min|mins|hr|hrs|hour|hours|day|days|week|weeks|month|months|year|years)( ago)?|\d+ likes?|\d+ repl(y|ies)|liked by creator|more|\.\.\.|…|[\d.,]+[kKmM]?)$/i;
+  const ACTION = { test: (t) => ACTION_BASE.test(t) || REPLY_RE.test(t) || LIKE_WORDS.includes(String(t).trim().toLowerCase().replace(/[’‘`]/g, "'").replace(/[!！.。]+$/, '')) || /^\d+\s*\p{L}{1,6}\.?$/u.test(t) };
 
   A.platformId = () => { const h = location.hostname; return /facebook\.com$/.test(h) ? 'facebook' : /instagram\.com$/.test(h) ? 'instagram' : /tiktok\.com$/.test(h) ? 'tiktok' : 'other'; };
   const visible = (el) => { if (!el || !el.getBoundingClientRect) return false; const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1) return false; const cs = getComputedStyle(el); return cs.visibility !== 'hidden' && cs.display !== 'none'; };
@@ -17,9 +23,9 @@
     for (const el of scope.querySelectorAll('span, div, a, button, [role="button"]')) {
       if (el.children.length > 1) continue;
       const t = (el.textContent || '');
-      if (t.length > 12 || !/^\s*reply\s*$/i.test(t) || !visible(el)) continue;
+      if (t.length > 14 || !REPLY_RE.test(t) || !visible(el)) continue;
       // keep the outermost element that is only the label
-      let top = el; while (top.parentElement && /^\s*reply\s*$/i.test(top.parentElement.textContent || '') && top.parentElement !== scope) top = top.parentElement;
+      let top = el; while (top.parentElement && REPLY_RE.test(top.parentElement.textContent || '') && top.parentElement !== scope) top = top.parentElement;
       if (!out.includes(top)) out.push(top);
     }
     return out;
@@ -54,12 +60,15 @@
   A.findComments = (scope) => {
     scope = scope || document.body;
     const seen = new Set(), out = [];
+    const me = (A.postContext().author || '').toLowerCase();
     for (const lab of replyLabels(scope).slice(0, 120)) {
       const el = containerFor(lab, scope); if (!el) continue;
       const { author, text } = parse(el, lab);
       const key = author + '|' + text.slice(0, 60);
       if (seen.has(key)) continue; seen.add(key);
-      out.push({ el, btn: lab.closest('[role="button"], button, a') || lab, author, text, key });
+      const replied = replyLabels(el).length > 1 || /\b(view|see|show|voir|afficher|ver|mostrar|anzeigen|visualizza)\b[^\n]{0,24}\b(repl|rép|resp|antwort|risposte)/i.test(el.textContent || '');
+      out.push({ el, btn: lab.closest('[role="button"], button, a') || lab, author, text, key, replied });
+      out[out.length - 1].own = !!me && author.toLowerCase() === me;
       if (out.length >= 80) break;
     }
     return out;
@@ -73,6 +82,9 @@
     }
     return null;
   };
+
+  /** Facts about the page's shape (no names, no comment text) for a "report a problem" message. */
+  A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]') });
 
   /* ---------- the post ---------- */
   A.postContext = () => {

@@ -10,7 +10,7 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['direct', 'Direct']];
 
-  const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '', hid: '', quick: [], qmark: {} };
+  const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '', hid: '', quick: [], qmark: {}, queue: null };
 
   /* ---------- shell ---------- */
   const host = document.createElement('div');
@@ -37,14 +37,14 @@
     .q{border-left:3px solid #f97316;padding:4px 0 4px 10px;color:#3d342b;font-size:13.5px}.q b{display:block;font-size:12px;color:#7a7066}
     .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid rgba(40,25,10,.16);background:#fff;border-radius:99px;padding:4px 11px;font:600 12.5px system-ui,sans-serif;cursor:pointer;color:#3d342b}.chip.on{background:#f97316;border-color:#f97316;color:#1a1209}
     .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#3d342b}.row label{display:flex;gap:6px;align-items:center;cursor:pointer}
-    input.h{width:100%;border:1px solid rgba(40,25,10,.18);border-radius:10px;padding:8px 10px;font:13px system-ui,sans-serif}
+    input.h,select.h{width:100%;background:#fff;border:1px solid rgba(40,25,10,.18);border-radius:10px;padding:8px 10px;font:13px system-ui,sans-serif}
     .d{border:1.5px solid rgba(40,25,10,.14);border-radius:14px;padding:10px;display:grid;gap:8px}.d:focus-within{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.14)}
     textarea.dt{width:100%;border:0;resize:none;font:14px/1.45 system-ui,sans-serif;color:#1a1612;outline:none;min-height:46px;background:transparent}
     .note{font-size:12.5px;color:#7a7066}.warn{background:#fff4dd;border:1px solid #f1d28a;border-radius:12px;padding:9px 12px;font-size:13px;color:#5c4400}
     .err{background:#ffe9ea;border:1px solid #f3b4b8;border-radius:12px;padding:9px 12px;font-size:13px;color:#7a1820}.ok{background:#e4f8ee;border:1px solid #a7e3c4;border-radius:12px;padding:9px 12px;font-size:13px;color:#0d5b36}
     .sk{height:62px;border-radius:14px;background:linear-gradient(90deg,#fdeedd,#fff8ee,#fdeedd);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
     .ft{padding:10px 16px;border-top:1px solid rgba(40,25,10,.1);font-size:12px;color:#7a7066;display:flex;justify-content:space-between;gap:10px}
-    a.l{color:#c2410c;cursor:pointer;text-decoration:underline}
+    a.l{white-space:nowrap;color:#c2410c;cursor:pointer;text-decoration:underline}
   </style><div class="w" id="w"></div>`;
   const W = root.getElementById('w');
 
@@ -52,20 +52,26 @@
   function usageText() { const u = S.usage; return u ? `${u.used} of ${u.limit} drafts used this month` : 'Drafts in your voice'; }
   function render() {
     const n = S.comments.length;
-    if (!S.open) { host.style.display = n || S.pick ? '' : 'none'; W.innerHTML = `<button class="pill" id="open"><i>✦</i>Reply${n ? ` <b>${n}</b>` : ''}</button>`; return; }
+    if (!S.open) { host.style.display = ''; W.innerHTML = `<button class="pill" id="open"><i>✦</i>Reply${n ? ` <b>${n}</b>` : ''}</button>`; return; }
     host.style.display = '';
     let body = '';
     const st = S.state || {};
     if (st.ok && !st.hasKey) body += `<div class="warn"><b>One quick step:</b> add your Aurora Reply key. <a class="l" id="optKey">Open settings</a></div>`;
     else if (st.ok && !st.voiceReady) body += `<div class="note">💡 It writes better when it knows you. <a class="l" id="optVoice">Teach it your voice</a> (30 seconds).</div>`;
+    if (st.ok && st.profiles && st.profiles.items.length > 1) body += `<div class="row"><label>Voice: <select class="h" id="profile" style="width:auto">${st.profiles.items.map((p) => `<option value="${esc(p.id)}" ${p.id === st.profiles.active ? 'selected' : ''}>${esc(p.label)}</option>`).join('')}</select></label></div>`;
     if (S.done) body += `<div class="ok">${esc(S.done)}</div>`;
     if (S.view === 'list') {
       body += `<div class="bar"><button class="b" id="pick">🎯 Pick a comment on the page</button><button class="b" id="rescan">↻ Rescan</button></div>`;
       body += n ? S.comments.map((c, i) => `<div class="c" data-i="${i}"><div class="a">${esc(c.author)}</div><div class="t">${esc(c.text)}</div><div><button class="b p" data-draft="${i}">✦ Draft a reply</button></div></div>`).join('')
-        : `<div class="note">No comments found on screen yet. Scroll to the comments (or open a post), then press Rescan.</div>`;
+        : `<div class="warn"><b>No comments found yet.</b> Open a post and scroll to its comments, then press Rescan.<br>Comments are on screen but nothing shows? The site may have changed its page. <a class="l" id="report">Report a problem</a> — it takes 10 seconds.</div>`;
+      const un = unanswered(); if (un.length) body = body.replace('<div class="c"', `<button class="b p" id="qstart" style="justify-self:start">▶ Reply to unanswered comments (${un.length})</button><div class="c"`);
+    } else if (S.view === 'qintro') {
+      const un = unanswered(), N = Math.min(un.length, 15), u = S.usage, left = u ? Math.max(0, u.limit - u.used) : null;
+      body += `<div class="q"><b>Reply to unanswered comments</b>Aurora drafts one reply at a time for the ${N} comment${N === 1 ? '' : 's'} nobody has answered yet. You read each one, insert it, and press Send yourself — then go to the next.</div><div class="note">Uses up to ${N} of your drafts${left != null ? ` (${left} left this month)` : ''}. A draft is only written when you reach that comment.</div><div class="bar"><button class="b p" id="qgo">Start</button><button class="b" id="back">Cancel</button></div>`;
     } else {
       const c = S.sel;
-      body += `<div class="bar"><button class="b" id="back">← All comments</button></div><div class="q"><b>${esc(c.author)} wrote</b>${esc(c.text.length > 300 ? c.text.slice(0, 300) + '…' : c.text)}</div>`;
+      if (S.queue) body += `<div class="bar"><span class="note" style="flex:1"><b>Queue ${S.queue.i + 1} of ${S.queue.list.length}</b></span><button class="b" id="qskip">Skip ›</button><button class="b" id="qstop">Stop</button></div>`;
+      body += `<div class="bar">${S.queue ? '' : '<button class="b" id="back">← All comments</button>'}</div><div class="q"><b>${esc(c.author)} wrote</b>${esc(c.text.length > 300 ? c.text.slice(0, 300) + '…' : c.text)}</div>`;
       body += `<div class="chips">${TONES.map(([id, l]) => `<button class="chip ${((S.tone || (S.state && S.state.voice && S.state.voice.tone) || 'friendly') === id) ? 'on' : ''}" data-tone="${id}">${l}</button>`).join('')}</div>`;
       body += `<input class="h" id="hint" maxlength="200" placeholder="Optional: what should the reply say? e.g. thank them and mention Saturday" value="${esc(S.hint)}"><div class="row"><label><input type="checkbox" id="best" ${S.quality ? 'checked' : ''}> Best quality (slower)</label></div>`;
       if (S.loading) body += `<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="note">Writing three replies in your voice…</div>`;
@@ -74,10 +80,11 @@
         if (S.flag !== 'none') body += `<div class="warn"><b>${{ spam: 'This looks like spam.', abusive: 'This looks abusive.', sensitive: 'This one may need you personally.' }[S.flag]}</b> ${esc(S.note)}</div>`;
         body += S.drafts.map((d, i) => `<div class="d"><textarea class="dt" data-t="${i}" rows="2">${esc(d)}</textarea><div class="bar"><button class="b p" data-use="${i}">Use this reply</button><button class="b" data-copy="${i}">Copy</button><button class="b" data-save="${i}" title="Add to the examples of how you write">＋ My style</button></div></div>`).join('');
         if (S.quick.length) body += `<div class="note">⚡ Your quick replies</div><div class="chips">${S.quick.slice(0, 8).map((q, i) => `<button class="chip" data-quick="${i}" title="${esc(q.text)}">${esc(q.title)}</button>`).join('')}</div>`;
+        if (S.queue && S.done && /Inserted/.test(S.done)) body = body.replace('<div class="ok">', '<div class="bar"><button class="b p" id="qnext">Next comment ›  (Alt+N)</button></div><div class="ok">');
         if (S.drafts.length || S.error) body += `<div class="bar"><button class="b" id="again">↻ Write new ones</button></div>`;
       }
     }
-    W.innerHTML = `<div class="panel"><div class="hd"><div class="lg">✦</div><h1>Aurora Reply<small>${esc(usageText())}</small></h1><button class="x" id="close" aria-label="Close">×</button></div><div class="bd">${body}</div><div class="ft"><span>You read, edit and send every reply yourself.</span></div></div>`;
+    W.innerHTML = `<div class="panel"><div class="hd"><div class="lg">✦</div><h1>Aurora Reply<small>${esc(usageText())}</small></h1><button class="x" id="close" aria-label="Close">×</button></div><div class="bd">${body}</div><div class="ft"><span>You read, edit and send every reply yourself.</span><a class="l" id="report" title="Something not working?">Report a problem</a></div></div>`;
     root.querySelectorAll('textarea.dt').forEach(grow);
   }
   const grow = (t) => { t.style.height = 'auto'; t.style.height = Math.min(220, t.scrollHeight) + 'px'; };
@@ -87,6 +94,21 @@
   async function refreshState() { const q = await ask('quickList'); S.quick = (q && q.quick) || []; S.state = await ask('getState'); if (S.state && S.state.usage) S.usage = S.state.usage; }
   function highlight(el, on) { if (!el) return; el.style.outline = on ? '2px solid #f97316' : ''; el.style.outlineOffset = on ? '2px' : ''; }
 
+  const unanswered = () => S.comments.filter((c) => !c.replied && !c.own && !(S.state && S.state.voice && S.state.voice.name && c.author.toLowerCase() === String(S.state.voice.name).toLowerCase()));
+  function queueGo(step) {
+    const q = S.queue; if (!q) return;
+    q.i += step;
+    while (q.i < q.list.length && !document.contains(q.list[q.i].el)) q.i++;
+    if (q.i >= q.list.length) { S.queue = null; S.view = 'list'; S.sel = null; S.done = '✓ Queue finished. Nice work!'; scan(); render(); return; }
+    draft(q.list[q.i]);
+  }
+  async function report() {
+    const info = Object.assign({ extension: (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '', ua: navigator.userAgent.replace(/\s+/g, ' ').slice(0, 110) }, A.diagnose());
+    const text = 'Aurora Reply — problem report\n(what happened, in your words: )\n\n--- technical details (no names or comments) ---\n' + JSON.stringify(info, null, 1);
+    try { await navigator.clipboard.writeText(text); } catch (_) {}
+    const a = document.createElement('a'); a.href = 'mailto:support@getaurorastudios.com?subject=' + encodeURIComponent('Aurora Reply problem on ' + info.platform) + '&body=' + encodeURIComponent(text); a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
+    S.done = 'Your email app should open. The technical details are also copied — paste them if it does not.'; render();
+  }
   async function draft(c) {
     S.sel = c; S.view = 'draft'; S.loading = true; S.error = null; S.drafts = []; S.flag = 'none'; S.note = ''; S.done = ''; render();
     try { c.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
@@ -104,7 +126,7 @@
     const box = await A.openReply(c);
     if (box && A.setText(box, text)) {
       logUse('inserted', text, i);
-      S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; S.open = false; S.view = 'list'; render();
+      S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render();
       toast(S.done); try { box.focus(); } catch (_) {}
     } else {
       try { await navigator.clipboard.writeText(text); logUse('copied', text, i); S.done = 'Could not find the reply box, so the reply is copied. Click Reply on that comment and paste it (Ctrl+V).'; } catch (_) { S.done = 'Could not find the reply box. Select the text above, copy it, and paste it into the comment yourself.'; }
@@ -133,8 +155,13 @@
     else if (t.id === 'close') { S.open = false; render(); }
     else if (t.id === 'rescan') { scan(); render(); }
     else if (t.id === 'pick') pickOn();
-    else if (t.id === 'back') { S.view = 'list'; S.error = null; render(); }
+    else if (t.id === 'back') { S.view = 'list'; S.queue = null; S.error = null; render(); }
     else if (t.id === 'again') draft(S.sel);
+    else if (t.id === 'report') report();
+    else if (t.id === 'qstart') { S.view = 'qintro'; render(); }
+    else if (t.id === 'qgo') { S.queue = { list: unanswered().slice(0, 15), i: -1 }; queueGo(1); }
+    else if (t.id === 'qnext' || t.id === 'qskip') queueGo(1);
+    else if (t.id === 'qstop') { S.queue = null; S.view = 'list'; S.done = ''; render(); }
     else if (t.id === 'optKey' || t.id === 'optVoice') ask('openOptions');
     else if (t.dataset.draft != null) draft(S.comments[+t.dataset.draft]);
     else if (t.dataset.tone) { S.tone = t.dataset.tone; render(); if (S.drafts.length || S.error) draft(S.sel); }
@@ -144,7 +171,20 @@
     else if (t.dataset.save != null) { const r = await ask('addSample', { text: root.querySelector(`[data-t="${t.dataset.save}"]`).value }); t.textContent = r.ok ? `Saved (${r.count}) ✓` : 'Could not save'; }
   });
   W.addEventListener('input', (e) => { if (e.target.id === 'hint') S.hint = e.target.value; if (e.target.classList.contains('dt')) { grow(e.target); const i = +e.target.dataset.t; if (S.drafts[i] != null) S.drafts[i] = e.target.value; } if (e.target.id === 'best') S.quality = e.target.checked; });
-  W.addEventListener('change', (e) => { if (e.target.id === 'best') S.quality = e.target.checked; });
+  W.addEventListener('change', async (e) => {
+    if (e.target.id === 'best') S.quality = e.target.checked;
+    if (e.target.id === 'profile') { await ask('setProfile', { id: e.target.value }); await refreshState(); render(); }
+  });
+  /* keyboard shortcuts — Alt+R open/close, Alt+1/2/3 use a draft, Alt+G write new ones, Alt+N next in the queue, Esc closes (only when the panel has focus) */
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && !e.ctrlKey && !e.metaKey) {
+      const k = e.code;
+      if (k === 'KeyR') { e.preventDefault(); S.open ? (S.open = false, render()) : (S.open = true, scan(), S.view = 'list', render(), refreshState().then(render)); }
+      else if (S.open && /^(Digit|Numpad)[123]$/.test(k) && S.view === 'draft' && S.drafts[+k.slice(-1) - 1] != null) { e.preventDefault(); use(+k.slice(-1) - 1); }
+      else if (S.open && k === 'KeyG' && S.view === 'draft' && S.sel && !S.loading) { e.preventDefault(); draft(S.sel); }
+      else if (S.open && k === 'KeyN' && S.queue) { e.preventDefault(); queueGo(1); }
+    } else if (e.key === 'Escape' && S.open && e.composedPath().includes(host)) { S.open = false; render(); }
+  }, true);
   W.addEventListener('mouseover', (e) => { const c = e.target.closest('.c'); if (c && S.comments[+c.dataset.i]) highlight(S.comments[+c.dataset.i].el, true); });
   W.addEventListener('mouseout', (e) => { const c = e.target.closest('.c'); if (c && S.comments[+c.dataset.i]) highlight(S.comments[+c.dataset.i].el, false); });
 
@@ -154,5 +194,5 @@
   new MutationObserver(rescanSoon).observe(document.body, { childList: true, subtree: true });
   document.documentElement.appendChild(host);
   scan(); render();
-  window.__auroraReplyTest = { S, scan, render, draft, use, root };
+  window.__auroraReplyTest = { S, unanswered, scan, render, draft, use, root };
 })();

@@ -4,7 +4,7 @@ const ROOT = path.join(__dirname, '..'), HG = path.join(ROOT, '..', '..', 'auror
 const version = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8')).version;
 fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
 const walk = (d) => fs.readdirSync(path.join(ROOT, d)).filter((f) => !f.startsWith('.')).map((f) => d + '/' + f);
-const ext = ['manifest.json', 'background.js', 'options.html', 'options.js', 'popup.html', 'popup.js', 'ui.css', ...walk('content'), ...walk('icons')];
+const ext = ['manifest.json', 'background.js', 'profiles.js', 'options.html', 'options.js', 'popup.html', 'popup.js', 'ui.css', ...walk('content'), ...walk('icons')];
 const py = `import zipfile,sys,json
 out,base,files=sys.argv[1],sys.argv[2],json.loads(sys.argv[3])
 with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:

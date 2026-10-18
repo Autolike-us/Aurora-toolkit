@@ -1,5 +1,6 @@
 /* Aurora Reply — service worker. The only place that talks to the Aurora server; the page scripts just ask it for drafts. */
 'use strict';
+importScripts('profiles.js');
 const DEFAULT_API = 'https://getaurorastudios.com/api';
 const get = (k, d) => chrome.storage.local.get(k).then((o) => (o[k] === undefined ? d : o[k]));
 const set = (o) => chrome.storage.local.set(o);
@@ -53,7 +54,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       send(r);
     } else if (msg.type === 'status') send(await api('/reply/status', {}));
     else if (msg.type === 'openOptions') { chrome.runtime.openOptionsPage(); send({ ok: true }); }
-    else if (msg.type === 'getState') send({ ok: true, hasKey: !!(await get('licenseKey', '')).trim(), voiceReady: !!(((await get('voice', {})).samples || []).length || ((await get('voice', {})).about || '').trim()), usage: await get('usage', null), voice: await get('voice', {}) });
+    else if (msg.type === 'profiles') send({ ok: true, ...(await AuroraProfiles.list()) });
+    else if (msg.type === 'setProfile') { await AuroraProfiles.switchTo(msg.id); send({ ok: true, ...(await AuroraProfiles.list()) }); }
+    else if (msg.type === 'getState') send({ ok: true, profiles: await AuroraProfiles.list(), hasKey: !!(await get('licenseKey', '')).trim(), voiceReady: !!(((await get('voice', {})).samples || []).length || ((await get('voice', {})).about || '').trim()), usage: await get('usage', null), voice: await get('voice', {}) });
     else if (msg.type === 'addSample') {
       const v = await get('voice', {}); const s = clip(msg.text, 300).trim();
       if (s) { v.samples = [...(v.samples || []).filter((x) => x !== s), s].slice(-20); await set({ voice: v }); }

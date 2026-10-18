@@ -22,6 +22,18 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('Facebook: Reply opens the comment\'s own box, keeps the @mention and adds the text after it', fbIns.id === 'reply-box' && fbIns.ok && /^Maya K\s+Hi Maya! Sundays are pick-up only\.$/.test(fbIns.text), JSON.stringify(fbIns));
   check('Facebook: nothing was sent (no Enter, no submit)', fbIns.ev.length === 0);
 
+  const rep = await pg.evaluate(() => AuroraReplyAdapters.findComments().map((c) => ({ a: c.author, replied: c.replied, own: c.own })));
+  check('Facebook: a comment that already has replies is marked replied; the page\'s own comment is marked own', rep[0].replied === true && rep[2].replied === false && rep[1].own === true && rep[2].own === false, JSON.stringify(rep));
+
+  await load('https://www.facebook.com/x', `<!doctype html><body><div role="main"><div role="article"><h3><a href="/p">Boulangerie</a></h3><div data-ad-preview="message">Pain frais!</div>
+   <div role="article" aria-label="Commentaire de Léa"><a href="/lea">Léa</a><div dir="auto">Vous livrez le dimanche ?</div><div><span role="button">J’aime</span> <span role="button" class="rp">Répondre</span> <span>2 h</span></div></div>
+   <div role="article" aria-label="Comment"><a href="/pablo">Pablo R</a><div dir="auto">¿Cuánto cuesta el pan?</div><div><span role="button">Me gusta</span> <span role="button" class="rp">Responder</span> <span>3 sem</span></div></div>
+   <div role="article" aria-label="Comment"><a href="/yuki">ゆき</a><div dir="auto">配達はありますか？</div><div><span role="button">いいね！</span> <span role="button" class="rp">返信する</span> <span>1日</span></div></div>
+   <div role="article" aria-label="Comment"><a href="/yuki2">ゆうき</a><div dir="auto">配達はありますか？</div><div><span role="button">いいね</span> <span role="button" class="rp">返信</span> <span>1日</span></div></div>
+   </div></div></body>`);
+  cs = await find();
+  check('other languages: finds comments labelled Répondre / Responder / 返信 and keeps only the words', cs.length === 4 && cs[0].text === 'Vous livrez le dimanche ?' && cs[0].author === 'Léa' && cs[0].text === 'Vous livrez le dimanche ?' && cs[1].text === '¿Cuánto cuesta el pan?' && cs.some((c) => c.text === '配達はありますか？'), JSON.stringify(cs));
+
   await load('https://www.instagram.com/p/ABC/', IG);
   cs = await find();
   check('Instagram: finds the comments, not the caption', cs.length === 2 && cs[0].author === 'maya.k' && cs[0].text === 'Do you deliver on Sundays?' && cs[1].author === 'tom_b', JSON.stringify(cs));

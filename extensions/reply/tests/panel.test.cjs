@@ -8,6 +8,7 @@ const { FB, IG } = require('./fixtures.cjs');
     window.chrome = { runtime: { sendMessage: (m, cb) => { window.__msgs.push(m); const c = window.__cfg; setTimeout(() => {
       if (m.type === 'getState') cb(c.state);
       else if (m.type === 'draft') cb(typeof c.draft === 'function' ? c.draft(m) : c.draft);
+      else if (m.type === 'setProfile') { c.state = { ...c.state, profiles: { ...c.state.profiles, active: m.id } }; cb({ ok: true }); }
       else if (m.type === 'addSample') cb({ ok: true, count: 4 });
       else cb({ ok: true });
     }, 30); } } };
@@ -76,5 +77,28 @@ const { FB, IG } = require('./fixtures.cjs');
   check('Instagram: the reply lands in the main box after "@tom_b "', await pg.evaluate(() => document.getElementById('box').value.startsWith('@tom_b Hi Maya!')) && await pg.evaluate(() => window.__events.length === 0));
   await pg.click('button.pill'); await pg.click('#pick'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(100);
   check('Escape cancels pick mode', !!(await pg.$('.panel')));
+
+  // queue of unanswered comments, shortcuts, report, profiles
+  await open('https://www.instagram.com/p/ABC/', IG, { state: { ...STATE, profiles: { active: 'default', items: [{ id: 'default', label: 'Main' }, { id: 'p2', label: 'Shop' }] } }, draft: OK });
+  await pg.click('button.pill'); await pg.waitForTimeout(150);
+  check('profiles: a voice picker appears when there is more than one profile and switching it tells the extension', (await pg.locator('#profile option').count()) === 2 && await (async () => { await pg.selectOption('#profile', 'p2'); await pg.waitForTimeout(150); return (await msgs('setProfile'))[0].id === 'p2'; })());
+  check('queue: offers to reply to unanswered comments, with the count', /Reply to unanswered comments \(2\)/.test(await pg.textContent('#qstart')));
+  await pg.click('#qstart'); await pg.waitForTimeout(80);
+  check('queue: explains that it uses drafts, one at a time, and that the person sends', /one reply at a time/.test(await pg.textContent('.q')) && /up to 2 of your drafts/.test(await pg.textContent('.bd')));
+  await pg.click('#qgo'); await pg.waitForSelector('textarea.dt');
+  check('queue: starts with the first comment and shows the position', /Queue 1 of 2/.test(await pg.textContent('.bd')) && (await msgs('draft')).length === 1 && (await msgs('draft'))[0].comment.author === 'maya.k');
+  await pg.keyboard.press('Alt+Digit2'); await pg.waitForTimeout(500);
+  check('shortcut Alt+2 inserts the second draft, nothing is sent, and the panel stays open for the next one', await pg.evaluate(() => document.getElementById('box').value.startsWith('@maya.k Great question') && window.__events.length === 0) && !!(await pg.$('#qnext')));
+  await pg.click('#qnext'); await pg.waitForSelector('textarea.dt');
+  check('queue: "Next" drafts the next comment only now (lazy, saves drafts)', (await msgs('draft')).length === 2 && (await msgs('draft'))[1].comment.author === 'tom_b' && /Queue 2 of 2/.test(await pg.textContent('.bd')));
+  await pg.click('#qskip'); await pg.waitForTimeout(150);
+  check('queue: finishing shows a done message and goes back to the list', /Queue finished/.test(await pg.textContent('.bd')) && !!(await pg.$('#pick')));
+  await pg.keyboard.press('Alt+KeyR'); await pg.waitForTimeout(80);
+  check('shortcut Alt+R closes and opens the panel', !(await pg.$('.panel')) && await (async () => { await pg.keyboard.press('Alt+KeyR'); await pg.waitForTimeout(100); return !!(await pg.$('.panel')); })());
+  await open('https://www.facebook.com/x', '<!doctype html><body><p>No comments here</p></body>', { state: STATE, draft: OK });
+  await pg.click('button.pill'); await pg.waitForTimeout(100);
+  check('nothing found: the panel says so and offers "Report a problem" instead of staying silent', /No comments found/.test(await pg.textContent('.bd')) && !!(await pg.$('.bd #report')));
+  const diag = await pg.evaluate(() => JSON.stringify(AuroraReplyAdapters.diagnose()));
+  check('the report holds page facts only (no names, no comment text)', /"replyLabels":0/.test(diag) && !/Maya|Tom/.test(diag));
   await b.close(); done();
 })();
