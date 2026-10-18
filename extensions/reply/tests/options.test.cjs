@@ -58,6 +58,8 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
   check('overview: stats come from history (2 replies used, 100% edited) and the setup card is done', (await pg.textContent('#stIns')) === '2' && (await pg.textContent('#stEdit')) === '100%' && (await pg.isHidden('#setupCard')));
   check('overview: activity chart has 14 bars and platform split lists 3 platforms', (await pg.locator('#bars i').count()) === 14 && (await pg.locator('#split .hbar').count()) === 3 && (await pg.locator('#recent .h').count()) === 3);
+  check('overview: shows the three supported platforms and that DMs are not supported', (await pg.locator('#plats .plat').count()) === 3 && /private messages/.test(await pg.textContent('#view-overview')));
+  check('the default theme is light', (await pg.evaluate(() => document.documentElement.dataset.theme)) === 'light');
   await pg.screenshot({ path: path.join(OUT, 'overview.png'), fullPage: true });
   await nav('history');
   check('history: lists every draft with status badges and the nav count', (await pg.locator('#hlist .h').count()) === 3 && (await pg.textContent('#navHist')) === '3' && /Used · edited/.test(await pg.textContent('#hlist .h')) );

@@ -9,7 +9,7 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':
 const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['direct', 'Direct']];
 const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tiktok: ['TikTok', 'tt'], test: ['Try it', 'test'] };
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
-const S = { voice: {}, history: [], quick: [], prefs: { theme: 'auto', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
+const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -28,7 +28,13 @@ function go(view) {
 }
 
 /* ---------- overview ---------- */
+const PLATFORMS = [['facebook', 'Facebook', 'Posts, Pages and Reels comments', 'https://www.facebook.com/'], ['instagram', 'Instagram', 'Post and Reels comments', 'https://www.instagram.com/'], ['tiktok', 'TikTok', 'Video comments', 'https://www.tiktok.com/']];
+function renderPlatforms() {
+  const by = {}; S.history.forEach((x) => { by[x.platform] = (by[x.platform] || 0) + 1; });
+  $('#plats').innerHTML = PLATFORMS.map(([id, n, d, url]) => `<a class="plat" href="${url}" target="_blank" rel="noopener"><span class="badge ${PLAT[id][1]}">${n}</span><b>${d}</b><span class="note">✓ Supported${by[id] ? ` · ${by[id]} draft${by[id] > 1 ? 's' : ''} so far` : ''}</span></a>`).join('');
+}
 function renderOverview() {
+  renderPlatforms();
   const h = S.history, u = S.usage, name = (S.voice.name || '').trim();
   const hr = new Date().getHours();
   $('#hello').textContent = (hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening') + (name ? ', ' + name : '') + ' ✦';
@@ -144,7 +150,7 @@ function meter(u) {
 }
 function status(kind, text) { $('#keyStatus').innerHTML = `<span class="pill ${kind}">${text.replace(/[<>&]/g, '')}</span>`; }
 function applyPrefs() {
-  const th = S.prefs.theme || 'auto';
+  const th = S.prefs.theme || 'light';
   if (th === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = th;
   $$('#theme button').forEach((b) => b.classList.toggle('on', b.dataset.th === th));
   $$('#histToggle button').forEach((b) => b.classList.toggle('on', (b.dataset.h === 'on') === (S.prefs.history !== false)));
@@ -162,7 +168,7 @@ async function checkKey() {
 
 function renderAll() { renderOverview(); renderHistory(); renderQuick(); }
 async function load() {
-  S.voice = await get('voice', {}); S.history = await get('history', []); S.quick = await get('quick', []); S.prefs = { theme: 'auto', history: true, ...(await get('prefs', {})) };
+  S.voice = await get('voice', {}); S.history = await get('history', []); S.quick = await get('quick', []); S.prefs = { theme: 'light', history: true, ...(await get('prefs', {})) };
   S.usage = await get('usage', null); const key = await get('licenseKey', ''); S.hasKey = !!key; return key;
 }
 
