@@ -4,11 +4,12 @@ import { EXTRACT } from '@/lib/products';
 import { SUPPORT } from '@/lib/support';
 import { ExtractIcon } from '@/components/ExtractIcon';
 import { PlatformIcon } from '@/components/PlatformIcon';
+import Image from 'next/image';
 import { Faq } from '@/components/Faq';
 
 export const metadata: Metadata = {
   title: 'Aurora Extract — free data extractor',
-  description: 'Free Chrome extension: collect public data from Facebook, Instagram and TikTok — profiles, groups, Marketplace, posts, comments, followers — and download photos and videos. Export to CSV, Excel and JSON.',
+  description: 'Free Chrome extension: collect public data from Facebook, Instagram and TikTok — profiles, groups, Marketplace, posts, comments, followers — download photos and videos, and score any profile with the built-in health check. Export to CSV, Excel and JSON.',
   openGraph: { title: 'Aurora Extract — free data extractor for Facebook, Instagram & TikTok', description: 'Collect public data and download photos and videos. Export to CSV, Excel or JSON. Free, no account, your data stays on your computer.', images: [{ url: '/og.png', width: 1200, height: 630 }] },
 };
 
@@ -16,6 +17,8 @@ const FAQ_X = [
   { q: 'Is Aurora Extract really free?', a: 'Yes. No account, no card, no trial timer, no limits on how many times you use it. It is our free companion to the paid Aurora studios.' },
   { q: 'Does it send my data anywhere?', a: 'No. There is no server. Everything you collect is stored in your own browser and exported by you. We never see your account, your cookies or your results.' },
   { q: 'What data can it collect?', a: 'Only what your own logged-in account can already see: public profiles and pages, groups you belong to, Marketplace listings, posts, comments and the follower, following and friends lists that the platform shows you. Public business emails and phone numbers are collected only when they are shown publicly (bio, About section, listing text, business contact buttons).' },
+  { q: 'What is the Health check?', a: 'Aurora Audit is built into Aurora Extract. Open a profile or page, choose Health check, and it reads the bio, link and contact details plus the latest 10, 20 or 30 posts. You get a 0–100 score with a grade, a breakdown of five areas and a short list of the fixes that would raise your score most. You can copy the summary or export it to CSV, Excel or JSON.' },
+  { q: 'Does the Health check use AI or send my profile anywhere?', a: 'No. The score is calculated on your own computer with simple, transparent rules — nothing is uploaded and there is no AI service involved. The benchmarks (for example how often to post) are rough guide values, not rules, and every niche is different.' },
   { q: 'Will it get my account in trouble?', a: 'Platforms restrict automated activity. Aurora Extract reads pages at a human pace (Gentle, Normal or Fast — Gentle is the kindest) and stops on warnings, but no tool can promise your account will never be limited. Read our platform disclaimer and use it responsibly.' },
   { q: 'How do I install it?', a: 'Download the zip, unzip it into a folder you keep, open chrome://extensions, switch on Developer mode, press Load unpacked and pick the folder. It takes about a minute. A Chrome Web Store listing is planned.' },
   { q: 'Something did not extract correctly. What now?', a: 'Press “Copy debug report” inside the extension and post it in our Telegram channel (or email it). Facebook, Instagram and TikTok change their pages often and these reports are how we keep up.' },
@@ -28,7 +31,7 @@ export default function ExtractPage() {
         <div className="xtitle"><ExtractIcon size={72} /><span className="freetag big">Free</span></div>
         <span className="eyebrow">New · Free for everyone</span>
         <h1>Aurora <em>Extract</em></h1>
-        <p className="lead">{EXTRACT.tagline} One extension, three platforms — pick one, open a page, press start.</p>
+        <p className="lead">{EXTRACT.tagline} One extension, three platforms — pick one, open a page, press start. <a href="#health" style={{ textDecoration: 'underline' }}>New: a free profile health check.</a></p>
         <div className="cta">
           <a className="btn primary lg" href={EXTRACT.zip} download>Download free · v{EXTRACT.version} <span className="arrow">↓</span></a>
           <a className="demo" href="#install"><span className="play">▶</span>How to install</a>
@@ -50,6 +53,25 @@ export default function ExtractPage() {
           ))}
         </div>
         <div className="xexports">{EXTRACT.exports.map(e => <span key={e} className="chip">{e}</span>)}</div>
+      </div></section>
+
+      <section className="block" id="health" style={{ paddingTop: 10 }}><div className="wrap">
+        <div className="section-head">
+          <div><span className="eyebrow"><span className="freetag">New</span> Built in · free</span><h2>How healthy is your<br /><em>profile or page?</em></h2></div>
+          <p className="side">{EXTRACT.audit.tagline} Open a profile, choose <b>Health check</b>, and get your score in about a minute.</p>
+        </div>
+        <div className="auditx">
+          <div className="auditx-list">
+            {EXTRACT.audit.checks.map(c => (
+              <div key={c.title} className="auditx-item"><span className="ic">{c.icon}</span><div><b>{c.title}</b><p>{c.text}</p></div></div>
+            ))}
+            <p className="note" style={{ marginTop: 6 }}>Works on Facebook pages and profiles, Instagram profiles and TikTok profiles. Choose Quick (10), Standard (20) or Deep (30) posts. Scored on your own computer — no AI service, nothing uploaded.</p>
+          </div>
+          <figure className="auditx-shot">
+            <Image src="/extract-audit.png" alt="A sample Aurora Audit report: a score of 69 out of 100, grade C, with the top five fixes and a score breakdown" width={814} height={703} />
+            <figcaption>Sample report with made-up data.</figcaption>
+          </figure>
+        </div>
       </div></section>
 
       <section className="block" id="how-extract" style={{ paddingTop: 10 }}><div className="wrap workflow">

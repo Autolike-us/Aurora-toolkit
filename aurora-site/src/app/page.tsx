@@ -52,7 +52,7 @@ export default function Home() {
           <div className="txt">
             <span className="eyebrow" style={{ marginBottom: 8 }}>New · <span className="freetag">Free</span></span>
             <h2>Aurora Extract</h2>
-            <p>{EXTRACT.tagline} One extension for all three platforms — profiles, groups, Marketplace, posts, comments, followers and more. Export to CSV, Excel or JSON.</p>
+            <p>{EXTRACT.tagline} One extension for all three platforms — profiles, groups, Marketplace, posts, comments, followers and more. Export to CSV, Excel or JSON. Now with a free profile health check.</p>
           </div>
           <div className="act">
             <a className="btn primary lg" href={EXTRACT.zip} download>Download free <span className="arrow">↓</span></a>

@@ -59,6 +59,9 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     const zres = await page.request.get(site + '/downloads/aurora-extract-latest.zip');
     const buf = await zres.body();
     check('the download is a real zip containing the extension manifest', zres.ok() && buf.slice(0, 2).toString() === 'PK' && buf.includes(Buffer.from('manifest.json')));
+    check('the bundled extension includes the Health check (core/audit.js) and the page shows the current version', buf.includes(Buffer.from('core/audit.js')) && /v0\.3\.5/.test(await page.textContent('.cta')));
+    check('the extract page features the Health check: five checks, a sample report image that loads, and it is linked from the top', (await page.locator('#health .auditx-item').count()) === 5 && (await page.locator('#health img').evaluate((i) => i.complete && i.naturalWidth > 500)) && (await page.locator('.xhero a[href="#health"]').count()) === 1);
+    check('the extract FAQ explains the Health check and says it uses no AI service', /Health check/.test(await page.textContent('main')) && /no AI service/.test(await page.textContent('main')));
     check('the extract page lists all three platforms and the export formats', (await page.locator('.xcard').count()) === 3 && /Excel/.test(await page.textContent('.xexports')));
     await page.goto(site + '/');
     check('the home page features the free extension with a download button', (await page.locator('#free a[download]').count()) === 1 && /Aurora Extract/.test(await page.textContent('#free')));

@@ -54,7 +54,7 @@ export const COMMON_FEATURES = [
 /** The free 3-in-1 data extractor. Not part of the paid license; downloaded directly (no account needed). */
 export const EXTRACT = {
   name: 'Aurora Extract',
-  version: '0.2.4',
+  version: '0.3.5',
   zip: '/downloads/aurora-extract-latest.zip',
   tagline: 'Collect public data from Facebook, Instagram and TikTok — and download the photos and videos — into a clean spreadsheet.',
   platforms: [
@@ -63,4 +63,16 @@ export const EXTRACT = {
     { id: 'tiktok' as const, items: ['Profiles with bio contacts and stats', 'Videos with captions, hashtags, stats and the video file', 'Followers and following lists', 'Comments and people who commented', 'Hashtag and search pages'] },
   ],
   exports: ['CSV', 'Excel (.xlsx)', 'JSON', 'Photos & videos as ZIP'],
+  /** Aurora Audit — the profile health check built into Extract. */
+  audit: {
+    title: 'Aurora Audit',
+    tagline: 'A free health check for any profile or page: a 0–100 score and a short list of fixes.',
+    checks: [
+      { icon: '📝', title: 'Bio & profile', text: 'Is the bio clear, complete and ending with a next step?' },
+      { icon: '🔗', title: 'Link & contact', text: 'Can people click through or reach you without a DM?' },
+      { icon: '📅', title: 'Posting rhythm', text: 'How recent, how often, and how steady?' },
+      { icon: '#️⃣', title: 'Captions & hashtags', text: 'Useful length, a call to action, the right number of hashtags.' },
+      { icon: '💬', title: 'Engagement', text: 'Likes and comments compared with your audience, and whether people reply.' },
+    ],
+  },
 };
