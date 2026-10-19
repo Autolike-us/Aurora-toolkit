@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Aurora Reply — comment replies in your voice",
-  "version": "0.3.2",
+  "version": "1.0.0",
   "description": "Drafts replies to comments in your own voice. You read, edit and send every reply yourself.",
   "icons": {
     "16": "icons/icon16.png",

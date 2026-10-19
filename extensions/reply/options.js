@@ -11,7 +11,7 @@ const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tik
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
 const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-const CHANGELOG = [{ v: '0.3.2', title: 'Free trial, free plan and reply packs', items: ['Your plan and remaining replies are shown in the dashboard and in the panel', 'New accounts get a 3-day full trial, then 10 free replies every month', 'Need more? A “Get more replies” link appears when you run out']}, { v: '0.3.1', title: 'Choose 1, 2 or 3 replies, report bugs on Telegram', items: ['Choose how many replies to write per comment (1, 2 or 3) — each reply counts as one draft, so pick 1 to use fewer', 'Report a problem on Telegram (fastest) or by email', 'Discover the other Aurora tools from your dashboard']}, { v: '0.3.0', title: 'Reply to all unanswered comments, more languages, voice profiles', items: ['Reply to unanswered comments one by one — you approve each reply and press Send yourself', 'Finds comments in French, Spanish, German, Portuguese, Japanese and many more languages', 'Voice profiles for people who run several brands', 'Keyboard shortcuts (Alt+R, Alt+1/2/3, Alt+G, Alt+N)', 'A quick tour, and a “Report a problem” button when comments can’t be found']}];
+const CHANGELOG = [{ v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Report a problem on Telegram or by email, straight from the panel']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -53,7 +53,7 @@ function renderOverview() {
   $('#stEdit').textContent = inserted.length ? Math.round((inserted.filter((x) => x.edited).length / inserted.length) * 100) + '%' : '–';
   // setup
   const steps = [
-    [S.hasKey, 'Add your Aurora Reply key', 'Paste it once in Settings & key.', 'settings'],
+    [S.hasKey, 'Add your Aurora Reply key', 'Create a free account at getaurorastudios.com, copy your key from My account and paste it in Settings & key.', 'settings'],
     [!!((S.voice.samples || []).length || (S.voice.about || '').trim()), 'Teach it your voice', 'Add a few of your own replies and your business facts.', 'voice'],
     [h.length > 0 || !!(u && u.used > 0), 'Write your first reply', 'Open a post on Facebook, Instagram or TikTok and press ✦ Reply — or try it in My voice.', 'voice'],
   ];
@@ -79,8 +79,8 @@ function renderOverview() {
   if (u && (u.plan === 'trial' || u.plan === 'free')) {
     pc.hidden = false;
     pc.innerHTML = u.plan === 'trial'
-      ? `<div style="font-size:26px">🎁</div><div class="grow"><b>Your free trial ends ${esc(new Date(u.trialEndsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }))}</b>Full features for 3 days (${u.dayLeft} replies left today). After that you keep ${10} free replies every month — or get more.</div><a class="btn p" href="https://getaurorastudios.com/reply/" target="_blank" rel="noopener" style="text-decoration:none">See plans ↗</a>`
-      : `<div style="font-size:26px">✦</div><div class="grow"><b>Free plan · ${Math.max(0, u.limit - u.used)} of ${u.limit} replies left this month${u.packs ? ` (+${u.packs} from your packs)` : ''}</b>Need more? Buy a reply pack, or subscribe for heavy use.</div><a class="btn p" href="https://getaurorastudios.com/reply/" target="_blank" rel="noopener" style="text-decoration:none">Get more replies ↗</a>`;
+      ? `<div style="font-size:26px">🎁</div><div class="grow"><b>Your free trial ends ${esc(new Date(u.trialEndsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }))}</b>Full features for 3 days (${u.dayLeft} replies left today). After that you keep ${u.freeAfter || 10} free replies every month — or get more.</div><a class="btn p" href="https://getaurorastudios.com/reply/#plans" target="_blank" rel="noopener" style="text-decoration:none">See plans ↗</a>`
+      : `<div style="font-size:26px">✦</div><div class="grow"><b>Free plan · ${Math.max(0, u.limit - u.used)} of ${u.limit} replies left this month${u.packs ? ` (+${u.packs} from your packs)` : ''}</b>Need more? Buy a reply pack, or subscribe for heavy use.</div><a class="btn p" href="https://getaurorastudios.com/reply/#plans" target="_blank" rel="noopener" style="text-decoration:none">Get more replies ↗</a>`;
   } else pc.hidden = true;
   $('#sideBar').style.width = pct + '%';
   $('#sideNote').textContent = u && u.resetsAt ? 'Renews ' + new Date(u.resetsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : S.hasKey ? 'Press “Save & check” to refresh' : 'Add your key in Settings';
@@ -182,7 +182,7 @@ async function checkKey() {
 
 /* ---------- tour ---------- */
 const TOUR = [
-  { t: 'Welcome to Aurora Reply ✦', d: 'It writes replies to your comments in your own voice. You stay in charge: you read, edit and send every reply yourself.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">💬✨</div>' },
+  { t: 'Welcome to Aurora Reply ✦', d: 'It writes replies to your comments in your own voice. You stay in charge: you read, edit and send every reply yourself. Your free key comes from your Aurora account.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">💬✨</div>' },
   { t: 'Open a post, then look bottom-right', d: 'On any Facebook, Instagram or TikTok post with comments, a black <b>✦ Reply</b> button appears in the corner of the page. Click it — or press <kbd>Alt</kbd>+<kbd>R</kbd>.', art: '<div class="mockpage"><div class="cm"><b></b><div style="flex:1"><i style="width:40%"></i><i style="width:85%"></i></div></div><div class="cm"><b style="background:#fb923c"></b><div style="flex:1"><i style="width:32%"></i><i style="width:70%"></i></div></div><div class="mockpill"><u>✦</u>Reply <em>2</em></div></div>' },
   { t: 'Pick a comment, pick a draft', d: 'Press <b>Draft a reply</b> next to a comment and get three options in your voice. Edit the one you like, then <b>Use this reply</b> — it lands in that comment’s reply box.', art: '<div class="mockpanel"><div class="h">✦ Aurora Reply</div><div class="x"><div class="d">Do you deliver on Sundays?</div><div class="d s">Sundays are pick-up only 🥖</div><div class="u">Use this reply</div></div></div>' },
   { t: 'You press Send', d: 'Aurora never posts anything. Read it, change what you like, and press Send yourself. Got many comments? Try <b>Reply to unanswered comments</b> and approve them one by one.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">✅</div>' },

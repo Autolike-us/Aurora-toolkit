@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-function paypal_base(): string { return cfg('paypal_env') === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com'; }
+function paypal_base(): string { if ((string) cfg('paypal_api_base', '') !== '') return rtrim((string) cfg('paypal_api_base'), '/'); return cfg('paypal_env') === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com'; }
 
 function paypal_call(string $method, string $path, ?array $json = null): array
 {
@@ -20,7 +20,7 @@ function paypal_call(string $method, string $path, ?array $json = null): array
 
 function paypal_plan_id(string $plan, bool $launch): string
 {
-    $map = ['bundle' => $launch ? 'paypal_plan_bundle_launch' : 'paypal_plan_bundle', 'facebook' => 'paypal_plan_facebook', 'instagram' => 'paypal_plan_instagram', 'tiktok' => 'paypal_plan_tiktok'];
+    $map = ['bundle' => $launch ? 'paypal_plan_bundle_launch' : 'paypal_plan_bundle', 'facebook' => 'paypal_plan_facebook', 'instagram' => 'paypal_plan_instagram', 'tiktok' => 'paypal_plan_tiktok', 'reply' => 'paypal_plan_reply', 'reply_pro' => 'paypal_plan_reply_pro'];
     $id = (string) cfg($map[$plan] ?? '', '');
     if ($id === '') throw new RuntimeException('Missing config ' . ($map[$plan] ?? $plan));
     return $id;
@@ -59,4 +59,35 @@ function paypal_sync_subscription(string $subId): void
     $map = ['ACTIVE' => 'active', 'APPROVAL_PENDING' => 'incomplete', 'APPROVED' => 'incomplete', 'SUSPENDED' => 'suspended', 'CANCELLED' => 'canceled', 'EXPIRED' => 'canceled'];
     $next = $s['billing_info']['next_billing_time'] ?? ($s['status_update_time'] ?? null);
     upsert_subscription('paypal', (string) $s['id'], (string) ($s['subscriber']['payer_id'] ?? ''), $userId, $plan, $map[$s['status'] ?? ''] ?? 'incomplete', $next ? gmdate('Y-m-d H:i:s', strtotime($next)) : null, $launch === 'true', false);
+}
+
+/** One-time purchase of a reply pack: creates an order the customer approves on PayPal. The amount always comes from the server's catalog. */
+function paypal_pack_checkout_url(array $user, string $packId): string
+{
+    $pack = reply_catalog()['packs'][$packId] ?? null;
+    if (!$pack) throw new RuntimeException('Unknown pack.');
+    $o = paypal_call('POST', '/v2/checkout/orders', [
+        'intent' => 'CAPTURE',
+        'purchase_units' => [['reference_id' => $packId, 'custom_id' => $user['id'] . '|' . $packId, 'description' => 'Aurora Reply - ' . $pack['name'], 'amount' => ['currency_code' => 'USD', 'value' => number_format((float) $pack['usd'], 2, '.', '')]]],
+        'payment_source' => ['paypal' => ['experience_context' => ['brand_name' => 'Aurora', 'user_action' => 'PAY_NOW', 'shipping_preference' => 'NO_SHIPPING',
+            'return_url' => site_url() . '/account/?checkout=success&pack=1', 'cancel_url' => site_url() . '/reply/?checkout=cancelled#plans']]],
+    ]);
+    foreach ($o['links'] ?? [] as $l) if (in_array($l['rel'] ?? '', ['payer-action', 'approve'], true)) return $l['href'];
+    throw new RuntimeException('PayPal returned no approval link.');
+}
+
+/** After the customer approves, capture the payment (only if it is for this user and the right amount) and add the pack. Safe to call twice. */
+function paypal_confirm_pack_order(array $user, string $orderId): string
+{
+    $o = paypal_call('GET', '/v2/checkout/orders/' . rawurlencode($orderId));
+    $pu = $o['purchase_units'][0] ?? [];
+    [$uid, $packId] = array_pad(explode('|', (string) ($pu['custom_id'] ?? '')), 2, '');
+    if ($uid !== $user['id']) throw new RuntimeException('That order belongs to another account.');
+    $pack = reply_catalog()['packs'][$packId] ?? null;
+    if (!$pack) throw new RuntimeException('Unknown pack in order.');
+    if (($pu['amount']['currency_code'] ?? '') !== 'USD' || abs((float) ($pu['amount']['value'] ?? 0) - (float) $pack['usd']) > 0.001) throw new RuntimeException('Order amount does not match.');
+    if (($o['status'] ?? '') === 'APPROVED') $o = paypal_call('POST', '/v2/checkout/orders/' . rawurlencode($orderId) . '/capture', null);
+    if (($o['status'] ?? '') !== 'COMPLETED') return strtoupper((string) ($o['status'] ?? 'PENDING'));
+    reply_grant_order('paypal:' . $orderId, $uid, 'paypal', $packId);
+    return 'PACK';
 }

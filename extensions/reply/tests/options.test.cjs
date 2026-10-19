@@ -12,10 +12,10 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
 
   const b = await launch(); const ctx = await b.newContext({ viewport: { width: 1000, height: 1100 } }); const pg = await ctx.newPage(); pg.on('pageerror', (e) => { throw e; });
   const stub = () => {
-    const store = { prefs: { onboarded: true, seen: '0.3.2', theme: 'light', history: true } }; window.__store = store; window.__msgs = [];
+    const store = { prefs: { onboarded: true, seen: '1.0.0', theme: 'light', history: true } }; window.__store = store; window.__msgs = [];
     window.chrome = {
       storage: { local: { get: async (k) => { const o = {}; [].concat(k).forEach((x) => { if (x in store) o[x] = store[x]; }); return o; }, set: async (o) => Object.assign(store, o) } },
-      runtime: { getManifest: () => ({ version: '0.3.2' }), openOptionsPage: () => { window.__msgs.push('opts'); }, sendMessage: (m, cb) => { window.__msgs.push(m); setTimeout(() => {
+      runtime: { getManifest: () => ({ version: '1.0.0' }), openOptionsPage: () => { window.__msgs.push('opts'); }, sendMessage: (m, cb) => { window.__msgs.push(m); setTimeout(() => {
         if (m.type === 'status') cb(store.licenseKey === 'AUR-GOOD-GOOD-GOOD' ? { ok: true, status: 'active', usage: { used: 12, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } } : { ok: false, message: 'License key not found. Check it on your Aurora account page.' });
         else if (m.type === 'draft') cb({ ok: true, drafts: [{ text: 'Sundays are pick-up only 🥖' }, { text: 'Tue–Sat we deliver!' }, { text: 'DM us your address.' }], flag: 'none', note: '', usage: { used: 13, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } });
         else if (m.type === 'getState') cb({ ok: true, hasKey: !!store.licenseKey, voiceReady: !!(store.voice && store.voice.samples && store.voice.samples.length), usage: store.usage || null });
@@ -27,6 +27,7 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   const nav = async (v) => { await pg.click(`.nav[data-view=${v}]`); await pg.waitForTimeout(60); };
   await nav('settings');
   check('settings: starts with a friendly "add your key" state', /Add your key to start/.test(await pg.textContent('#keyStatus')) && (await pg.isHidden('#meter')));
+  check('settings: the key box links to "Get my free key" (sign-up) and to My account & plans', (await pg.getAttribute('#licenseCard a.btn.p', 'href')) === 'https://getaurorastudios.com/signup/?next=reply' && (await pg.locator('#licenseCard a[href$="/account/#reply"]').count()) === 1);
   await pg.fill('#key', 'aur-bad0-bad0-bad0'); await pg.click('#check'); await pg.waitForTimeout(150);
   check('settings: a wrong key shows the server\'s message', /not found/i.test(await pg.textContent('#keyStatus')) && (await pg.evaluate(() => window.__store.licenseKey)) === 'AUR-BAD0-BAD0-BAD0');
   await pg.fill('#key', 'AUR-GOOD-GOOD-GOOD'); await pg.click('#check'); await pg.waitForTimeout(150);
@@ -110,7 +111,7 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.prefs = { onboarded: true, seen: '0.2.2', theme: 'light', history: true }; });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
   await nav('overview');
-  check("what's new: shown once after an update, and goes away when dismissed", !(await pg.isHidden('#whatsNew')) && /0\.3\.2/.test(await pg.textContent('#whatsNew')) && await (async () => { await pg.click('#wnDismiss'); await pg.waitForTimeout(100); return (await pg.isHidden('#whatsNew')) && (await pg.evaluate(() => window.__store.prefs.seen)) === '0.3.2'; })());
+  check("what's new: shown once after an update, and goes away when dismissed", !(await pg.isHidden('#whatsNew')) && /1\.0\.0/.test(await pg.textContent('#whatsNew')) && await (async () => { await pg.click('#wnDismiss'); await pg.waitForTimeout(100); return (await pg.isHidden('#whatsNew')) && (await pg.evaluate(() => window.__store.prefs.seen)) === '1.0.0'; })());
   await pg.evaluate(() => { window.__store.prefs = {}; });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.prefs = {}; });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
@@ -133,7 +134,7 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.usage = { used: 4, limit: 10, resetsAt: '2026-11-01T00:00:00Z', plan: 'free', packs: 5 }; window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250);
   await nav('overview');
-  check('free plan: the dashboard says 6 of 10 replies are left, mentions the pack, and links to get more', !(await pg.isHidden('#planCard')) && /6 of 10 replies left/.test(await pg.textContent('#planCard')) && /\+5 from your packs/.test(await pg.textContent('#planCard')) && (await pg.getAttribute('#planCard a', 'href')) === 'https://getaurorastudios.com/reply/' && /Free plan/.test(await pg.textContent('#sideUse')));
+  check('free plan: the dashboard says 6 of 10 replies are left, mentions the pack, and links to get more', !(await pg.isHidden('#planCard')) && /6 of 10 replies left/.test(await pg.textContent('#planCard')) && /\+5 from your packs/.test(await pg.textContent('#planCard')) && (await pg.getAttribute('#planCard a', 'href')) === 'https://getaurorastudios.com/reply/#plans' && /Free plan/.test(await pg.textContent('#sideUse')));
   await pg.evaluate(() => { window.__store.usage = { used: 3, limit: 150, resetsAt: '2026-11-01T00:00:00Z', plan: 'trial', dayLeft: 47, trialEndsAt: '2026-10-21T10:00:00Z' }; });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.usage = { used: 3, limit: 150, resetsAt: '2026-11-01T00:00:00Z', plan: 'trial', dayLeft: 47, trialEndsAt: '2026-10-21T10:00:00Z' }; window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250); await nav('overview');

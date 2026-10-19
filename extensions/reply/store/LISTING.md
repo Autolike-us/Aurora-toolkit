@@ -45,7 +45,7 @@ PRIVATE BY DESIGN
 • Your voice, history and quick replies stay in your browser
 
 FREE TO START — AURORA ACCOUNT NEEDED
-Create a free account at getaurorastudios.com and paste your key into the extension. New accounts get a 3-day trial with every feature, then 10 free replies every month. Need more? Reply packs and a monthly subscription are available at getaurorastudios.com/reply.
+Create a free account at getaurorastudios.com, copy your Aurora Reply key from My account and paste it into the extension. New accounts get a 3-day trial with every feature, then 10 free replies every month. Need more? Buy a reply pack or a monthly plan at getaurorastudios.com/reply.
 Not affiliated with Facebook, Instagram, TikTok or Meta. Replies are suggestions — check them before you send and follow each platform's rules.
 ```
 

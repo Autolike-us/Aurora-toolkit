@@ -342,3 +342,12 @@ html[data-theme="dark"] input:focus,html[data-theme="dark"] button:focus-visible
 .nav nav .freetag,.nav nav .newtag{margin-left:6px}
 @media(max-width:1180px){.nav nav{gap:16px;font-size:13.5px}.nav .hide-md{display:none!important}}
 @media(max-width:1000px){.nav nav a.hide-lg{display:none!important}}
+
+/* Aurora Reply pricing */
+.rplans{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:28px}.rplans.r2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.rplan{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:24px;display:grid;gap:10px;align-content:start}.rplan.hot{border:2px solid #f97316;box-shadow:0 18px 40px -22px rgba(249,115,22,.6)}
+.rplan h3{margin:0;font-size:22px}.rplan .big{font-size:40px;font-weight:800;letter-spacing:-.03em;margin:0;line-height:1}.rplan .big small{font-size:15px;font-weight:600;color:var(--muted);letter-spacing:0}.rplan ul{margin:0 0 6px;padding-left:18px;color:var(--muted);font-size:14.5px}
+.rtag.s{background:rgba(249,115,22,.14);color:#c2410c}.rplan .rtag{justify-self:start}
+.rh{margin:40px 0 0;font-size:24px;text-align:center}
+.rpacks{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:8px}.rpack{border:1.5px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:4px;text-align:center;background:var(--bg)}
+.rpack b{font-size:26px;letter-spacing:-.02em}.rpack span{color:var(--muted);font-size:13px}.rpack em{font-style:normal;font-size:24px;font-weight:800}.rpack em small{font-size:13px;font-weight:600;color:var(--muted)}.rpack>small{color:var(--muted);font-size:12px;margin-bottom:6px}

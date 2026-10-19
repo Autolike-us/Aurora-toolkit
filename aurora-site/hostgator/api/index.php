@@ -33,7 +33,7 @@ $routes = [
     'GET /billing/providers' => 'route_providers', 'POST /checkout' => 'route_checkout', 'POST /billing/sync' => 'route_billing_sync', 'POST /billing/portal' => 'route_portal', 'POST /billing/cancel' => 'route_cancel',
     'POST /webhooks/stripe' => 'route_webhook_stripe', 'POST /webhooks/paypal' => 'route_webhook_paypal',
     'POST /license/verify' => 'route_license_verify', 'GET /download' => 'route_download',
-    'POST /reply/draft' => 'route_reply_draft', 'POST /reply/status' => 'route_reply_status', 'POST /reply/admin' => 'route_reply_admin',
+    'POST /reply/draft' => 'route_reply_draft', 'POST /reply/status' => 'route_reply_status', 'POST /reply/admin' => 'route_reply_admin', 'GET /reply/plans' => 'route_reply_plans', 'GET /reply/account' => 'route_reply_account', 'POST /checkout/pack' => 'route_checkout_pack',
 ];
 $handler = $routes["$method $path"] ?? null;
 if (!$handler) { http_response_code(404); echo json_encode(['ok' => false, 'error' => 'Not found.']); exit; }

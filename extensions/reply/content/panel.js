@@ -172,7 +172,7 @@
     else if (t.id === 'pick') pickOn();
     else if (t.id === 'back') { S.view = 'list'; S.queue = null; S.error = null; render(); }
     else if (t.id === 'again') draft(S.sel);
-    else if (t.id === 'upgrade') window.open((S.error && S.error.upgrade) || 'https://getaurorastudios.com/reply/', '_blank', 'noopener');
+    else if (t.id === 'upgrade') window.open((S.error && S.error.upgrade) || 'https://getaurorastudios.com/reply/#plans', '_blank', 'noopener');
     else if (t.id === 'report') report();
     else if (t.id === 'repTg') reportVia('tg');
     else if (t.id === 'repMail') reportVia('mail');

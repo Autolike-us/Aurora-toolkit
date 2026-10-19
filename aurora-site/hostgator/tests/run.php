@@ -8,6 +8,7 @@ $tmp = sys_get_temp_dir() . '/aurora-test-' . bin2hex(random_bytes(4));
 mkdir($tmp); mkdir("$tmp/releases");
 $port = random_int(20000, 29000);
 $mport = random_int(30000, 39000);
+$pport = random_int(40000, 49000);
 
 // Same schema as production, translated for SQLite.
 $schema = file_get_contents("$root/schema.sql");
@@ -24,13 +25,15 @@ file_put_contents("$tmp/config.php", '<?php return ' . var_export([
     'mail_driver' => 'file', 'mail_log' => "$tmp/mail.log", 'license_private_key' => $privPem, 'releases_dir' => "$tmp/releases",
     'stripe_webhook_secret' => 'whsec_test',
     'anthropic_api_key' => 'sk-ant-test-key', 'anthropic_base_url' => "http://127.0.0.1:$mport", 'reply_monthly_quota' => 5, 'reply_plans' => true,
+    'stripe_api_base' => "http://127.0.0.1:$pport", 'paypal_api_base' => "http://127.0.0.1:$pport", 'stripe_secret' => 'sk_test_x', 'paypal_client_id' => 'pid', 'paypal_client_secret' => 'psec', 'paypal_webhook_id' => 'WH-1', 'stripe_price_reply' => 'price_reply_1', 'stripe_price_reply_pro' => 'price_reply_pro_1', 'paypal_plan_reply' => 'P-REPLY-1',
 ], true) . ';');
 
 $cmd = sprintf('AURORA_CONFIG=%s php -S 127.0.0.1:%d %s > %s 2>&1 & echo $!', escapeshellarg("$tmp/config.php"), $port, escapeshellarg("$root/api/index.php"), escapeshellarg("$tmp/server.log"));
 $pid = (int) trim((string) shell_exec($cmd));
 $mpid = (int) trim((string) shell_exec(sprintf('MOCK_LOG=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!', escapeshellarg("$tmp/anthropic.log"), $mport, escapeshellarg(__DIR__ . '/mock-anthropic.php'))));
-register_shutdown_function(function () use ($pid, $mpid, $tmp) { posix_kill($pid, SIGTERM); posix_kill($mpid, SIGTERM); });
-for ($i = 0; $i < 50; $i++) { if (@fsockopen('127.0.0.1', $port) && @fsockopen('127.0.0.1', $mport)) break; usleep(100000); }
+$ppid = (int) trim((string) shell_exec(sprintf('MOCK_DIR=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!', escapeshellarg($tmp), $pport, escapeshellarg(__DIR__ . '/mock-payments.php'))));
+register_shutdown_function(function () use ($pid, $mpid, $ppid, $tmp) { posix_kill($pid, SIGTERM); posix_kill($mpid, SIGTERM); posix_kill($ppid, SIGTERM); });
+for ($i = 0; $i < 50; $i++) { if (@fsockopen('127.0.0.1', $port) && @fsockopen('127.0.0.1', $mport) && @fsockopen('127.0.0.1', $pport)) break; usleep(100000); }
 
 $passed = 0; $failed = 0;
 function check(string $name, bool $ok, $detail = ''): void { global $passed, $failed; if ($ok) { $passed++; echo "PASS $name\n"; } else { $failed++; echo "FAIL $name " . (is_string($detail) ? $detail : json_encode($detail)) . "\n"; } }
@@ -66,7 +69,7 @@ $session = $r['json']['token'];
 $r = call('POST', '/auth/verify', ['token' => $tok]); check('a confirmation link cannot be reused', $r['status'] === 400);
 $r = call('POST', '/auth/signup', ['email' => 'a@example.com', 'password' => 'another pass 1']); check('signing up again with the same email gives the same answer (no account probing)', $r['status'] === 200 && $r['json']['ok']);
 
-$r = call('GET', '/billing/providers'); check('providers list is public and reports unconfigured payment methods as off, with no secrets', $r['status'] === 200 && ($r['json']['stripe'] ?? null) === false && ($r['json']['paypal'] ?? null) === false && count($r['json']) === 3);
+$r = call('GET', '/billing/providers'); check('providers list is public and reports unconfigured payment methods as off, with no secrets', $r['status'] === 200 && ($r['json']['stripe'] ?? null) === false && ($r['json']['paypal'] ?? null) === false && count($r['json']) === 4);
 $r = call('POST', '/billing/sync', ['subscriptionId' => 'I-ABCDEF123456']); check('billing sync needs a session', $r['status'] === 401);
 $r = call('GET', '/me'); check('/me needs a session', $r['status'] === 401);
 $r = call('GET', '/me', null, $session);
@@ -248,7 +251,7 @@ $r = $ps('AUR-PLAN-AAAA-0001'); check('Reply plans: after the trial the free pla
 $pdo->exec("UPDATE reply_usage SET n = 0");
 foreach ([1, 2, 3] as $i) $pr('AUR-PLAN-AAAA-0001');
 $r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: the free allowance runs out exactly at 10 (the last request is cut to one reply)', ($r['json']['ok'] ?? false) && count($r['json']['drafts']) === 1 && ($r['json']['usage']['used'] ?? 0) === 10);
-$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: then a calm message with the renewal date and the link to get more replies', $r['status'] === 402 && strpos($r['json']['message'], 'free replies') !== false && strpos($r['json']['message'], 'renew') !== false && ($r['json']['upgrade'] ?? '') === 'https://getaurorastudios.com/reply/');
+$r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: then a calm message with the renewal date and the link to get more replies', $r['status'] === 402 && strpos($r['json']['message'], 'free replies') !== false && strpos($r['json']['message'], 'renew') !== false && ($r['json']['upgrade'] ?? '') === 'https://getaurorastudios.com/reply/#plans');
 $pdo->prepare('INSERT INTO reply_packs (id, user_id, replies_total, replies_left, expires_at, source, created_at) VALUES (?,?,?,?,?,?,?)')->execute(['pk1', 'rplan1', 5, 5, gmdate('Y-m-d H:i:s', time() + 86400 * 300), 'test', gmdate('Y-m-d H:i:s')]);
 $r = $ps('AUR-PLAN-AAAA-0001'); check('Reply plans: a pack shows up beside the free allowance', ($r['json']['usage']['packs'] ?? 0) === 5);
 $r = $pr('AUR-PLAN-AAAA-0001'); check('Reply plans: when the allowance is gone, replies come out of the pack (the monthly count does not move)', ($r['json']['ok'] ?? false) && count($r['json']['drafts']) === 3 && ($r['json']['usage']['used'] ?? 0) === 10 && ($r['json']['usage']['packs'] ?? 0) === 2);
@@ -264,6 +267,62 @@ $pdo->exec("UPDATE subscriptions SET status = 'canceled', current_period_end = '
 $r = call('POST', '/reply/admin', ['key' => 'AUR-MSTR-AAAA-1111', 'installId' => 'x']); check('Reply cost report: refused for a key that is not marked admin', $r['status'] === 403);
 $r = call('POST', '/reply/admin', ['key' => 'AUR-MSTR-ADMN-0000', 'installId' => 'x']); $mo = $r['json']['months'][0] ?? [];
 check('Reply cost report: shows replies, tokens, estimated dollars and the cost of one reply for the month', $r['status'] === 200 && ($mo['replies'] ?? 0) > 5 && ($mo['tokensIn'] ?? 0) > 0 && ($mo['costUsd'] ?? 0) > 0 && ($mo['costPerReplyUsd'] ?? 0) > 0 && isset($mo['byPlan']['trial']) && isset($mo['byPlan']['free']) && isset($mo['byModel']['claude-haiku-5-5']), $mo);
+
+// ---- Aurora Reply: pricing, keys and buying (Stripe and PayPal are local stand-ins) ----
+$pl = call('GET', '/reply/plans'); $pj = $pl['json'];
+check('Reply pricing is public and comes from the server catalog (trial, free allowance, subscriptions, packs)', $pl['status'] === 200 && ($pj['enabled'] ?? false) === true && $pj['free'] === 10 && $pj['trialDays'] === 3 && count($pj['packs']) === 2 && $pj['packs'][0]['id'] === 'pack150' && $pj['packs'][0]['usd'] == 5 && $pj['packs'][0]['replies'] === 150 && $pj['subs'][0]['id'] === 'reply' && $pj['subs'][1]['id'] === 'reply_pro');
+$rp = call('GET', '/billing/providers')['json']['reply'] ?? [];
+check('the providers list tells the website which Reply payment methods work', ($rp['stripe'] ?? false) && ($rp['paypal'] ?? false) && ($rp['stripeSub'] ?? false) && ($rp['paypalSub'] ?? false));
+check('Reply account needs a sign-in', call('GET', '/reply/account')['status'] === 401);
+$ra = call('GET', '/reply/account', null, $s3);
+check('a customer can see their Reply key (the same key as their licence) and looking does not start the trial', $ra['status'] === 200 && $ra['json']['licenseKey'] === $licenseKey && ($ra['json']['plan'] ?? '') === 'trial_waiting' && ($ra['json']['usage']['packs'] ?? -1) === 0);
+$ra2 = call('POST', '/reply/status', ['key' => $licenseKey, 'installId' => 'install-site-1']); $ra3 = call('GET', '/reply/account', null, $s3);
+check('using the key in the extension starts the 3-day trial, and the account page then shows it', ($ra2['json']['plan'] ?? '') === 'trial' && ($ra3['json']['plan'] ?? '') === 'trial' && ($ra3['json']['usage']['dayLeft'] ?? 0) === 50);
+check('buying a pack needs a sign-in', call('POST', '/checkout/pack', ['pack' => 'pack150', 'provider' => 'stripe'])['status'] === 401);
+check('an unknown pack or payment method is refused', call('POST', '/checkout/pack', ['pack' => 'pack999999', 'provider' => 'stripe'], $s3)['status'] === 400 && call('POST', '/checkout/pack', ['pack' => 'pack150', 'provider' => 'bitcoin'], $s3)['status'] === 400);
+$plog = fn() => is_file("$tmp/payments.log") ? array_map(fn($l) => json_decode($l, true), file("$tmp/payments.log", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)) : [];
+// Stripe pack
+$c = call('POST', '/checkout/pack', ['pack' => 'pack150', 'provider' => 'stripe'], $s3); $sessId = basename((string) ($c['json']['url'] ?? ''));
+$sl = array_values(array_filter($plog(), fn($e) => $e['p'] === '/v1/checkout/sessions' && $e['m'] === 'POST')); $f = end($sl)['form'] ?? [];
+check('a Stripe pack checkout is a one-time payment for the catalog price (client cannot choose the amount)', $c['status'] === 200 && strpos($c['json']['url'], 'stripe.test') !== false && ($f['mode'] ?? '') === 'payment' && (int) ($f['line_items'][0]['price_data']['unit_amount'] ?? 0) === 500 && ($f['metadata']['user_id'] ?? '') === $uidA && ($f['metadata']['pack'] ?? '') === 'pack150');
+$r = call('POST', '/billing/sync', ['sessionId' => $sessId], $s3); check('before the customer pays nothing is added', ($r['json']['status'] ?? '') === 'PENDING' && (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? -1) === 0);
+touch("$tmp/paid-$sessId");
+$r = call('POST', '/billing/sync', ['sessionId' => $sessId], $s3); $acc = call('GET', '/reply/account', null, $s3)['json'];
+check('after paying, the 150-reply pack appears on the account and in the order list', ($r['json']['status'] ?? '') === 'PACK' && ($acc['usage']['packs'] ?? 0) === 150 && count($acc['orders'] ?? []) === 1 && ($acc['orders'][0]['replies'] ?? 0) === 150);
+call('POST', '/billing/sync', ['sessionId' => $sessId], $s3); check('reloading the page does not add the pack twice', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 150);
+// Stripe webhook for a pack
+function stripe_pack_event(string $id, array $obj): array { $payload = json_encode(['id' => $id, 'type' => 'checkout.session.completed', 'data' => ['object' => $obj]]); $t = time(); return call('POST', '/webhooks/stripe', $payload, null, ['Stripe-Signature: t=' . $t . ',v1=' . hash_hmac('sha256', $t . '.' . $payload, 'whsec_test'), 'Content-Type: application/json'], true); }
+$wh = ['id' => 'cs_test_WEBHOOKPACK1', 'mode' => 'payment', 'payment_status' => 'paid', 'amount_total' => 1500, 'metadata' => ['user_id' => $uidA, 'pack' => 'pack600'], 'client_reference_id' => $uidA];
+stripe_pack_event('evt_pack_1', $wh); check('a signed Stripe payment event adds the 600-reply pack', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 750);
+stripe_pack_event('evt_pack_1', $wh); stripe_pack_event('evt_pack_2', $wh); check('the same payment arriving twice (new event id, same session) adds nothing more', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 750);
+stripe_pack_event('evt_pack_3', ['id' => 'cs_test_CHEAT0001', 'mode' => 'payment', 'payment_status' => 'paid', 'amount_total' => 100, 'metadata' => ['user_id' => $uidA, 'pack' => 'pack600'], 'client_reference_id' => $uidA]); check('a payment for the wrong amount does not add a pack', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 750);
+stripe_pack_event('evt_pack_4', ['id' => 'cs_test_UNPAID0001', 'mode' => 'payment', 'payment_status' => 'unpaid', 'amount_total' => 500, 'metadata' => ['user_id' => $uidA, 'pack' => 'pack150'], 'client_reference_id' => $uidA]); check('an unpaid checkout does not add a pack', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 750);
+// PayPal pack
+$c = call('POST', '/checkout/pack', ['pack' => 'pack150', 'provider' => 'paypal'], $s3); $orderId = basename((string) ($c['json']['url'] ?? ''));
+$ol = array_values(array_filter($plog(), fn($e) => $e['p'] === '/v2/checkout/orders' && $e['m'] === 'POST')); $pu = end($ol)['json']['purchase_units'][0] ?? [];
+check('a PayPal pack order has the catalog amount in dollars and is tied to the customer', $c['status'] === 200 && strpos($c['json']['url'], 'paypal.test') !== false && ($pu['amount']['value'] ?? '') === '5.00' && ($pu['amount']['currency_code'] ?? '') === 'USD' && ($pu['custom_id'] ?? '') === $uidA . '|pack150');
+$r = call('POST', '/billing/sync', ['orderId' => $orderId], $s3); check('PayPal: before the customer approves, nothing is captured or added', ($r['json']['status'] ?? '') === 'CREATED' && (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 750);
+call('POST', '/auth/signup', ['email' => 'pay-b@example.com', 'password' => 'correct horse 9']); $sb = call('POST', '/auth/verify', ['token' => mail_token('pay-b@example.com')])['json']['token'] ?? '';
+touch("$tmp/approved-$orderId");
+$r = call('POST', '/billing/sync', ['orderId' => $orderId], $sb); check('PayPal: another account cannot claim someone else\'s order', $r['status'] >= 400 && (call('GET', '/reply/account', null, $sb)['json']['usage']['packs'] ?? -1) === 0);
+$r = call('POST', '/billing/sync', ['orderId' => $orderId], $s3); check('PayPal: after approval the payment is captured and the pack added', ($r['json']['status'] ?? '') === 'PACK' && (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 900);
+call('POST', '/billing/sync', ['orderId' => $orderId], $s3); check('PayPal: confirming twice does not add the pack twice', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 900);
+check('a malformed PayPal order id is refused', call('POST', '/billing/sync', ['orderId' => 'x; DROP'], $s3)['status'] === 400);
+// PayPal capture webhook
+$ev = json_encode(['id' => 'WH-EV-1', 'event_type' => 'PAYMENT.CAPTURE.COMPLETED', 'resource' => ['custom_id' => $uidA . '|pack150', 'amount' => ['currency_code' => 'USD', 'value' => '5.00'], 'supplementary_data' => ['related_ids' => ['order_id' => 'ORDWEBHOOK0001']]]]);
+$r = call('POST', '/webhooks/paypal', $ev, null, ['PayPal-Transmission-Id: t1', 'PayPal-Transmission-Sig: s', 'PayPal-Auth-Algo: a', 'PayPal-Cert-Url: https://x', 'PayPal-Transmission-Time: 2026-10-19T00:00:00Z', 'Content-Type: application/json'], true);
+check('a verified PayPal capture event adds the pack once', $r['status'] === 200 && (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 1050);
+$ev2 = str_replace('WH-EV-1', 'WH-EV-2', $ev); call('POST', '/webhooks/paypal', $ev2, null, ['PayPal-Transmission-Id: t2', 'PayPal-Transmission-Sig: s', 'PayPal-Auth-Algo: a', 'PayPal-Cert-Url: https://x', 'PayPal-Transmission-Time: 2026-10-19T00:00:00Z', 'Content-Type: application/json'], true);
+check('the same PayPal order arriving again adds nothing', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 1050);
+// packs are really spent
+$kb = call('POST', '/reply/draft', $rbody(['key' => $licenseKey, 'count' => 3]));
+check('the bought replies are spent after the allowance (the account page shows fewer packs after a draft)', ($kb['json']['ok'] ?? false) && (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) <= 1050 && (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) >= 1047);
+// subscriptions for Reply
+$c = call('POST', '/checkout', ['plan' => 'reply', 'provider' => 'stripe'], $s3); $sl = array_values(array_filter($plog(), fn($e) => $e['p'] === '/v1/checkout/sessions' && $e['m'] === 'POST')); $f = end($sl)['form'] ?? [];
+check('a Reply subscription checkout uses the Reply price and records the plan', $c['status'] === 200 && ($f['mode'] ?? '') === 'subscription' && ($f['line_items'][0]['price'] ?? '') === 'price_reply_1' && ($f['subscription_data']['metadata']['plan'] ?? '') === 'reply');
+stripe_event('evt_reply_sub', 'customer.subscription.created', ['id' => 'sub_reply_1', 'customer' => 'cus_r', 'status' => 'active', 'current_period_end' => time() + 30 * 86400, 'metadata' => ['user_id' => $uidA, 'plan' => 'reply', 'launch' => 'false']]);
+$acc = call('GET', '/reply/account', null, $s3)['json'];
+check('an active Reply subscription shows on the account page as the subscription plan with its monthly allowance', ($acc['plan'] ?? '') === 'subscription' && ($acc['tier'] ?? '') === 'reply' && ($acc['usage']['limit'] ?? 0) === 5);
 
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);

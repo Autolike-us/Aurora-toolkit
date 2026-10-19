@@ -20,9 +20,9 @@ const VOICE = { name: 'Sunrise Bakery', samples: ['Thank you Sam! See you Saturd
 const stub = (cfg) => {
   const store = cfg.store; window.__store = store;
   window.chrome = { storage: { local: { get: async (k) => { const o = {}; [].concat(k).forEach((x) => { if (x in store) o[x] = store[x]; }); return o; }, set: async (o) => Object.assign(store, o) } },
-    runtime: { getManifest: () => ({ version: '0.3.2' }), openOptionsPage() {}, sendMessage: (m, cb) => setTimeout(() => cb(m.type === 'getState' ? { ok: true, hasKey: true, voiceReady: true, usage: store.usage, voice: store.voice, profiles: { active: 'default', items: [{ id: 'default', label: 'Sunrise Bakery' }, { id: 'p2', label: 'Harbor Coffee' }] } } : m.type === 'quickList' ? { ok: true, quick: store.quick } : m.type === 'draft' ? { ok: true, drafts: cfg.drafts.map((t) => ({ text: t })), flag: 'none', usage: store.usage } : { ok: true }), 20) } };
+    runtime: { getManifest: () => ({ version: '1.0.0' }), openOptionsPage() {}, sendMessage: (m, cb) => setTimeout(() => cb(m.type === 'getState' ? { ok: true, hasKey: true, voiceReady: true, usage: store.usage, voice: store.voice, profiles: { active: 'default', items: [{ id: 'default', label: 'Sunrise Bakery' }, { id: 'p2', label: 'Harbor Coffee' }] } } : m.type === 'quickList' ? { ok: true, quick: store.quick } : m.type === 'draft' ? { ok: true, drafts: cfg.drafts.map((t) => ({ text: t })), flag: 'none', usage: store.usage } : { ok: true }), 20) } };
 };
-const mkStore = (extra = {}) => ({ prefs: { onboarded: true, seen: '0.3.2', theme: 'light', history: true }, licenseKey: 'AUR-DEMO-DEMO-DEMO', usage: { used: 142, limit: 1500, resetsAt: new Date(now + 12 * D).toISOString() }, voice: VOICE, history: HISTORY, quick: QUICK, profiles: { default: { label: 'Sunrise Bakery', voice: VOICE }, p2: { label: 'Harbor Coffee', voice: {} } }, activeProfile: 'default', ...extra });
+const mkStore = (extra = {}) => ({ prefs: { onboarded: true, seen: '1.0.0', theme: 'light', history: true }, licenseKey: 'AUR-DEMO-DEMO-DEMO', usage: { used: 142, limit: 1500, resetsAt: new Date(now + 12 * D).toISOString() }, voice: VOICE, history: HISTORY, quick: QUICK, profiles: { default: { label: 'Sunrise Bakery', voice: VOICE }, p2: { label: 'Harbor Coffee', voice: {} } }, activeProfile: 'default', ...extra });
 
 const PAGE = `<!doctype html><title>demo</title><style>body{margin:0;background:#e9eaee;font:15px system-ui,sans-serif;color:#1c1e21}.wrap{width:560px;margin:0 auto;padding:36px 0}
 .post{background:#fff;border-radius:16px;box-shadow:0 2px 10px #0002;overflow:hidden}.ph{height:250px;background:linear-gradient(135deg,#fbbf24,#f97316 60%,#c2410c);display:grid;place-items:center;font-size:96px}
@@ -41,7 +41,7 @@ async function dash(b, name, view, theme, extra) {
   await shot(b, name, 1280, 800, async (pg) => {
     await pg.route('**/*', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: read('options.html').replace(/<link rel="stylesheet" href="ui.css">/, '<style>' + read('ui.css') + '</style>').replace(/<script src="[^"]*"><\/script>/g, '').replace(/<img src="icons\/[^"]*"/g, `<img src="${icon}"`) }));
     await pg.goto('https://x.test/options.html#' + view);
-    await pg.evaluate(stub, { store: mkStore({ prefs: { onboarded: true, seen: '0.3.2', theme } , ...extra }), drafts: [] });
+    await pg.evaluate(stub, { store: mkStore({ prefs: { onboarded: true, seen: '1.0.0', theme } , ...extra }), drafts: [] });
     await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(400);
   });
 }

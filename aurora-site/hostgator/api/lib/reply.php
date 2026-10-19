@@ -46,24 +46,25 @@ function reply_entitlement(string $key): array
     return ['ok' => false, 'http' => 402, 'status' => 'wrong_plan', 'message' => 'Aurora Reply is a separate subscription. Visit getaurorastudios.com to subscribe.'];
 }
 
-const REPLY_TRIAL_DAYS = 3;
 /** Plans mode (off by default): 3-day trial, then a small free allowance, subscriptions and reply packs. Off = the earlier beta behaviour. */
 function reply_plans_on(): bool { return (bool) cfg('reply_plans', false); }
-function reply_plan_entitlement(array $license): array
+function reply_plan_entitlement(array $license, bool $startTrial = true): array
 {
     reply_ensure_table();
+    $cat = reply_catalog();
     $uid = (string) $license['user_id'];
     $tier = null;
     foreach (q_all('SELECT * FROM subscriptions WHERE user_id = ?', [$uid]) as $sub) {
         if (!subscription_grants($sub)) continue;
         if ($sub['plan'] === 'reply_pro') $tier = 'reply_pro'; elseif ($sub['plan'] === 'reply' && $tier !== 'reply_pro') $tier = 'reply';
     }
-    if ($tier) return ['ok' => true, 'status' => 'active', 'plan' => 'subscription', 'tier' => $tier, 'who' => 'subscription', 'userId' => $uid, 'quota' => (int) ($tier === 'reply_pro' ? cfg('reply_pro_quota', 5000) : cfg('reply_monthly_quota', 1500))];
+    if ($tier) return ['ok' => true, 'status' => 'active', 'plan' => 'subscription', 'tier' => $tier, 'who' => 'subscription', 'userId' => $uid, 'quota' => (int) $cat['subs'][$tier]['replies']];
     $acc = q_one('SELECT * FROM reply_accounts WHERE user_id = ?', [$uid]);
-    if (!$acc) { q('INSERT INTO reply_accounts (user_id, trial_started_at) VALUES (?, ?)', [$uid, now()]); $acc = q_one('SELECT * FROM reply_accounts WHERE user_id = ?', [$uid]); }
-    $trialEnd = ts($acc['trial_started_at']) + REPLY_TRIAL_DAYS * 86400;
-    if (time() < $trialEnd) return ['ok' => true, 'status' => 'active', 'plan' => 'trial', 'who' => 'trial', 'userId' => $uid, 'quota' => (int) cfg('reply_trial_total', 150), 'dayCap' => (int) cfg('reply_trial_daily', 50), 'trialEndsAt' => gmdate('Y-m-d\TH:i:s\Z', $trialEnd)];
-    return ['ok' => true, 'status' => 'active', 'plan' => 'free', 'who' => 'free', 'userId' => $uid, 'quota' => (int) cfg('reply_free_monthly', 10)];
+    if (!$acc && $startTrial) { q('INSERT INTO reply_accounts (user_id, trial_started_at) VALUES (?, ?)', [$uid, now()]); $acc = q_one('SELECT * FROM reply_accounts WHERE user_id = ?', [$uid]); }
+    if (!$acc) return ['ok' => true, 'status' => 'active', 'plan' => 'trial_waiting', 'who' => 'trial', 'userId' => $uid, 'quota' => (int) $cat['trialTotal'], 'dayCap' => (int) $cat['trialDaily']];
+    $trialEnd = ts($acc['trial_started_at']) + (int) $cat['trialDays'] * 86400;
+    if (time() < $trialEnd) return ['ok' => true, 'status' => 'active', 'plan' => 'trial', 'who' => 'trial', 'userId' => $uid, 'quota' => (int) $cat['trialTotal'], 'dayCap' => (int) $cat['trialDaily'], 'trialEndsAt' => gmdate('Y-m-d\TH:i:s\Z', $trialEnd)];
+    return ['ok' => true, 'status' => 'active', 'plan' => 'free', 'who' => 'free', 'userId' => $uid, 'quota' => (int) $cat['free']];
 }
 /** Reply packs: bought replies that last a year and are used after the monthly allowance. */
 function reply_packs_left(?string $userId): int
@@ -77,6 +78,17 @@ function reply_grant_pack(string $userId, int $replies, string $source = 'purcha
 {
     reply_ensure_table();
     q('INSERT INTO reply_packs (id, user_id, replies_total, replies_left, expires_at, source, created_at) VALUES (?,?,?,?,?,?,?)', [uid(), $userId, $replies, $replies, gmdate('Y-m-d H:i:s', strtotime("+$months months")), $source, now()]);
+}
+/** Adds a purchased pack exactly once per order reference (a repeated webhook or page reload does nothing). Returns true if it was newly added. */
+function reply_grant_order(string $ref, string $userId, string $provider, string $packId): bool
+{
+    reply_ensure_table();
+    $pack = reply_catalog()['packs'][$packId] ?? null;
+    if (!$pack) return false;
+    try { q('INSERT INTO reply_orders (ref, user_id, provider, pack, replies, usd, created_at) VALUES (?,?,?,?,?,?,?)', [$ref, $userId, $provider, $packId, (int) $pack['replies'], (float) $pack['usd'], now()]); }
+    catch (Throwable $e) { return false; } // already recorded
+    reply_grant_pack($userId, (int) $pack['replies'], $provider, 12);
+    return true;
 }
 function reply_take_packs(string $userId, int $n): void
 {
@@ -134,6 +146,7 @@ function reply_ensure_table(): void
     q('CREATE TABLE IF NOT EXISTS reply_usage_day (k CHAR(64) NOT NULL, d CHAR(10) NOT NULL, n INT NOT NULL DEFAULT 0, PRIMARY KEY (k, d))');
     q('CREATE TABLE IF NOT EXISTS reply_accounts (user_id VARCHAR(32) NOT NULL PRIMARY KEY, trial_started_at DATETIME NOT NULL)');
     q('CREATE TABLE IF NOT EXISTS reply_packs (id VARCHAR(32) NOT NULL PRIMARY KEY, user_id VARCHAR(32) NOT NULL, replies_total INT NOT NULL, replies_left INT NOT NULL, expires_at DATETIME NOT NULL, source VARCHAR(24) NOT NULL, created_at DATETIME NOT NULL)');
+    q('CREATE TABLE IF NOT EXISTS reply_orders (ref VARCHAR(120) NOT NULL PRIMARY KEY, user_id VARCHAR(32) NOT NULL, provider VARCHAR(10) NOT NULL, pack VARCHAR(24) NOT NULL, replies INT NOT NULL, usd DECIMAL(8,2) NOT NULL, created_at DATETIME NOT NULL)');
     q('CREATE TABLE IF NOT EXISTS reply_cost (ym CHAR(7) NOT NULL, model VARCHAR(48) NOT NULL, plan VARCHAR(16) NOT NULL, reqs INT NOT NULL DEFAULT 0, replies INT NOT NULL DEFAULT 0, tok_in BIGINT NOT NULL DEFAULT 0, tok_out BIGINT NOT NULL DEFAULT 0, PRIMARY KEY (ym, model, plan))');
     $done = true;
 }
@@ -157,7 +170,7 @@ function reply_usage_block(string $key, int $quota, ?array $e = null): array
     $b = ['used' => reply_used($key), 'limit' => $quota, 'resetsAt' => reply_resets_at()];
     if ($e && isset($e['plan'])) {
         $b['plan'] = $e['plan']; $b['packs'] = reply_packs_left($e['userId'] ?? null);
-        if (!empty($e['dayCap'])) { $b['dayLeft'] = max(0, (int) $e['dayCap'] - reply_day_used($key)); $b['trialEndsAt'] = $e['trialEndsAt']; }
+        if (!empty($e['dayCap'])) { $b['freeAfter'] = (int) reply_catalog()['free']; $b['dayLeft'] = max(0, (int) $e['dayCap'] - reply_day_used($key)); $b['trialEndsAt'] = $e['trialEndsAt']; }
     }
     return $b;
 }

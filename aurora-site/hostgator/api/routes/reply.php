@@ -36,7 +36,7 @@ function route_reply_draft(): void
         $msg = $plan === 'trial' ? 'You have used today\'s ' . $e['dayCap'] . ' trial replies. Come back tomorrow, or get more replies at getaurorastudios.com/reply.'
             : ($plan === 'free' ? 'You have used your ' . $e['quota'] . ' free replies for this month. They renew on ' . $renew . ' — or get more replies at getaurorastudios.com/reply.'
             : 'You have used all ' . $e['quota'] . ' drafts for this month. They renew on ' . $renew . '.');
-        json_out(['ok' => false, 'status' => 'quota', 'message' => $msg, 'upgrade' => in_array($plan, ['trial', 'free'], true) ? 'https://getaurorastudios.com/reply/' : null, 'usage' => reply_usage_block($key, $e['quota'], $e)], 402);
+        json_out(['ok' => false, 'status' => 'quota', 'message' => $msg, 'upgrade' => in_array($plan, ['trial', 'free'], true) ? 'https://getaurorastudios.com/reply/#plans' : null, 'usage' => reply_usage_block($key, $e['quota'], $e)], 402);
     }
     $in['count'] = min($in['count'], $avail); // never write more replies than are left
     $best = ($b['quality'] ?? '') === 'best';
@@ -68,4 +68,29 @@ function route_reply_admin(): void
     }
     foreach ($months as &$mo) { $mo['costUsd'] = round($mo['costUsd'], 4); $mo['costPerReplyUsd'] = $mo['replies'] ? round($mo['costUsd'] / $mo['replies'], 6) : 0; $mo['avgTokensInPerRequest'] = $mo['requests'] ? (int) round($mo['tokensIn'] / $mo['requests']) : 0; $mo['avgTokensOutPerRequest'] = $mo['requests'] ? (int) round($mo['tokensOut'] / $mo['requests']) : 0; }
     json_out(['ok' => true, 'months' => array_values($months)]);
+}
+
+/** What is for sale, straight from the server's catalog (the website draws its pricing from this). */
+function route_reply_plans(): void
+{
+    $c = reply_catalog();
+    $sub = static fn($id, $x) => ['id' => $id, 'name' => $x['name'], 'usd' => (float) $x['usd'], 'replies' => (int) $x['replies']];
+    json_out(['ok' => true, 'enabled' => reply_plans_on(), 'trialDays' => (int) $c['trialDays'], 'trialDaily' => (int) $c['trialDaily'], 'trialTotal' => (int) $c['trialTotal'], 'free' => (int) $c['free'],
+        'subs' => array_map(fn($id) => $sub($id, $c['subs'][$id]), array_keys($c['subs'])), 'packs' => array_map(fn($id) => $sub($id, $c['packs'][$id]), array_keys($c['packs']))]);
+}
+
+/** The signed-in customer's Reply key, plan and replies left (shown on the account page). Looking does not start the trial. */
+function route_reply_account(): void
+{
+    $user = require_user();
+    $license = ensure_license($user['id']);
+    $key = (string) $license['license_key'];
+    $out = ['ok' => true, 'enabled' => reply_plans_on(), 'licenseKey' => $key];
+    if (reply_plans_on()) {
+        $e = reply_plan_entitlement($license, false);
+        $out['plan'] = $e['plan']; $out['tier'] = $e['tier'] ?? null;
+        $out['usage'] = $e['plan'] === 'trial_waiting' ? ['used' => 0, 'limit' => $e['quota'], 'packs' => reply_packs_left($user['id']), 'resetsAt' => reply_resets_at()] : reply_usage_block($key, $e['quota'], $e);
+        $out['orders'] = array_map(static fn($o) => ['pack' => $o['pack'], 'replies' => (int) $o['replies'], 'usd' => (float) $o['usd'], 'at' => iso($o['created_at'])], q_all('SELECT pack, replies, usd, created_at FROM reply_orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [$user['id']]));
+    }
+    json_out($out);
 }

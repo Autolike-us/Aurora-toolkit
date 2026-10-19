@@ -6,7 +6,7 @@ declare(strict_types=1);
 header('Content-Type: text/plain; charset=utf-8');
 ini_set('display_errors', '0');
 require __DIR__ . '/lib/bootstrap.php';
-foreach (['paypal', 'stripe'] as $f) require __DIR__ . "/lib/$f.php";
+foreach (['paypal', 'stripe', 'pricing'] as $f) require __DIR__ . "/lib/$f.php";
 
 $bad = 0;
 function line(string $label, bool $ok, string $detail = ''): void { global $bad; if (!$ok) $bad++; echo ($ok ? '[ OK ] ' : '[FAIL] ') . $label . ($detail !== '' ? " — $detail" : '') . "\n"; }
@@ -21,6 +21,7 @@ echo "\nPayPal\n------\n";
 $env = (string) cfg('paypal_env', 'sandbox');
 line('paypal_env is "live"', $env === 'live', "currently \"$env\"");
 $expect = ['paypal_plan_bundle_launch' => '10.00', 'paypal_plan_bundle' => '20.00', 'paypal_plan_facebook' => '10.00', 'paypal_plan_instagram' => '10.00', 'paypal_plan_tiktok' => '10.00'];
+foreach (reply_catalog()['subs'] as $rid => $rx) $expect['paypal_plan_' . $rid] = number_format((float) $rx['usd'], 2, '.', ''); // Aurora Reply plans
 if ((string) cfg('paypal_client_id', '') === '' || (string) cfg('paypal_client_secret', '') === '') {
     line('PayPal client ID and secret are set', false, 'missing in aurora-config.php');
 } else {
@@ -57,6 +58,7 @@ echo "\nStripe\n------\n";
 $sk = (string) cfg('stripe_secret', '');
 line('stripe_secret is a LIVE key (sk_live_… or rk_live_…)', ($isLive = preg_match('/^(sk|rk)_live_/', $sk) === 1), $isLive ? '' : ($sk === '' ? 'empty' : (strpos($sk, '_test_') !== false ? 'it is a TEST key' : 'unrecognised key')));
 $sexpect = ['stripe_price_bundle_launch' => 1000, 'stripe_price_bundle' => 2000, 'stripe_price_facebook' => 1000, 'stripe_price_instagram' => 1000, 'stripe_price_tiktok' => 1000];
+foreach (reply_catalog()['subs'] as $rid => $rx) $sexpect['stripe_price_' . $rid] = reply_cents((float) $rx['usd']); // Aurora Reply prices
 if ($sk === '') line('Stripe key is set', false);
 else {
     try {
