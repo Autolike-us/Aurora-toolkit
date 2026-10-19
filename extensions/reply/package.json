@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node tests/adapters.test.cjs && node tests/panel.test.cjs && node tests/options.test.cjs",
     "test:ext": "node tests/extension_smoke.cjs",
+    "test:sync": "node tests/sync.test.cjs",
     "test:chain": "node tests/chain.test.cjs",
     "test:php": "php ../../aurora-site/hostgator/tests/run.php",
     "package": "node scripts/package.cjs"

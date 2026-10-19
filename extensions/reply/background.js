@@ -1,6 +1,6 @@
 /* Aurora Reply — service worker. The only place that talks to the Aurora server; the page scripts just ask it for drafts. */
 'use strict';
-importScripts('profiles.js');
+importScripts('profiles.js', 'sync.js');
 const DEFAULT_API = 'https://getaurorastudios.com/api';
 const get = (k, d) => chrome.storage.local.get(k).then((o) => (o[k] === undefined ? d : o[k]));
 const set = (o) => chrome.storage.local.set(o);
@@ -36,6 +36,14 @@ let histQueue = Promise.resolve();
 const withHistory = (fn) => (histQueue = histQueue.then(async () => { const h = await get('history', []); const out = await fn(h); await set({ history: h.slice(0, HIST_MAX) }); return out; }).catch(() => {}));
 const historyOn = async () => ((await get('prefs', {})).history !== false);
 
+/* Voice backup: restore on start, save a moment after any change to voices or quick replies. */
+chrome.runtime.onStartup.addListener(() => AuroraSync.pull());
+chrome.storage.onChanged.addListener((ch) => {
+  if (ch.licenseKey && (ch.licenseKey.newValue || '').trim()) setTimeout(() => AuroraSync.pull(), 600);
+  else if (ch.voice || ch.profiles || ch.activeProfile || ch.quick) AuroraSync.schedule();
+});
+AuroraSync.pull();
+
 chrome.runtime.onMessage.addListener((msg, _sender, send) => {
   if (!msg || msg.aurora !== 'reply') return;
   (async () => {
@@ -53,6 +61,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       }
       send(r);
     } else if (msg.type === 'status') send(await api('/reply/status', {}));
+    else if (msg.type === 'syncNow') send(msg.mode === 'push' ? await AuroraSync.push() : msg.mode === 'erase' ? await AuroraSync.erase() : await AuroraSync.pull());
     else if (msg.type === 'openOptions') { chrome.runtime.openOptionsPage(); send({ ok: true }); }
     else if (msg.type === 'profiles') send({ ok: true, ...(await AuroraProfiles.list()) });
     else if (msg.type === 'setProfile') { await AuroraProfiles.switchTo(msg.id); send({ ok: true, ...(await AuroraProfiles.list()) }); }

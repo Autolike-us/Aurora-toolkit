@@ -42,7 +42,7 @@ PRIVATE BY DESIGN
 • It only reads a comment when you press "Draft a reply"
 • It never presses Send, never reads private messages and never touches your password or cookies
 • The comment you choose, the post caption and your voice settings are sent to Aurora's server, which asks an AI service (Anthropic) to write the drafts. The server keeps only a count of drafts — not your comments or replies
-• Your voice, history and quick replies stay in your browser
+• Your history stays in your browser. Your voice profiles and quick replies are backed up to your Aurora key so a reinstall can restore them (you can turn this off)
 
 FREE TO START — AURORA ACCOUNT NEEDED
 Create a free account at getaurorastudios.com, copy your Aurora Reply key from My account and paste it into the extension. New accounts get a 3-day trial with every feature, then 10 free replies every month. Need more? Buy a reply pack or a monthly plan at getaurorastudios.com/reply.
@@ -67,7 +67,7 @@ Not affiliated with Facebook, Instagram, TikTok or Meta. Replies are suggestions
 
 **Data usage** (tick these, untick the rest)
 - Authentication information → license key (used to verify the license)
-- Website content → the comment text/author and post caption the user chooses to draft a reply for
+- Website content → the comment text/author and post caption the user chooses to draft a reply for, plus the voice profiles and quick replies the user writes (optionally backed up to their key)
 - Personal communications is NOT collected (private messages are not read)
 
 **Certify:** data is not sold, not used for purposes unrelated to the single purpose, not used for creditworthiness or lending.
@@ -90,7 +90,7 @@ Aurora Reply needs an Aurora key. Use this reviewer key: KEY
 1. Click the extension icon > "Open dashboard" > "Settings & key", paste the key, press "Save & check" (it should say "Key accepted").
 2. Open any public post with comments on instagram.com, facebook.com or tiktok.com (you must be logged in to those sites).
 3. A black "Reply" button appears bottom-right. Click it, press "Draft a reply" next to a comment, then "Use this reply". The text is placed in that comment's reply box. The extension never presses Send.
-Nothing is posted by the extension. Voice settings, history and quick replies stay in the browser. The server keeps only a count of replies per key.
+Nothing is posted by the extension. History stays in the browser. Voice profiles and quick replies are backed up to the user's key (optional, on by default). The server otherwise keeps only a count of replies per key.
 ```
 
 ## 5. After approval

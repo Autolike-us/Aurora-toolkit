@@ -324,5 +324,19 @@ stripe_event('evt_reply_sub', 'customer.subscription.created', ['id' => 'sub_rep
 $acc = call('GET', '/reply/account', null, $s3)['json'];
 check('an active Reply subscription shows on the account page as the subscription plan with its monthly allowance', ($acc['plan'] ?? '') === 'subscription' && ($acc['tier'] ?? '') === 'reply' && ($acc['usage']['limit'] ?? 0) === 5);
 
+// ---- Reply voice backup ----
+$sy = fn(array $o) => call('POST', '/reply/sync', array_merge(['key' => 'AUR-REPL-AAAA-1111', 'installId' => 'install-sync-1'], $o));
+$r = $sy(['action' => 'get']); check('Voice backup: nothing saved yet reads back as empty', $r['status'] === 200 && $r['status'] === 200 && array_key_exists('data', $r['json']) && $r['json']['data'] === null && ($r['json']['updatedAt'] ?? 1) === 0);
+$vd = ['profiles' => ['default' => ['label' => 'Main', 'voice' => ['about' => 'We sell candles', 'samples' => ['Thanks so much! 🕯️']]]], 'activeProfile' => 'default', 'quick' => [['id' => 'q1', 'text' => 'Thank you!']], 'history' => [['secret' => 'x']]];
+$r = $sy(['action' => 'put', 'data' => $vd]); check('Voice backup: saving voices works', $r['status'] === 200 && ($r['json']['updatedAt'] ?? 0) > 0);
+$r = $sy(['action' => 'get', 'installId' => 'brand-new-install']); $got = $r['json']['data'] ?? [];
+check('Voice backup: a fresh install with the same key gets the voices back, with accents and emoji intact', ($got['profiles']['default']['voice']['samples'][0] ?? '') === 'Thanks so much! 🕯️' && ($got['quick'][0]['text'] ?? '') === 'Thank you!');
+check('Voice backup: history is never stored on the server', !isset($got['history']));
+$r = call('POST', '/reply/sync', ['key' => 'AUR-REPL-BBBB-2222', 'installId' => 'install-sync-2', 'action' => 'get']); check('Voice backup: another key cannot see these voices', array_key_exists('data', $r['json']) && $r['json']['data'] === null);
+$r = $sy(['key' => 'AUR-ZZZZ-ZZZZ-ZZZZ', 'action' => 'get']); check('Voice backup: an unknown key is refused', $r['status'] === 404);
+$r = $sy(['action' => 'delete', 'key' => 'AUR-REPL-BBBB-2222']); check('Voice backup: deleting works and only touches that key', $r['status'] === 200 && (($sy(['action' => 'get'])['json']['data']['profiles']['default']['label'] ?? '') === 'Main'));
+$r = $sy(['action' => 'put', 'data' => ['profiles' => ['default' => ['label' => 'x', 'voice' => ['about' => str_repeat('a', 95000)]]]]]); check('Voice backup: an oversized backup is refused', $r['status'] === 413);
+$r = $sy(['action' => 'get']); check('Voice backup: a refused save leaves the earlier backup untouched', ($r['json']['data']['profiles']['default']['label'] ?? '') === 'Main');
+
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);

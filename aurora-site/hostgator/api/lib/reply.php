@@ -147,6 +147,7 @@ function reply_ensure_table(): void
     q('CREATE TABLE IF NOT EXISTS reply_accounts (user_id VARCHAR(32) NOT NULL PRIMARY KEY, trial_started_at DATETIME NOT NULL)');
     q('CREATE TABLE IF NOT EXISTS reply_packs (id VARCHAR(32) NOT NULL PRIMARY KEY, user_id VARCHAR(32) NOT NULL, replies_total INT NOT NULL, replies_left INT NOT NULL, expires_at DATETIME NOT NULL, source VARCHAR(24) NOT NULL, created_at DATETIME NOT NULL)');
     q('CREATE TABLE IF NOT EXISTS reply_orders (ref VARCHAR(120) NOT NULL PRIMARY KEY, user_id VARCHAR(32) NOT NULL, provider VARCHAR(10) NOT NULL, pack VARCHAR(24) NOT NULL, replies INT NOT NULL, usd DECIMAL(8,2) NOT NULL, created_at DATETIME NOT NULL)');
+    q('CREATE TABLE IF NOT EXISTS reply_sync (k CHAR(64) NOT NULL PRIMARY KEY, data MEDIUMTEXT NOT NULL, updated_ms BIGINT NOT NULL, updated_at DATETIME NOT NULL)');
     q('CREATE TABLE IF NOT EXISTS reply_cost (ym CHAR(7) NOT NULL, model VARCHAR(48) NOT NULL, plan VARCHAR(16) NOT NULL, reqs INT NOT NULL DEFAULT 0, replies INT NOT NULL DEFAULT 0, tok_in BIGINT NOT NULL DEFAULT 0, tok_out BIGINT NOT NULL DEFAULT 0, PRIMARY KEY (ym, model, plan))');
     $done = true;
 }

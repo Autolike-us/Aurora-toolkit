@@ -18,7 +18,7 @@ const FAQ_R = [
   { q: 'How does it sound like me?', a: 'In the dashboard you paste a few of your own past replies, your business facts (hours, prices, delivery, links) and pick a tone. Every draft is written to match, and it only uses the facts you give it.' },
   { q: 'How do I get my key?', a: 'Create a free Aurora account and open My account: your Aurora Reply key is there. Install the extension, open its dashboard, go to Settings & key and paste it. Your 3-day trial starts the first time you use it.' },
   { q: 'What counts as a draft?', a: 'Each reply it writes counts as one. You choose 1, 2 or 3 replies per comment, so you can use fewer when you only need one. Quick replies are free.' },
-  { q: 'What is sent to your server?', a: 'Only when you press “Draft a reply”: the comment you chose, the post caption and your voice settings. They go to an AI service (Anthropic) to write the drafts. We keep only a count of drafts — not your comments or replies. Your history and settings stay in your browser.' },
+  { q: 'What is sent to your server?', a: 'Only when you press “Draft a reply”: the comment you chose, the post caption and your voice settings. They go to an AI service (Anthropic) to write the drafts. We keep only a count of drafts — not your comments or replies. Your history stays in your browser. Your voices are backed up to your key (you can turn that off), so you get them back if you reinstall.' },
   { q: 'Does it read private messages?', a: 'No. Aurora Reply is built for public comments only.' },
   { q: 'Which platforms and languages?', a: 'Facebook, Instagram and TikTok in Chrome and Chromium browsers on desktop. Comments are found in English, French, Spanish, Portuguese, German, Italian, Dutch, Japanese, Chinese, Korean, Arabic, Russian, Turkish and more.' },
   { q: 'What does it cost?', a: 'A free 3-day trial with every feature, then 10 free replies every month. Need more? Buy a reply pack (one-off, valid 12 months) or subscribe monthly — the subscription is much cheaper per reply. Prices are in the Plans section above.' },
@@ -71,7 +71,7 @@ export default function ReplyPage() {
 
       <section className="block" style={{ paddingTop: 0 }}><div className="wrap">
         <div className="rcallout"><div><span className="eyebrow" style={{ color: '#fbbf24' }}>Private by design</span><h2>You stay in control.</h2></div>
-          <ul><li>It only reads a comment when you press <b>Draft a reply</b>.</li><li>It never presses Send, never reads private messages and never asks for your password.</li><li>Your voice, history and quick replies stay in your browser. Our server keeps only a count of drafts.</li></ul>
+          <ul><li>It only reads a comment when you press <b>Draft a reply</b>.</li><li>It never presses Send, never reads private messages and never asks for your password.</li><li>Your history stays in your browser. Your voices and quick replies are backed up to your key so a reinstall can restore them — you can turn that off. Otherwise our server keeps only a count of drafts.</li></ul>
           <p>Read the <Link href="/legal/privacy">privacy policy</Link>.</p></div>
       </div></section>
 

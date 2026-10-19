@@ -11,7 +11,7 @@ const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tik
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
 const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-const CHANGELOG = [{ v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Report a problem on Telegram or by email, straight from the panel']}];
+const CHANGELOG = [{ v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Your voices are backed up to your key, so a reinstall or a new computer gets them back','Report a problem on Telegram or by email, straight from the panel']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -166,8 +166,14 @@ function applyPrefs() {
   const th = S.prefs.theme || 'light';
   if (th === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = th;
   $$('#theme button').forEach((b) => b.classList.toggle('on', b.dataset.th === th));
+  $$('#bkToggle button').forEach((b) => b.classList.toggle('on', (b.dataset.b === 'on') === (S.prefs.backup !== false)));
   $$('#histToggle button').forEach((b) => b.classList.toggle('on', (b.dataset.h === 'on') === (S.prefs.history !== false)));
 }
+async function showBackup() {
+  const st = await get('syncState', null); const el = $('#bkStatus'); if (!el) return;
+  el.textContent = S.prefs.backup === false ? 'Backup is off. Your voices stay only in this browser.' : !S.hasKey ? 'Add your key to turn backup on.' : !st ? 'Not backed up yet.' : st.ok ? 'Backed up ' + new Date(st.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ✓' : st.status === 'network' ? 'Could not reach Aurora. It will try again later.' : 'Backup did not work. Try again in a moment.';
+}
+async function afterRestore() { S.voice = await get('voice', {}); S.quick = await get('quick', []); fillVoice(); await renderProfiles(); renderAll(); await showBackup(); }
 async function checkKey() {
   const key = $('#key').value.trim().toUpperCase();
   await set({ licenseKey: key }); S.hasKey = !!key;
@@ -177,6 +183,7 @@ async function checkKey() {
   if (r.ok) { status('ok', r.status === 'beta' ? 'Key accepted · beta access' : 'Key accepted ✓'); meter(r.usage); }
   else { status('bad', r.message || 'That key was not accepted.'); meter(r.usage || null); }
   renderOverview();
+  const b = await ask('syncNow'); if (b && b.restored) { await afterRestore(); toast('Welcome back — your saved voices are restored ✓'); } else await showBackup();
 }
 
 
@@ -217,7 +224,7 @@ async function load() {
 
 (async () => {
   const key = await load();
-  $('#key').value = key; fillVoice(); applyPrefs(); renderAll(); meter(S.usage);
+  $('#key').value = key; fillVoice(); applyPrefs(); renderAll(); meter(S.usage); showBackup();
   if (key) status('warn', 'Saved — press “Save & check” to verify'); else status('warn', 'Add your key to start');
   await renderProfiles();
   go(location.hash.slice(1) || 'overview');
@@ -281,11 +288,14 @@ async function load() {
 
   // settings
   $('#theme').addEventListener('click', async (e) => { const b = e.target.closest('[data-th]'); if (!b) return; S.prefs.theme = b.dataset.th; await set({ prefs: S.prefs }); applyPrefs(); });
+  $('#bkToggle').addEventListener('click', async (e) => { const b = e.target.closest('[data-b]'); if (!b) return; S.prefs.backup = b.dataset.b === 'on'; await set({ prefs: S.prefs }); applyPrefs(); if (S.prefs.backup) { readForm(); await set({ voice: S.voice }); await ask('syncNow'); toast('Voice backup is on'); } else toast('Backup is off — nothing new will be saved'); await showBackup(); });
+  $('#bkNow').addEventListener('click', async () => { if (!S.hasKey) return toast('Add your key first'); readForm(); await set({ voice: S.voice }); const r = await ask('syncNow', { mode: 'push' }); toast(r.ok ? 'Backed up ✓' : r.status === 'off' ? 'Turn backup on first' : 'Could not back up right now'); await showBackup(); });
+  $('#bkRestore').addEventListener('click', async () => { if (!S.hasKey) return toast('Add your key first'); if (!confirm('Replace the voices in this browser with your saved backup?')) return; await set({ syncMeta: { at: 0, sig: '' }, voice: {}, profiles: { default: { label: 'Main', voice: {} } }, activeProfile: 'default', quick: [] }); const r = await ask('syncNow'); await afterRestore(); toast(r.restored ? 'Your saved voices are back ✓' : r.status === 'off' ? 'Turn backup on first' : 'No saved backup was found'); });
   $('#histToggle').addEventListener('click', async (e) => { const b = e.target.closest('[data-h]'); if (!b) return; S.prefs.history = b.dataset.h === 'on'; await set({ prefs: S.prefs }); applyPrefs(); renderHistory(); toast(S.prefs.history ? 'History is on' : 'History is off — nothing new will be saved'); });
   $('#export').addEventListener('click', async () => { const all = { exportedAt: new Date().toISOString(), voice: S.voice, profiles: (await get('profiles', {})), quickReplies: S.quick, history: S.history }; download('aurora-reply-data.json', JSON.stringify(all, null, 2), 'application/json'); toast('Downloaded'); });
   $('#wipe').addEventListener('click', async () => {
     if (!confirm('Delete your voice, history and quick replies from this browser? Your key stays.')) return;
-    S.history = []; S.quick = []; S.voice = {}; await set({ history: [], quick: [] }); await AuroraProfiles.reset(); fillVoice(); await renderProfiles(); renderAll(); toast('Everything deleted');
+    S.history = []; S.quick = []; S.voice = {}; await set({ history: [], quick: [] }); await AuroraProfiles.reset(); await ask('syncNow', { mode: 'erase' }); fillVoice(); await renderProfiles(); renderAll(); showBackup(); toast('Everything deleted');
   });
 
   // live updates when drafts are written on a post in another tab

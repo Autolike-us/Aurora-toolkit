@@ -94,3 +94,35 @@ function route_reply_account(): void
     }
     json_out($out);
 }
+
+/** Voice backup: the voice profiles and quick replies (never the history) are kept under the key so a reinstall can restore them.
+    Works for any real key, even one with no replies left, so people can always get their voices back. */
+function route_reply_sync(): void
+{
+    header('Access-Control-Allow-Origin: *');
+    $b = body();
+    $key = strtoupper(trim((string) ($b['key'] ?? ''))); $iid = (string) ($b['installId'] ?? '');
+    if (!preg_match('/^AUR-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/', $key) || strlen($iid) < 8 || strlen($iid) > 80)
+        json_out(['ok' => false, 'status' => 'invalid', 'message' => 'That key does not look right.'], 400);
+    rate_limit('reply-sync-ip:' . client_ip(), 600, 3600);
+    rate_limit('reply-sync-key:' . $key, 60, 3600);
+    if (!master_license($key) && !q_one('SELECT license_key FROM licenses WHERE license_key = ?', [$key]))
+        json_out(['ok' => false, 'status' => 'invalid', 'message' => 'License key not found.'], 404);
+    reply_ensure_table();
+    $h = hash('sha256', $key);
+    $row = q_one('SELECT data, updated_ms FROM reply_sync WHERE k = ?', [$h]);
+    if (($b['action'] ?? 'get') === 'delete') { q('DELETE FROM reply_sync WHERE k = ?', [$h]); json_out(['ok' => true]); }
+    if (($b['action'] ?? 'get') === 'put') {
+        $d = $b['data'] ?? null;
+        if (!is_array($d)) json_out(['ok' => false, 'status' => 'bad_data', 'message' => 'Nothing to save.'], 400);
+        $d = array_intersect_key($d, array_flip(['profiles', 'activeProfile', 'quick']));
+        $json = json_encode($d, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($json === false || strlen($json) > 90000) json_out(['ok' => false, 'status' => 'too_big', 'message' => 'Your voices are too large to back up. Shorten some samples.'], 413);
+        $ms = (int) round(microtime(true) * 1000);
+        if ($row) q('UPDATE reply_sync SET data = ?, updated_ms = ?, updated_at = ? WHERE k = ?', [$json, $ms, now(), $h]);
+        else q('INSERT INTO reply_sync (k, data, updated_ms, updated_at) VALUES (?,?,?,?)', [$h, $json, $ms, now()]);
+        json_out(['ok' => true, 'updatedAt' => $ms]);
+    }
+    if (!$row) json_out(['ok' => true, 'data' => null, 'updatedAt' => 0]);
+    json_out(['ok' => true, 'data' => json_decode((string) $row['data'], true), 'updatedAt' => (int) $row['updated_ms']]);
+}
