@@ -61,6 +61,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       }
       send(r);
     } else if (msg.type === 'status') send(await api('/reply/status', {}));
+    else if (msg.type === 'histUpdate') {
+      await withHistory((h) => {
+        const x = h.find((e) => e.id === msg.id); if (!x || (msg.action !== 'inserted' && msg.action !== 'copied')) return;
+        const text = clip(msg.chosen, 700);
+        if (x.action !== 'inserted' || msg.action === 'inserted') x.action = msg.action; // a reply that was put in the box stays "Used" even if copied again
+        x.chosen = text; x.edited = !!text.trim() && !(x.drafts || []).some((d) => d.trim() === text.trim()); x.quick = !!msg.quick; x.usedAt = Date.now();
+      });
+      send({ ok: true });
+    }
     else if (msg.type === 'syncNow') send(msg.mode === 'push' ? await AuroraSync.push() : msg.mode === 'erase' ? await AuroraSync.erase() : await AuroraSync.pull());
     else if (msg.type === 'openOptions') { chrome.runtime.openOptionsPage(); send({ ok: true }); }
     else if (msg.type === 'profiles') send({ ok: true, ...(await AuroraProfiles.list()) });

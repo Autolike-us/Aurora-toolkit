@@ -38,6 +38,8 @@ const cleanup = () => pids.forEach((p) => { try { process.kill(p, 'SIGTERM'); } 
   need(!/AUR-CHAI|installId|install-/.test(JSON.stringify(req.body)), 'the customer\'s license key and install id are not passed on to the AI service');
   await page.locator('[data-use="1"]').click(); await page.waitForTimeout(600);
   need(await page.evaluate(() => document.getElementById('box').value === '@maya.k Glad you liked it — see you soon!' && window.__events.length === 0), 'the chosen reply is inserted, nothing is sent');
+  const hx = await sw.evaluate(async () => (await chrome.storage.local.get('history')).history[0]);
+  need(hx.action === 'inserted' && /Glad you liked it/.test(hx.chosen) && hx.edited === false, 'a reply put in the box is marked Used in the history, and not marked edited');
   await page.click('button.pill'); await page.locator('[data-draft="1"]').click(); await page.waitForSelector('textarea.dt'); 
   await page.click('#back'); await page.locator('[data-draft="0"]').click(); await page.waitForSelector('.err', { timeout: 10000 });
   need(/used all 4 drafts/.test(await page.textContent('.err')), 'after the monthly quota the person sees a clear message instead of drafts');

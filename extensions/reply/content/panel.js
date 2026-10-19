@@ -37,7 +37,8 @@
     .q{border-left:3px solid #f97316;padding:4px 0 4px 10px;color:#3d342b;font-size:13.5px}.q b{display:block;font-size:12px;color:#7a7066}
     .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid rgba(40,25,10,.16);background:#fff;border-radius:99px;padding:4px 11px;font:600 12.5px system-ui,sans-serif;cursor:pointer;color:#3d342b}.chip.on{background:#f97316;border-color:#f97316;color:#1a1209}
     .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#3d342b}.row label{display:flex;gap:6px;align-items:center;cursor:pointer}
-    input.h,select.h{width:100%;background:#fff;border:1px solid rgba(40,25,10,.18);border-radius:10px;padding:8px 10px;font:13px system-ui,sans-serif}
+    input.h,select.h{color:#1a1612;color-scheme:light;width:100%;background:#fff;border:1px solid rgba(40,25,10,.18);border-radius:10px;padding:8px 10px;font:13px system-ui,sans-serif}
+    select.h option{color:#1a1612;background:#fff}
     .d{border:1.5px solid rgba(40,25,10,.14);border-radius:14px;padding:10px;display:grid;gap:8px}.d:focus-within{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.14)}
     textarea.dt{width:100%;border:0;resize:none;font:14px/1.45 system-ui,sans-serif;color:#1a1612;outline:none;min-height:46px;background:transparent}
     .note{font-size:12.5px;color:#7a7066}.warn{background:#fff4dd;border:1px solid #f1d28a;border-radius:12px;padding:9px 12px;font-size:13px;color:#5c4400}
