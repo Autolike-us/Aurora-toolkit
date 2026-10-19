@@ -19,6 +19,7 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
         if (m.type === 'status') cb(store.licenseKey === 'AUR-GOOD-GOOD-GOOD' ? { ok: true, status: 'active', usage: { used: 12, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } } : { ok: false, message: 'License key not found. Check it on your Aurora account page.' });
         else if (m.type === 'draft') cb({ ok: true, drafts: [{ text: 'Sundays are pick-up only 🥖' }, { text: 'Tue–Sat we deliver!' }, { text: 'DM us your address.' }], flag: 'none', note: '', usage: { used: 13, limit: 1500, resetsAt: '2026-11-01T00:00:00Z' } });
         else if (m.type === 'getState') cb({ ok: true, hasKey: !!store.licenseKey, voiceReady: !!(store.voice && store.voice.samples && store.voice.samples.length), usage: store.usage || null });
+        else if (m.type === 'syncNow') { if (m.mode === 'peek') cb(window.__peek || { ok: true, found: false }); else if (window.__peek) { store.voice = { samples: ['Hi!'], about: 'Open Tue–Sun' }; window.__peek = null; cb({ ok: true, restored: true }); } else cb({ ok: true }); }
         else cb({ ok: true }); }, 20); } },
     };
   };
@@ -144,11 +145,24 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(250); await nav('overview');
   check('subscription: no upgrade banner', await pg.isHidden('#planCard'));
 
+  // ---- a saved voice backup is offered on the Overview when this browser has no voice yet
+  await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; window.__peek = { ok: true, found: true, at: Date.now() - 86400000, voices: 2, quick: 3 }; });
+  await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(400);
+  await nav('overview');
+  check('overview: when a backup exists and no voice is set up here, the step says so and offers "Restore my voices"', /We found your saved voices \(2 voices, 3 quick replies/.test(await pg.textContent('#setup')) && !!(await pg.$('#setup [data-restore]')) && /Start fresh/.test(await pg.textContent('#setup')));
+  await pg.click('#setup [data-restore]'); await pg.waitForTimeout(500);
+  check('overview: one click restores the voices and the step turns done', !(await pg.$('#setup [data-restore]')) && /Teach it your voice/.test(await pg.textContent('#setup')) && (await pg.evaluate(() => window.__store.voice.samples.length)) === 1 && !/We found your saved voices/.test(await pg.textContent('#setup')));
+  await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; });
+  await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(400);
+  await nav('overview');
+  check('overview: with no backup the step is the normal "Open" button', !/We found your saved voices/.test(await pg.textContent('#setup')) && !(await pg.$('#setup [data-restore]')));
   await pg.unroute('**/*'); await pg.setViewportSize({ width: 340, height: 420 });
+
   await page('popup.html');
   check('popup: shows the steps and "Ready" once a key is saved', /Open a post/.test(await pg.textContent('.how')) && /Add your key/.test(await pg.textContent('#st')));
   await pg.evaluate(() => { window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; window.__store.usage = { used: 12, limit: 1500 }; });
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; window.__store.usage = { used: 12, limit: 1500 }; }); await pg.addScriptTag({ content: read('popup.js') }); await pg.waitForTimeout(150);
   check('popup: with a key it says Ready and shows usage', /Ready/.test(await pg.textContent('#st')) && /12 of 1500/.test(await pg.textContent('#st')));
+
   await b.close(); done();
 })();

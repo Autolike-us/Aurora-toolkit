@@ -11,7 +11,7 @@ const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tik
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
 const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-const CHANGELOG = [{ v: '1.1.0', title: 'New: comment on any post', items: ['Press “Draft a comment” in the panel to write a new comment under a post — not only replies', 'Choose a style: Friendly, Funny, Serious, Professional, Supportive or Curious', 'Aurora reads the post, comments in the post’s language, and you read, edit and press Send', 'Replies now follow the language of the comment, and translated comments are read in their original language'] }, { v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Your voices are backed up to your key, so a reinstall or a new computer gets them back','Report a problem on Telegram or by email, straight from the panel']}];
+const CHANGELOG = [{ v: '1.1.0', title: 'New: comment on any post', items: ['Press “Draft a comment” in the panel to write a new comment under a post — not only replies', 'Choose a style: Friendly, Funny, Serious, Professional, Supportive or Curious', 'Aurora reads the post, comments in the post’s language, and you read, edit and press Send', 'Replies now follow the language of the comment, and translated comments are read in their original language', 'On a new install the Overview offers to restore your saved voices in one click'] }, { v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Your voices are backed up to your key, so a reinstall or a new computer gets them back','Report a problem on Telegram or by email, straight from the panel']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -57,9 +57,11 @@ function renderOverview() {
     [!!((S.voice.samples || []).length || (S.voice.about || '').trim()), 'Teach it your voice', 'Add a few of your own replies and your business facts.', 'voice'],
     [h.length > 0 || !!(u && u.used > 0), 'Write your first reply', 'Open a post on Facebook, Instagram or TikTok and press ✦ Reply — or try it in My voice.', 'voice'],
   ];
+  const pk = S.peek;
+  if (!steps[1][0] && S.hasKey && pk && pk.found) { steps[1][2] = `We found your saved voices (${pk.voices} voice${pk.voices === 1 ? '' : 's'}${pk.quick ? `, ${pk.quick} quick repl${pk.quick === 1 ? 'y' : 'ies'}` : ''}${pk.at ? `, saved ${when(pk.at)}` : ''}). Bring them back in one click, or start fresh in My voice.`; steps[1][4] = true; }
   const done = steps.filter((s) => s[0]).length;
   $('#setupCard').hidden = done === 3; $('#setupCount').textContent = `· ${done} of 3`;
-  $('#setup').innerHTML = steps.map((s, i) => `<li class="${s[0] ? 'ok' : ''}"><span class="dot">${s[0] ? '✓' : i + 1}</span><div><b>${s[1]}</b><small>${s[2]}</small></div>${s[0] ? '' : `<button class="btn sm" data-go="${s[3]}">Open</button>`}</li>`).join('');
+  $('#setup').innerHTML = steps.map((s, i) => `<li class="${s[0] ? 'ok' : ''}"><span class="dot">${s[0] ? '✓' : i + 1}</span><div><b>${s[1]}</b><small>${s[2]}</small></div>${s[0] ? '' : s[4] ? `<button class="btn sm p" data-restore="1">Restore my voices</button> <button class="btn sm" data-go="${s[3]}">Start fresh</button>` : `<button class="btn sm" data-go="${s[3]}">Open</button>`}</li>`).join('');
   // activity
   const days = [], today = new Date(); today.setHours(0, 0, 0, 0);
   for (let i = 13; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); days.push(d); }
@@ -173,6 +175,12 @@ async function showBackup() {
   const st = await get('syncState', null); const el = $('#bkStatus'); if (!el) return;
   el.textContent = S.prefs.backup === false ? 'Backup is off. Your voices stay only in this browser.' : !S.hasKey ? 'Add your key to turn backup on.' : !st ? 'Not backed up yet.' : st.ok ? 'Backed up ' + new Date(st.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ✓' : st.status === 'network' ? 'Could not reach Aurora. It will try again later.' : st.http === 404 || st.http === 405 ? 'Backup is not switched on at the server yet (the server needs the latest update). Your voices are still safe in this browser.' : 'Backup did not work (' + (st.status || 'error') + (st.http ? ', ' + st.http : '') + '). Try again in a moment.';
 }
+/** Is there a saved backup under this key that this browser doesn't have yet? Only asked when the voice step is still open. */
+async function checkBackup() {
+  S.peek = null;
+  if (S.hasKey && S.prefs.backup !== false && !((S.voice.samples || []).length || (S.voice.about || '').trim())) { try { const r = await ask('syncNow', { mode: 'peek' }); S.peek = r && r.ok ? r : null; } catch (_) {} }
+  renderOverview();
+}
 async function afterRestore() { S.voice = await get('voice', {}); S.quick = await get('quick', []); fillVoice(); await renderProfiles(); renderAll(); await showBackup(); }
 async function checkKey() {
   const key = $('#key').value.trim().toUpperCase();
@@ -183,7 +191,7 @@ async function checkKey() {
   if (r.ok) { status('ok', r.status === 'beta' ? 'Key accepted · beta access' : 'Key accepted ✓'); meter(r.usage); }
   else { status('bad', r.message || 'That key was not accepted.'); meter(r.usage || null); }
   renderOverview();
-  const b = await ask('syncNow'); if (b && b.restored) { await afterRestore(); toast('Welcome back — your saved voices are restored ✓'); } else await showBackup();
+  const b = await ask('syncNow'); if (b && b.restored) { await afterRestore(); toast('Welcome back — your saved voices are restored ✓'); } else { await showBackup(); checkBackup(); }
 }
 
 
@@ -224,7 +232,7 @@ async function load() {
 
 (async () => {
   const key = await load();
-  $('#key').value = key; fillVoice(); applyPrefs(); renderAll(); meter(S.usage); showBackup();
+  $('#key').value = key; fillVoice(); applyPrefs(); renderAll(); meter(S.usage); showBackup(); checkBackup();
   if (key) status('warn', 'Saved — press “Save & check” to verify'); else status('warn', 'Add your key to start');
   await renderProfiles();
   go(location.hash.slice(1) || 'overview');
@@ -232,6 +240,7 @@ async function load() {
   setInterval(renderOverview, 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) renderOverview(); });
 
   document.addEventListener('click', async (e) => {
+    const rs = e.target.closest('[data-restore]'); if (rs) { rs.disabled = true; rs.textContent = 'Restoring…'; const r = await ask('syncNow'); await afterRestore(); await checkBackup(); toast(r && r.restored ? 'Your saved voices are back ✓' : 'Could not restore — open Settings & key → Voice backup to try again'); return; }
     const n = e.target.closest('[data-view], [data-go]'); if (n) { go(n.dataset.view || n.dataset.go); return; }
     const tb = e.target.closest('[data-tour]');
     if (tb) { const a = tb.dataset.tour; if (a === 'next') showTour(tourI + 1); else if (a === 'back') showTour(tourI - 1); else endTour(); return; }

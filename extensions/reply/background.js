@@ -70,7 +70,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       });
       send({ ok: true });
     }
-    else if (msg.type === 'syncNow') send(msg.mode === 'push' ? await AuroraSync.push() : msg.mode === 'erase' ? await AuroraSync.erase() : await AuroraSync.pull());
+    else if (msg.type === 'syncNow') send(msg.mode === 'push' ? await AuroraSync.push() : msg.mode === 'erase' ? await AuroraSync.erase() : msg.mode === 'peek' ? await AuroraSync.peek() : await AuroraSync.pull());
     else if (msg.type === 'openOptions') { chrome.runtime.openOptionsPage(); send({ ok: true }); }
     else if (msg.type === 'profiles') send({ ok: true, ...(await AuroraProfiles.list()) });
     else if (msg.type === 'setProfile') { await AuroraProfiles.switchTo(msg.id); send({ ok: true, ...(await AuroraProfiles.list()) }); }

@@ -38,6 +38,10 @@ const KEY = 'AUR-SYNC-TEST-0001';
   // 2. reinstall: a brand-new browser, same key
   const B = await launch();
   await B.opts.click('.nav[data-view=voice]'); need((await B.opts.inputValue('#samples')) === '', 'a fresh install starts empty');
+  const pk = await B.sw.evaluate(async (k) => { await chrome.storage.local.set({ licenseKey: k }); const r = await AuroraSync.peek(); const cs = await chrome.storage.local.get(['voice', 'quick']); return { r, voiceAfter: cs.voice || {}, quickAfter: cs.quick || [] }; }, KEY);
+  need(pk.r.ok && pk.r.found && pk.r.voices === 2 && pk.r.quick === 1 && pk.r.at > 0, 'peeking finds the saved backup (2 voices, 1 quick reply) so the dashboard can offer "Restore my voices"');
+  need(!(pk.voiceAfter.samples || []).length && !pk.quickAfter.length, 'peeking changes nothing in this browser');
+  await B.sw.evaluate(() => chrome.storage.local.remove('licenseKey'));
   await enterKey(B.opts);
   await B.opts.waitForFunction(() => /restored/i.test(document.querySelector('#toast, .toast')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
   await B.opts.click('.nav[data-view=voice]'); await B.opts.waitForTimeout(500);

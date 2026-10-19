@@ -79,6 +79,14 @@
       clearTimeout(S._t);
       S._t = setTimeout(async () => { const cur = sig(await snapshot()); const m = await get('syncMeta', { sig: '' }); if (cur !== m.sig && await get('licenseKey', '')) S.push(); }, 2500);
     },
+    /* Looks at the saved backup without applying it — so the dashboard can offer "Restore my voices". */
+    async peek() {
+      if (!(await enabled())) return { ok: false, status: 'off' };
+      const r = await call('get'); if (!r.ok) return r;
+      if (!r.data) return { ok: true, found: false };
+      const rem = clean(r.data);
+      return { ok: true, found: hasContent(rem), at: r.updatedAt || 0, voices: Object.keys(rem.profiles).length, quick: (rem.quick || []).length };
+    },
     clean, snapshot, hasContent,
   };
   root.AuroraSync = S;
