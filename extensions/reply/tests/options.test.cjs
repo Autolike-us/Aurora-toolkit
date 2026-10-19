@@ -150,7 +150,9 @@ const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(400);
   await nav('overview');
   check('overview: when a backup exists and no voice is set up here, the step says so and offers "Restore my voices"', /We found your saved voices \(2 voices, 3 quick replies/.test(await pg.textContent('#setup')) && !!(await pg.$('#setup [data-restore]')) && /Start fresh/.test(await pg.textContent('#setup')));
+  await pg.evaluate(() => { const o = window.chrome.runtime.sendMessage; window.chrome.runtime.sendMessage = (m, cb) => { if (m.type === 'syncNow' && !m.mode) { window.__store.voice = { samples: ['Hi!'], about: 'Open Tue–Sun' }; return setTimeout(() => cb({ ok: true }), 20); } return o(m, cb); }; }); // the voices had already come back on their own: the server then says "nothing new"
   await pg.click('#setup [data-restore]'); await pg.waitForTimeout(500);
+  check('overview: if the voices were already restored on their own, the message still says they are back (not "could not restore")', /back/.test(await pg.evaluate(() => document.getElementById('toast').textContent)) && !/Could not/.test(await pg.evaluate(() => document.getElementById('toast').textContent)));
   check('overview: one click restores the voices and the step turns done', !(await pg.$('#setup [data-restore]')) && /Teach it your voice/.test(await pg.textContent('#setup')) && (await pg.evaluate(() => window.__store.voice.samples.length)) === 1 && !/We found your saved voices/.test(await pg.textContent('#setup')));
   await pg.reload(); await pg.evaluate(stub); await pg.evaluate(() => { window.__store.licenseKey = 'AUR-GOOD-GOOD-GOOD'; });
   await pg.addScriptTag({ content: read('profiles.js') }); await pg.addScriptTag({ content: read('options.js') }); await pg.waitForTimeout(400);
