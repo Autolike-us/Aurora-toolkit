@@ -88,5 +88,24 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('translated: the "See original" link is found, and neither it nor "Rate this translation" is part of the text', tr0[0].hasOrig && tr0[0].text === 'Do you deliver on Sundays?' && !tr0[1].hasOrig && tr0[1].text === '¿Abren los domingos?', JSON.stringify(tr0));
   const tr1 = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const t = await AuroraReplyAdapters.revealOriginal(c); const again = await AuroraReplyAdapters.revealOriginal(c); return { t, again, now: document.getElementById('tt').textContent, c2: AuroraReplyAdapters.findComments().map((x) => x.text) }; });
   check('translated: asking for the original shows it, returns the original text, and does not toggle it back', tr1.t === '¿Hacen entregas los domingos?' && tr1.again === tr1.t && tr1.now === tr1.t && tr1.c2[0] === tr1.t, JSON.stringify(tr1));
+
+  // Main comment box (a new comment under the post), per site
+  await load('https://www.facebook.com/sunrisebakery/posts/1', FB);
+  let pb = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; await AuroraReplyAdapters.openReply(c); const b = AuroraReplyAdapters.findPostBox(); return { id: b && b.id, all: AuroraReplyAdapters.postBoxes().map((e) => e.id), scope: !!AuroraReplyAdapters.postScope(b), cap: AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)) }; });
+  check('post box (Facebook): finds the main "Write a comment" box, never the reply box that a Reply click opens', pb.id === 'main-box' && !pb.all.includes('reply-box'), JSON.stringify(pb));
+  check('post box (Facebook): the post is read from the box\'s own post', pb.scope && pb.cap.caption === 'Fresh sourdough today!' && pb.cap.author === 'Sunrise Bakery', JSON.stringify(pb));
+  await load('https://www.instagram.com/p/abc/', IG);
+  pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return { id: b && b.id, set: AuroraReplyAdapters.setText(b, 'Great post!'), v: b.value, ev: window.__events }; });
+  check('post box (Instagram): finds "Add a comment…", fills it and does not submit', pb.id === 'box' && pb.set && pb.v === 'Great post!' && pb.ev.length === 0, JSON.stringify(pb));
+  await load('https://www.tiktok.com/@chef/video/1', TT);
+  pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return b && b.id; });
+  check('post box (TikTok): finds the comment input', pb === 'box');
+  // a feed with two posts: the box in the middle of the screen wins, and its own post is read
+  await load('https://www.facebook.com/', `<!doctype html><body><div role="main">
+   <div role="article" style="height:700px"><h3><a href="/one">First Page</a></h3><div data-ad-preview="message">First post text</div><div contenteditable="true" role="textbox" aria-label="Write a comment" id="b1"></div></div>
+   <div role="article" style="height:700px"><h3><a href="/two">Second Page</a></h3><div data-ad-preview="message">Second post text</div><div contenteditable="true" role="textbox" aria-label="Write a comment" id="b2"></div></div></div></body>`);
+  await pg.evaluate(() => document.getElementById('b2').scrollIntoView({ block: 'center' }));
+  pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return { id: b.id, c: AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)) }; });
+  check('post box (feed): the box nearest the middle of the screen is used, with that post\'s text', pb.id === 'b2' && pb.c.caption === 'Second post text' && pb.c.author === 'Second Page', JSON.stringify(pb));
   await b.close(); done();
 })();

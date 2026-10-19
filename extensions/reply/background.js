@@ -51,12 +51,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       const voice = await get('voice', {});
       const comment = { text: clip(msg.comment && msg.comment.text, 1000), author: clip(msg.comment && msg.comment.author, 80) };
       const r = await api('/reply/draft', {
-        platform: msg.platform, count: Math.max(1, Math.min(3, +msg.count || 3)), tone: msg.tone, quality: msg.quality, hint: clip(msg.hint, 200),
+        platform: msg.platform, mode: msg.mode === 'post' ? 'post' : 'reply', count: Math.max(1, Math.min(3, +msg.count || 3)), tone: msg.tone, quality: msg.quality, hint: clip(msg.hint, 200),
         comment, post: { caption: clip(msg.post && msg.post.caption, 800), author: clip(msg.post && msg.post.author, 80) }, voice,
       });
       if (r && r.ok && (r.drafts || []).length && await historyOn()) {
         const id = 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-        await withHistory((h) => { h.unshift({ id, ts: Date.now(), platform: clip(msg.platform, 20), author: comment.author, comment: comment.text, drafts: r.drafts.map((d) => clip(d.text, 700)), chosen: '', action: 'drafted', tone: msg.tone || voice.tone || '', flag: r.flag || 'none' }); });
+        await withHistory((h) => { const isPost = msg.mode === 'post'; h.unshift({ id, ts: Date.now(), platform: clip(msg.platform, 20), mode: isPost ? 'post' : 'reply', author: isPost ? clip(msg.post && msg.post.author, 80) : comment.author, comment: isPost ? clip(msg.post && msg.post.caption, 300) : comment.text, drafts: r.drafts.map((d) => clip(d.text, 700)), chosen: '', action: 'drafted', tone: msg.tone || voice.tone || '', flag: r.flag || 'none' }); });
         r.historyId = id;
       }
       send(r);

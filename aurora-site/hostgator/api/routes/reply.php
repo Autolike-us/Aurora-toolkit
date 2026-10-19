@@ -28,7 +28,8 @@ function route_reply_draft(): void
     header('Access-Control-Allow-Origin: *');
     [$key, $e, $b] = reply_auth();
     $in = reply_input($b);
-    if ($in['comment'] === '') json_out(['ok' => false, 'status' => 'empty', 'message' => 'There is no comment text to reply to.'], 400);
+    if ($in['mode'] === 'post') { if ($in['post'] === '' && $in['hint'] === '') json_out(['ok' => false, 'status' => 'empty', 'message' => 'I could not read the post\'s text. Type a few words about it in the box ("what should the comment say?") and try again.'], 400); }
+    elseif ($in['comment'] === '') json_out(['ok' => false, 'status' => 'empty', 'message' => 'There is no comment text to reply to.'], 400);
     $avail = reply_allow_left($key, $e) + reply_packs_left($e['userId'] ?? null);
     if ($avail <= 0) {
         $renew = gmdate('F j', strtotime(reply_resets_at()));

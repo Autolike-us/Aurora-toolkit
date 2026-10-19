@@ -108,18 +108,41 @@
   A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]'), lastReplyAttempt: A.lastTrace });
 
   /* ---------- the post ---------- */
-  A.postContext = () => {
+  A.postContext = (scope) => {
     const p = A.platformId(); let caption = '', author = '';
-    const first = (sels, scope) => { for (const s of sels) { const e = (scope || document).querySelector(s); const t = txt(e); if (t) return t; } return ''; };
+    const first = (sels, sc) => { for (const s of sels) { const e = (sc || document).querySelector(s); const t = txt(e); if (t) return t; } return ''; };
     if (p === 'tiktok') { caption = first(['[data-e2e="browse-video-desc"]', '[data-e2e="video-desc"]']); author = first(['[data-e2e="browse-username"]', '[data-e2e="video-author-uniqueid"]']); }
-    else if (p === 'instagram') { caption = first(['article h1', 'main article ul li h1', 'div[role="dialog"] h1']); author = first(['article header a[href^="/"]', 'div[role="dialog"] header a[href^="/"]']); }
+    else if (p === 'instagram') { const sc = scope || document; caption = first(['article h1', 'main article ul li h1', 'div[role="dialog"] h1'], sc) || (scope ? first(['h1'], scope) : ''); author = first(['article header a[href^="/"]', 'div[role="dialog"] header a[href^="/"]', 'header a[href^="/"]'], sc); }
     else if (p === 'facebook') {
-      const posts = Array.from(document.querySelectorAll('[role="article"]')).filter((a) => !/^comment/i.test(a.getAttribute('aria-label') || '') && !a.parentElement.closest('[role="article"]'));
-      const post = posts[0] || document;
+      const posts = Array.from(document.querySelectorAll('[role="article"]')).filter((a) => !/^(comment|reply)/i.test(a.getAttribute('aria-label') || '') && !a.parentElement.closest('[role="article"]'));
+      const post = scope || posts[0] || document;
       caption = first(['[data-ad-preview="message"]', '[data-ad-comet-preview="message"]'], post); author = first(['h2 a', 'h3 a', 'strong a'], post);
     }
-    if (!caption) { const m = document.querySelector('meta[property="og:description"]'); caption = (m && m.content) || ''; }
+    if (!caption && !scope) { const m = document.querySelector('meta[property="og:description"]'); caption = (m && m.content) || ''; }
     return { caption: caption.replace(/\s+/g, ' ').trim().slice(0, 800), author: author.replace(/\s+/g, ' ').trim().slice(0, 80) };
+  };
+
+  /* ---------- the main comment box (a new comment under the post, not a reply) ---------- */
+  const COMMENT_HINT = /comment|commentaire|comentar|comentario|coment[aá]rio|kommentar|commento|reageer|reactie|kommentera|komentarz|комментар|коментар|yorum|bình luận|コメント|评论|評論|댓글|تعليق/i;
+  const REPLY_HINT = /repl|répon|respon|antwort|rispond|svara|odpow|ответ|yanıt|cevap|返信|回复|回覆|답글|رد/i;
+  /** Comment boxes that are not a reply box: every visible box that talks about "comment" and not about "reply", has no @mention in it. */
+  A.postBoxes = () => A.editables().filter((e) => visible(e) && !hasMention(e) && ((COMMENT_HINT.test(hintOf(e)) && !REPLY_HINT.test(hintOf(e))) || (!!e.closest && !!e.closest('[data-e2e="comment-input"]'))));
+  /** The one the person means: inside an open post window if there is one, otherwise the one nearest the middle of the screen. */
+  A.findPostBox = () => {
+    const boxes = A.postBoxes(); if (!boxes.length) return null;
+    const mid = innerHeight / 2, dist = (e) => { const r = e.getBoundingClientRect(); return Math.abs((r.top + r.bottom) / 2 - mid); };
+    const inDialog = boxes.filter((e) => e.closest('[role="dialog"]'));
+    const pool = inDialog.length ? inDialog : boxes;
+    return pool.slice().sort((a, b) => dist(a) - dist(b))[0];
+  };
+  /** The post a comment box belongs to (so the AI reads that post, even in a feed with many). */
+  A.postScope = (box) => {
+    for (let el = box && box.parentElement; el && el !== document.body; el = el.parentElement) {
+      if (el.getAttribute('role') === 'article' && !/^(comment|reply)/i.test(el.getAttribute('aria-label') || '')) return el;
+      if (el.tagName === 'ARTICLE') return el;
+      if (el.getAttribute('role') === 'dialog') return el;
+    }
+    return null;
   };
 
   /* ---------- the reply box ---------- */

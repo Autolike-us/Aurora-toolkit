@@ -1,6 +1,6 @@
 # Chrome Web Store submission pack — Aurora Reply
 
-Upload `dist/aurora-reply-1.0.0.zip` (built with `npm run package`). Images are in `store/assets/` (regenerate with `node store/make-assets.cjs`).
+Upload `dist/aurora-reply-1.1.0.zip` (built with `npm run package`). Images are in `store/assets/` (regenerate with `node store/make-assets.cjs`).
 Before submitting: the **privacy policy must be live** — upload the website update first (it adds an "Aurora Reply" section to https://getaurorastudios.com/legal/privacy/).
 
 ## 1. Store listing tab
@@ -13,17 +13,18 @@ Before submitting: the **privacy policy must be live** — upload the website up
 **Detailed description:**
 
 ```
-Aurora Reply writes replies to the comments on your Facebook, Instagram and TikTok posts — in your own voice. You read, edit and press Send yourself. Nothing is ever posted for you.
+Aurora Reply writes replies to comments — and new comments under posts — on Facebook, Instagram and TikTok, in your own voice. You read, edit and press Send yourself. Nothing is ever posted for you.
 
 HOW IT WORKS
 1. Open a post that has comments (on Instagram and TikTok, open the comments first). A black ✦ Reply button appears in the corner of the page.
 2. Press "Draft a reply" next to any comment. You get three options in your voice.
-3. Edit the one you like and press "Use this reply". On Facebook and Instagram it lands in that comment's reply box; on TikTok it is copied and you paste it (Ctrl+V). You press Send.
+3. Or press "Draft a comment" to write a new comment under the post itself, in a style you pick: Friendly, Funny, Serious, Professional, Supportive or Curious.
+4. Edit the one you like and press "Use this reply" (or "Use this comment"). On Facebook and Instagram it lands in that comment's reply box; on TikTok it is copied and you paste it (Ctrl+V). You press Send.
 
 SOUNDS LIKE YOU
 • Teach it your voice once: paste a few of your own replies, your business facts (hours, prices, delivery, links) and your tone
 • It only uses the facts you give it and never invents prices, dates or promises
-• Pick Friendly, Warm, Professional, Playful or Direct — or add a hint like "thank them and mention Saturday"
+• Pick Friendly, Warm, Professional, Playful or Direct for replies, and Funny, Serious, Supportive or Curious for new comments — or add a hint like "thank them and mention Saturday"
 • Replies in the language of the comment, or the language you choose
 • Voice profiles for people who run several brands
 
@@ -39,7 +40,7 @@ YOUR HISTORY, ON YOUR COMPUTER
 • A dashboard with your usage, time saved, activity and platform split — in light or dark
 
 PRIVATE BY DESIGN
-• It only reads a comment when you press "Draft a reply"
+• It only reads a comment or a post when you press "Draft a reply" or "Draft a comment"
 • It never presses Send, never reads private messages and never touches your password or cookies
 • The comment you choose, the post caption and your voice settings are sent to Aurora's server, which asks an AI service (Anthropic) to write the drafts. The server keeps only a count of drafts — not your comments or replies
 • Your history stays in your browser. Your voice profiles and quick replies are backed up to your Aurora key so a reinstall can restore them (you can turn this off)
@@ -56,7 +57,7 @@ Not affiliated with Facebook, Instagram, TikTok or Meta. Replies are suggestions
 - Marquee 1400×560: `promo-marquee-1400x560.png`
 
 ## 3. Privacy tab
-**Single purpose:** Draft replies to comments on Facebook, Instagram and TikTok posts, in the user's own voice, and insert the chosen draft into the comment's reply box for the user to review and send.
+**Single purpose:** Draft replies to comments, and comments under posts, on Facebook, Instagram and TikTok, in the user's own voice, and insert the chosen draft into the comment box for the user to review and send.
 
 **Permission justifications**
 - `storage`: saves the user's key, voice settings, voice profiles, quick replies, reply history and preferences in the browser.
@@ -107,3 +108,9 @@ Facebook, Instagram and TikTok only allow people to open accounts themselves, so
 ## 5. After approval
 - Add the store link to the website's Reply page and the dashboard's "Help & support".
 - Turn on the paid plan (PayPal/Stripe `reply`) when you are ready to sell keys.
+
+
+## 6. Version 1.1.0 — what changed (for the "what's new" / update review)
+- New: "Draft a comment" writes a new comment under a post in a chosen style (Friendly, Funny, Serious, Professional, Supportive, Curious). Same permissions as 1.0.0 — no new permission, no new site. The person still reads, edits and presses Send; nothing is posted automatically and there is no bulk mode.
+- Replies and comments follow the language of the comment/post; translated comments are read in their original language.
+- Update the **Single purpose** and **Description** in the console with the text above.

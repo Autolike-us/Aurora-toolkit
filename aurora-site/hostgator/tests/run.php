@@ -326,6 +326,29 @@ check('an active Reply subscription shows on the account page as the subscriptio
 
 // ---- Reply voice backup ----
 $sy = fn(array $o) => call('POST', '/reply/sync', array_merge(['key' => 'AUR-REPL-AAAA-1111', 'installId' => 'install-sync-1'], $o));
+// Reply language follows the COMMENT, not the (Spanish) voice
+if (is_file(__DIR__ . '/../api/lib/reply.php')) { if (!function_exists('reply_prompt')) { if (!function_exists('cfg')) { function cfg($k, $d = null) { return $d; } } require_once __DIR__ . '/../api/lib/reply.php'; }
+    [$sysP, $usrP] = reply_prompt(reply_input(['comment' => ['text' => 'Do you deliver on Sundays?', 'author' => 'Sam'], 'voice' => ['about' => 'Abrimos de martes a domingo.', 'language' => 'auto', 'samples' => ['¡Gracias! Te esperamos.']]]));
+    check('Reply language: auto means the comment\'s language and the profile language must not decide', str_contains($sysP, 'language the COMMENT is written in') && str_contains($sysP, 'must NOT decide') && str_contains($usrP, 'same language as the comment above'));
+    [$sysQ, $usrQ] = reply_prompt(reply_input(['comment' => ['text' => 'Hola'], 'voice' => ['language' => 'French']]));
+    check('Reply language: a language set in the voice is used for every reply', str_contains($sysQ, 'write every reply in French') && str_contains($usrQ, 'Reply in French.'));
+} else check('Reply language: prompt builder reachable', false);
+// Commenting under a post (not replying to a comment)
+{
+    [$sysP, $usrP] = reply_prompt(reply_input(['mode' => 'post', 'tone' => 'funny', 'post' => ['caption' => 'Fresh sourdough out of the oven at 7am! #bread', 'author' => 'Sunrise Bakery'], 'voice' => ['name' => 'Sam', 'about' => 'Me gusta el pan.', 'language' => 'auto', 'samples' => ['¡Qué rico!']], 'count' => 2]));
+    check('Post comment: asks for a comment under the post, in the post\'s language, in the chosen style', str_contains($sysP, 'under someone else\'s') && str_contains($sysP, 'language the POST is written in') && str_contains($sysP, 'style "funny"') && str_contains($usrP, 'Draft two comments') && str_contains($usrP, 'Fresh sourdough'));
+    check('Post comment: never speaks as the owner, no promo, and sees only text', str_contains($sysP, 'NOT the owner') && str_contains($sysP, 'never its picture or video'));
+    [$sysR, $usrR] = reply_prompt(reply_input(['mode' => 'post', 'post' => ['caption' => '', 'author' => 'X'], 'hint' => 'congratulate them']));
+    check('Post comment: a post with no text still works when the person gives a hint', str_contains($usrR, 'only a picture or video') && str_contains($usrR, 'congratulate them'));
+    [$sysQ, ] = reply_prompt(reply_input(['comment' => ['text' => 'Hola'], 'voice' => ['language' => 'auto']]));
+    check('Post comment: a normal reply still uses the reply prompt', str_contains($sysQ, 'replies to public comments') && !str_contains($sysQ, 'under someone else'));
+}
+$r = call('POST', '/reply/draft', $rbody(['key' => 'AUR-MSTR-AAAA-1111', 'mode' => 'post', 'post' => ['caption' => '', 'author' => 'X'], 'comment' => ['text' => '']]));
+check('Post comment: a post with no readable text and no hint asks the person to type a few words (400)', $r['status'] === 400 && ($r['json']['status'] ?? '') === 'empty' && str_contains((string) ($r['json']['message'] ?? ''), 'Type a few words'));
+$n0 = count($reqs());
+$r = call('POST', '/reply/draft', $rbody(['key' => 'AUR-MSTR-AAAA-1111', 'mode' => 'post', 'tone' => 'funny', 'count' => 2, 'post' => ['caption' => 'Our new puppy came home today!', 'author' => 'Dana'], 'comment' => ['text' => '']]));
+$uq = (string) ((($reqs()[$n0] ?? [])['body']['messages'][0]['content']) ?? '');
+check('Post comment: the route accepts a post with no comment, sends the post to the AI and returns drafts', $r['status'] === 200 && ($r['json']['ok'] ?? false) && count($reqs()) === $n0 + 1 && str_contains($uq, 'Our new puppy') && str_contains($uq, 'to leave under the post'), [$r['status'], $uq]);
 $r = $sy(['action' => 'get']); check('Voice backup: nothing saved yet reads back as empty', $r['status'] === 200 && $r['status'] === 200 && array_key_exists('data', $r['json']) && $r['json']['data'] === null && ($r['json']['updatedAt'] ?? 1) === 0);
 $vd = ['profiles' => ['default' => ['label' => 'Main', 'voice' => ['about' => 'We sell candles', 'samples' => ['Thanks so much! 🕯️']]]], 'activeProfile' => 'default', 'quick' => [['id' => 'q1', 'text' => 'Thank you!']], 'history' => [['secret' => 'x']]];
 $r = $sy(['action' => 'put', 'data' => $vd]); check('Voice backup: saving voices works', $r['status'] === 200 && ($r['json']['updatedAt'] ?? 0) > 0);

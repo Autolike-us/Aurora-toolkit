@@ -1,6 +1,6 @@
 // The panel on the page: list comments, draft, tone, errors, pick mode, "Use this reply" — with the extension's messages stubbed.
 const { launch, read, check, done } = require('./_pw.cjs');
-const { FB, IG } = require('./fixtures.cjs');
+const { FB, IG, TT } = require('./fixtures.cjs');
 (async () => {
   const b = await launch(); const pg = await (await b.newContext({ viewport: { width: 1200, height: 900 } })).newPage(); pg.on('pageerror', (e) => { throw e; });
   const stub = (cfg) => {
@@ -49,6 +49,33 @@ const { FB, IG } = require('./fixtures.cjs');
   check('"Use this reply" puts the (edited) text in Maya\'s reply box, after the @mention', /^Maya K\s+Tue to Sat we deliver — Sundays are pick-up!$/.test(ins.box), JSON.stringify(ins));
   check('it never sends: no Enter key, no submit — and the panel gets out of the way', ins.ev.length === 0 && ins.open === false);
   check('a confirmation tells the person to press Send themselves', /press Send yourself/.test(await pg.evaluate(() => document.querySelector('#aurora-reply-host').shadowRoot.getElementById('toast').textContent)));
+
+
+  // ---- Comment on the post (V2): a new comment under the post, not a reply
+  await open('https://www.facebook.com/sunrisebakery/posts/1', FB, { state: STATE, draft: { ...OK, drafts: [{ text: 'Those loaves look unreal 🥖' }, { text: 'Okay, I need one of these right now.' }] } });
+  await pg.click('button.pill'); await pg.waitForTimeout(150);
+  check('post mode: the list offers "Draft a comment" for the post and still lists every comment', !!(await pg.$('#postc')) && (await pg.locator('.c').count()) === 3);
+  await pg.click('#postc'); await pg.waitForSelector('textarea.dt');
+  const pm = (await msgs('draft'))[0];
+  check('post mode: the request says mode "post", carries the post text and no comment', pm.mode === 'post' && pm.post.caption === 'Fresh sourdough today!' && pm.post.author === 'Sunrise Bakery' && pm.comment.text === '' && pm.platform === 'facebook');
+  check('post mode: the style choices are Friendly, Funny, Serious, Professional, Supportive, Curious and the button says "Use this comment"', (await pg.locator('[data-tone]').allTextContents()).join(',') === 'Friendly,Funny,Serious,Professional,Supportive,Curious' && /Use this comment/.test(await pg.textContent('[data-use="0"]')) && /Post by Sunrise Bakery/.test(await pg.textContent('.q')));
+  check('post mode: "warm" (a reply-only style) falls back to Friendly highlighted', /friendly/i.test(await pg.locator('[data-tone].on').textContent()));
+  await pg.locator('[data-tone="funny"]').click(); await pg.waitForSelector('textarea.dt');
+  check('post mode: choosing Funny writes new drafts with the funny style', (await msgs('draft'))[1].tone === 'funny' && (await msgs('draft'))[1].mode === 'post');
+  await pg.locator('[data-use="0"]').click(); await pg.waitForTimeout(500);
+  const pi = await pg.evaluate(() => ({ main: document.getElementById('main-box').textContent, reply: !!document.getElementById('reply-box'), ev: window.__events }));
+  check('post mode: "Use this comment" fills the post\'s main comment box, opens no reply box and sends nothing', pi.main === 'Those loaves look unreal 🥖' && !pi.reply && pi.ev.length === 0, JSON.stringify(pi));
+  await open('https://www.instagram.com/p/abc/', IG, { state: STATE, draft: OK });
+  await pg.click('button.pill'); await pg.click('#postc'); await pg.waitForSelector('textarea.dt');
+  check('post mode on Instagram reads the caption', (await msgs('draft'))[0].post.caption === 'Fresh sourdough today! #bread' && (await msgs('draft'))[0].post.author === 'sunrisebakery');
+  await pg.locator('[data-use="0"]').click(); await pg.waitForTimeout(400);
+  check('post mode on Instagram fills the "Add a comment" box', (await pg.evaluate(() => document.getElementById('box').value)).startsWith('Hi Maya!'));
+  await open('https://www.tiktok.com/@chef/video/1', TT, { state: STATE, draft: OK });
+  await pg.click('button.pill'); await pg.click('#postc'); await pg.waitForSelector('textarea.dt');
+  check('post mode on TikTok reads the video description', (await msgs('draft'))[0].post.caption === 'Pasta in 60 seconds #food');
+  await pg.goto('about:blank'); await open('https://www.facebook.com/x', `<!doctype html><body><div role="main"><div role="article"><h3><a href="/p">Page</a></h3><div data-ad-preview="message">Hello</div><div role="article" aria-label="Comment by A"><a href="/a">A</a><div dir="auto">Nice</div><div><span role="button">Reply</span></div></div></div></div></body>`, { state: STATE, draft: OK });
+  await pg.click('button.pill'); await pg.waitForTimeout(100);
+  check('post mode: no comment box on the page means no "Draft a comment" card (nothing is guessed)', !(await pg.$('#postc')));
 
   // spam flag + errors
   await open('https://www.facebook.com/sunrisebakery/posts/1', FB, { state: STATE, draft: { ...OK, flag: 'spam', note: 'Looks like a scam link.' } });

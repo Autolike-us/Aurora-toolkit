@@ -40,7 +40,13 @@ const cleanup = () => pids.forEach((p) => { try { process.kill(p, 'SIGTERM'); } 
   need(await page.evaluate(() => document.getElementById('box').value === '@maya.k Glad you liked it — see you soon!' && window.__events.length === 0), 'the chosen reply is inserted, nothing is sent');
   const hx = await sw.evaluate(async () => (await chrome.storage.local.get('history')).history[0]);
   need(hx.action === 'inserted' && /Glad you liked it/.test(hx.chosen) && hx.edited === false, 'a reply put in the box is marked Used in the history, and not marked edited');
-  await page.click('button.pill'); await page.locator('[data-draft="1"]').click(); await page.waitForSelector('textarea.dt'); 
+  await page.evaluate(() => { document.getElementById('box').value = ''; }); // the person sent the reply, so the box is empty again
+  await page.click('button.pill'); await page.click('#postc'); await page.waitForSelector('textarea.dt', { timeout: 10000 });
+  const log2 = fs.readFileSync(path.join(tmp, 'anthropic.log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)); const u2 = log2[log2.length - 1].body.messages[0].content;
+  need(/to leave under the post/.test(u2) && /Fresh sourdough today! #bread/.test(u2) && !/Do you deliver on Sundays\?/.test(u2), 'a new comment under the post goes through the whole chain: the AI is asked to comment on the post, not to reply to a comment');
+  const hp = await sw.evaluate(async () => (await chrome.storage.local.get('history')).history[0]);
+  need(hp.mode === 'post' && /Fresh sourdough/.test(hp.comment) && hp.author === 'sunrisebakery' && hp.action === 'drafted', 'the history keeps it as a comment on that post');
+  need((await page.locator('textarea.dt').count()) === 1 && /4 of 4/.test(await page.textContent('.hd')), 'only the drafts that are left are written (1), and the meter says 4 of 4');
   await page.click('#back'); await page.locator('[data-draft="0"]').click(); await page.waitForSelector('.err', { timeout: 10000 });
   need(/used all 4 drafts/.test(await page.textContent('.err')), 'after the monthly quota the person sees a clear message instead of drafts');
   await ctx.close(); cleanup(); console.log('\nchain test passed');

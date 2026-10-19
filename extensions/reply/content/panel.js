@@ -9,6 +9,7 @@
   const ask = (type, extra) => new Promise((res) => { try { chrome.runtime.sendMessage({ aurora: 'reply', type, ...extra }, (r) => res(r || { ok: false, message: 'The extension was updated — reload this page.' })); } catch (_) { res({ ok: false, message: 'The extension was updated — reload this page.' }); } });
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['direct', 'Direct']];
+  const POST_TONES = [['friendly', 'Friendly'], ['funny', 'Funny'], ['serious', 'Serious'], ['professional', 'Professional'], ['supportive', 'Supportive'], ['curious', 'Curious']];
 
   const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '', hid: '', quick: [], qmark: {}, queue: null, count: 0 };
 
@@ -41,6 +42,7 @@
     select.h option{color:#1a1612;background:#fff}
     .d{border:1.5px solid rgba(40,25,10,.14);border-radius:14px;padding:10px;display:grid;gap:8px}.d:focus-within{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.14)}
     textarea.dt{width:100%;border:0;resize:none;font:14px/1.45 system-ui,sans-serif;color:#1a1612;outline:none;min-height:46px;background:transparent}
+    .pcard{display:grid;gap:6px;background:#fff7ed;border:1px solid #f9c98f;border-radius:14px;padding:11px 13px}.pcard b{font-size:13.5px}.pcard span{font-size:12.5px;color:#7a7066}.pcard .b{justify-self:start}
     .note{font-size:12.5px;color:#7a7066}.warn{background:#fff4dd;border:1px solid #f1d28a;border-radius:12px;padding:9px 12px;font-size:13px;color:#5c4400}
     .err{background:#ffe9ea;border:1px solid #f3b4b8;border-radius:12px;padding:9px 12px;font-size:13px;color:#7a1820}.ok{background:#e4f8ee;border:1px solid #a7e3c4;border-radius:12px;padding:9px 12px;font-size:13px;color:#0d5b36}
     .sk{height:62px;border-radius:14px;background:linear-gradient(90deg,#fdeedd,#fff8ee,#fdeedd);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
@@ -69,6 +71,7 @@
     if (S.done) body += `<div class="ok">${esc(S.done)}</div>`;
     if (S.view === 'list') {
       body += `<div class="bar"><button class="b" id="pick">🎯 Pick a comment on the page</button><button class="b" id="rescan">↻ Rescan</button></div>`;
+      if (A.findPostBox()) body += `<div class="pcard"><b>Comment on this post</b><span>Aurora reads the post and drafts a comment for you — funny, serious, professional and more.</span><button class="b p" id="postc">✎ Draft a comment</button></div>`;
       body += n ? S.comments.map((c, i) => `<div class="c" data-i="${i}"><div class="a">${esc(c.author)}</div><div class="t">${esc(c.text)}</div><div><button class="b p" data-draft="${i}">✦ Draft a reply</button></div></div>`).join('')
         : `<div class="warn"><b>No comments found yet.</b> ${A.platformId() === 'facebook' ? 'Open a post and scroll to its comments' : 'Open the comments first — tap the 💬 speech-bubble icon on the post or video'}; they appear here by themselves (or press Rescan).<br>Comments are on screen but nothing shows? The site may have changed its page. <a class="l" id="report">Report a problem</a> — it takes 10 seconds.</div>`;
       const un = unanswered(); if (un.length) body = body.replace('<div class="c"', `<button class="b p" id="qstart" style="justify-self:start">▶ Reply to unanswered comments (${un.length})</button><div class="c"`);
@@ -80,14 +83,14 @@
     } else {
       const c = S.sel;
       if (S.queue) body += `<div class="bar"><span class="note" style="flex:1"><b>Queue ${S.queue.i + 1} of ${S.queue.list.length}</b></span><button class="b" id="qskip">Skip ›</button><button class="b" id="qstop">Stop</button></div>`;
-      body += `<div class="bar">${S.queue ? '' : '<button class="b" id="back">← All comments</button>'}</div><div class="q"><b>${esc(c.author)} wrote</b>${esc(c.text.length > 300 ? c.text.slice(0, 300) + '…' : c.text)}</div>`;
-      body += `<div class="chips">${TONES.map(([id, l]) => `<button class="chip ${((S.tone || (S.state && S.state.voice && S.state.voice.tone) || 'friendly') === id) ? 'on' : ''}" data-tone="${id}">${l}</button>`).join('')}</div>`;
-      body += `<input class="h" id="hint" maxlength="200" placeholder="Optional: what should the reply say? e.g. thank them and mention Saturday" value="${esc(S.hint)}"><div class="row"><span>Replies:</span><div class="chips">${[1, 2, 3].map((k) => `<button class="chip ${nReplies() === k ? 'on' : ''}" data-count="${k}">${k}</button>`).join('')}</div><span class="note">uses ${nReplies()} draft${nReplies() > 1 ? 's' : ''}</span></div><div class="row"><label><input type="checkbox" id="best" ${S.quality ? 'checked' : ''}> Best quality (slower)</label></div>`;
-      if (S.loading) body += `<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="note">Writing ${nReplies() === 1 ? 'a reply' : nReplies() + ' replies'} in your voice…</div>`;
+      body += `<div class="bar">${S.queue ? '' : '<button class="b" id="back">← All comments</button>'}</div><div class="q"><b>${c.isPost ? 'Post by ' + esc(c.author || 'this account') : esc(c.author) + ' wrote'}</b>${esc(!c.text ? '(No text found — add a hint below about what the post shows.)' : c.text.length > 300 ? c.text.slice(0, 300) + '…' : c.text)}</div>`;
+      body += `<div class="chips">${(c.isPost ? POST_TONES : TONES).map(([id, l]) => `<button class="chip ${(curTone(c) === id) ? 'on' : ''}" data-tone="${id}">${l}</button>`).join('')}</div>`;
+      body += `<input class="h" id="hint" maxlength="200" placeholder="${c.isPost ? 'Optional: what should the comment say? e.g. congratulate them, ask where it was taken' : 'Optional: what should the reply say? e.g. thank them and mention Saturday'}" value="${esc(S.hint)}"><div class="row"><span>${c.isPost ? 'Options:' : 'Replies:'}</span><div class="chips">${[1, 2, 3].map((k) => `<button class="chip ${nReplies() === k ? 'on' : ''}" data-count="${k}">${k}</button>`).join('')}</div><span class="note">uses ${nReplies()} draft${nReplies() > 1 ? 's' : ''}</span></div><div class="row"><label><input type="checkbox" id="best" ${S.quality ? 'checked' : ''}> Best quality (slower)</label></div>`;
+      if (S.loading) body += `<div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="note">Writing ${c.isPost ? (nReplies() === 1 ? 'a comment' : nReplies() + ' comments') : (nReplies() === 1 ? 'a reply' : nReplies() + ' replies')} in your voice…</div>`;
       else {
         if (S.error) body += `<div class="err">${esc(S.error.message)}${S.error.status === 'no_key' || S.error.status === 'invalid' || S.error.status === 'wrong_plan' ? ' <a class="l" id="optKey">Open settings</a>' : ''}${S.error.upgrade ? ' <a class="l" id="upgrade">Get more replies ↗</a>' : ''}</div>`;
         if (S.flag !== 'none') body += `<div class="warn"><b>${{ spam: 'This looks like spam.', abusive: 'This looks abusive.', sensitive: 'This one may need you personally.' }[S.flag]}</b> ${esc(S.note)}</div>`;
-        body += S.drafts.map((d, i) => `<div class="d"><textarea class="dt" data-t="${i}" rows="2">${esc(d)}</textarea><div class="bar"><button class="b p" data-use="${i}">Use this reply</button><button class="b" data-copy="${i}">Copy</button><button class="b" data-save="${i}" title="Add to the examples of how you write">＋ My style</button></div></div>`).join('');
+        body += S.drafts.map((d, i) => `<div class="d"><textarea class="dt" data-t="${i}" rows="2">${esc(d)}</textarea><div class="bar"><button class="b p" data-use="${i}">${c.isPost ? 'Use this comment' : 'Use this reply'}</button><button class="b" data-copy="${i}">Copy</button><button class="b" data-save="${i}" title="Add to the examples of how you write">＋ My style</button></div></div>`).join('');
         if (S.quick.length) body += `<div class="note">⚡ Your quick replies</div><div class="chips">${S.quick.slice(0, 8).map((q, i) => `<button class="chip" data-quick="${i}" title="${esc(q.text)}">${esc(q.title)}</button>`).join('')}</div>`;
         if (S.queue && S.done && /Inserted/.test(S.done)) body = body.replace('<div class="ok">', '<div class="bar"><button class="b p" id="qnext">Next comment ›  (Alt+N)</button></div><div class="ok">');
         if (S.drafts.length || S.error) body += `<div class="bar"><button class="b" id="again">↻ Write new ones</button></div>`;
@@ -125,12 +128,21 @@
     else { const a = document.createElement('a'); a.href = 'mailto:support@getaurorastudios.com?subject=' + encodeURIComponent('Aurora Reply problem on ' + info.platform) + '&body=' + encodeURIComponent(text); a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove(); S.done = 'Your email app should open. The technical details are also copied — paste them if it does not.'; }
     S.view = 'list'; render();
   }
+  const curTone = (c) => { const v = S.tone || (S.state && S.state.voice && S.state.voice.tone) || 'friendly'; return c && c.isPost && !POST_TONES.some(([id]) => id === v) ? 'friendly' : v; };
+  /** A new comment under the post (not a reply): read the post the comment box belongs to, then draft like any reply. */
+  function draftPost() {
+    const box = A.findPostBox();
+    if (!box) { S.done = ''; S.error = { message: 'I could not find this post\'s comment box. Scroll to the post and its "Add a comment" box, then try again.' }; S.view = 'list'; render(); return; }
+    const post = A.postContext(A.postScope(box));
+    S.tone = ''; S.hint = '';
+    draft({ isPost: true, el: box, box, author: post.author, text: post.caption, post });
+  }
   async function draft(c) {
     S.sel = c; S.view = 'draft'; S.loading = true; S.error = null; S.drafts = []; S.flag = 'none'; S.note = ''; S.done = ''; render();
     try { c.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
     if (c.orig) { try { await A.revealOriginal(c); } catch (_) {} render(); }
-    const post = A.postContext();
-    const r = await ask('draft', { platform: A.platformId(), tone: S.tone || undefined, quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: { text: c.text, author: c.author }, post, count: nReplies() });
+    const post = c.isPost ? c.post : A.postContext();
+    const r = await ask('draft', { platform: A.platformId(), mode: c.isPost ? 'post' : 'reply', tone: c.isPost ? curTone(c) : (S.tone || undefined), quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: c.isPost ? { text: '', author: '' } : { text: c.text, author: c.author }, post, count: nReplies() });
     S.loading = false;
     if (r.usage) S.usage = r.usage;
     if (r.ok) { S.hid = r.historyId || ''; S.qmark = {}; S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status, upgrade: r.upgrade || '' };
@@ -140,7 +152,7 @@
   async function use(i) {
     const text = (root.querySelector(`[data-t="${i}"]`) || {}).value || S.drafts[i];
     const c = S.sel; if (!c) return;
-    const box = await A.openReply(c);
+    const box = c.isPost ? (document.contains(c.box) && c.box.isConnected ? c.box : A.findPostBox()) : await A.openReply(c);
     if (box && A.setText(box, text)) {
       logUse('inserted', text, i);
       S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render();
@@ -148,7 +160,7 @@
     } else {
       let copied = false; try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
       logUse('copied', text, i);
-      S.done = A.platformId() === 'tiktok' ? (copied ? 'Copied ✓ ' : '') + 'TikTok needs you to type in its box yourself: click Reply on the comment, click inside the box and press Ctrl+V (Cmd+V on a Mac).' : (copied ? 'Copied. ' : '') + 'I could not open that comment\'s reply box by myself. Click Reply on the comment, click inside its box, and I will fill it in for you — or press Ctrl+V to paste.';
+      S.done = A.platformId() === 'tiktok' ? (copied ? 'Copied ✓ ' : '') + 'TikTok needs you to type in its box yourself: ' + (c.isPost ? 'click inside the comment box' : 'click Reply on the comment, click inside the box') + ' and press Ctrl+V (Cmd+V on a Mac).' : (copied ? 'Copied. ' : '') + (c.isPost ? 'I could not fill the comment box by myself. Click inside it and I will fill it in for you — or press Ctrl+V to paste.' : 'I could not open that comment\'s reply box by myself. Click Reply on the comment, click inside its box, and I will fill it in for you — or press Ctrl+V to paste.');
       S.waiting = true; render();
       const el = await A.waitForBox(45000); S.waiting = false;
       if (el && A.setText(el, text)) { logUse('inserted', text, i); S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render(); toast(S.done); }
@@ -177,12 +189,13 @@
     else if (t.id === 'close') { S.open = false; render(); }
     else if (t.id === 'rescan') { scan(); render(); }
     else if (t.id === 'pick') pickOn();
-    else if (t.id === 'back') { S.view = 'list'; S.queue = null; S.error = null; render(); }
+    else if (t.id === 'back') { if (S.sel && S.sel.isPost) { S.tone = ''; S.hint = ''; } S.view = 'list'; S.queue = null; S.error = null; render(); }
     else if (t.id === 'again') draft(S.sel);
     else if (t.id === 'upgrade') window.open((S.error && S.error.upgrade) || 'https://getaurorastudios.com/reply/#plans', '_blank', 'noopener');
     else if (t.id === 'report') report();
     else if (t.id === 'repTg') reportVia('tg');
     else if (t.id === 'repMail') reportVia('mail');
+    else if (t.id === 'postc') draftPost();
     else if (t.id === 'qstart') { S.view = 'qintro'; render(); }
     else if (t.id === 'qgo') { S.queue = { list: unanswered().slice(0, 15), i: -1 }; queueGo(1); }
     else if (t.id === 'qnext' || t.id === 'qskip') queueGo(1);
