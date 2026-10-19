@@ -1,6 +1,6 @@
 # Chrome Web Store submission pack — Aurora Reply
 
-Upload `dist/aurora-reply-0.3.0.zip` (built with `npm run package`). Images are in `store/assets/` (regenerate with `node store/make-assets.cjs`).
+Upload `dist/aurora-reply-1.0.0.zip` (built with `npm run package`). Images are in `store/assets/` (regenerate with `node store/make-assets.cjs`).
 Before submitting: the **privacy policy must be live** — upload the website update first (it adds an "Aurora Reply" section to https://getaurorastudios.com/legal/privacy/).
 
 ## 1. Store listing tab
@@ -16,9 +16,9 @@ Before submitting: the **privacy policy must be live** — upload the website up
 Aurora Reply writes replies to the comments on your Facebook, Instagram and TikTok posts — in your own voice. You read, edit and press Send yourself. Nothing is ever posted for you.
 
 HOW IT WORKS
-1. Open a post that has comments. A black ✦ Reply button appears in the corner of the page.
+1. Open a post that has comments (on Instagram and TikTok, open the comments first). A black ✦ Reply button appears in the corner of the page.
 2. Press "Draft a reply" next to any comment. You get three options in your voice.
-3. Edit the one you like and press "Use this reply". It lands in that comment's reply box. You press Send.
+3. Edit the one you like and press "Use this reply". On Facebook and Instagram it lands in that comment's reply box; on TikTok it is copied and you paste it (Ctrl+V). You press Send.
 
 SOUNDS LIKE YOU
 • Teach it your voice once: paste a few of your own replies, your business facts (hours, prices, delivery, links) and your tone
@@ -83,15 +83,26 @@ Not affiliated with Facebook, Instagram, TikTok or Meta. Replies are suggestions
 
 ## 4. Test instructions for the reviewer
 1. Make a one-time reviewer code: upload `master-key-ONE-TIME.php` (included) to `public_html/api/`, open `https://getaurorastudios.com/api/master-key-ONE-TIME.php?go=1&note=chrome-reviewer&days=60&products=reply&quota=100`, copy the code it prints (shown only once), and the script deletes itself. It only works for Aurora Reply, for 60 days, 100 replies.
-2. Paste this into the dashboard's **Test instructions** box (replace KEY with that code):
+2. In the dashboard's **Test instructions** tab, tick **Sign-in required** and enter the login of a test account (see "Reviewer test accounts" below), then paste this into the box (replace KEY and VIDEO-LINK):
 
 ```
 Aurora Reply needs an Aurora key. Use this reviewer key: KEY
-1. Click the extension icon > "Open dashboard" > "Settings & key", paste the key, press "Save & check" (it should say "Key accepted").
-2. Open any public post with comments on instagram.com, facebook.com or tiktok.com (you must be logged in to those sites).
-3. A black "Reply" button appears bottom-right. Click it, press "Draft a reply" next to a comment, then "Use this reply". The text is placed in that comment's reply box. The extension never presses Send.
-Nothing is posted by the extension. History stays in the browser. Voice profiles and quick replies are backed up to the user's key (optional, on by default). The server otherwise keeps only a count of replies per key.
+A 1-minute screen recording of the whole flow: VIDEO-LINK
+
+1. Click the extension icon > "Open dashboard" > "Settings & key", paste the key, press "Save & check" (it says "Key accepted").
+2. Open a post with comments on facebook.com, instagram.com or tiktok.com. Those sites need a login: use the test account above (Facebook/Instagram). On Instagram and TikTok, first open the comments by clicking the speech-bubble icon.
+3. A black "Reply" button appears bottom-right. Click it, press "Draft a reply" next to a comment, then "Use this reply".
+   - Facebook and Instagram: the text is placed in that comment's reply box.
+   - TikTok: the reply is copied; click the comment box and paste it (Ctrl+V).
+4. The extension never presses Send and never posts anything. You read, edit and send the reply yourself.
+Data: comment text, post caption and the user's voice settings go to getaurorastudios.com to write the draft. History stays in the browser. Voice profiles and quick replies are backed up to the user's key (optional, on by default).
 ```
+
+### Reviewer test accounts (you create these, I can't)
+Facebook, Instagram and TikTok only allow people to open accounts themselves, so please make one throwaway account per site you list, add a few comments from another account of yours so there is something to reply to, and put the logins in the box above.
+- Use an email that is only for this (for example reviewer@yourdomain), turn two-step login OFF on these accounts, and don't connect any real page or card to them.
+- The platforms can lock a new account when someone logs in from a new place. Check each login still works the day you submit, and keep the screen recording as the backup.
+- TikTok usually lets anyone view a video and its comments without logging in (check on your own), so a test account matters most for Facebook and Instagram.
 
 ## 5. After approval
 - Add the store link to the website's Reply page and the dashboard's "Help & support".

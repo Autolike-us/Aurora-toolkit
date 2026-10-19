@@ -70,7 +70,7 @@
     if (S.view === 'list') {
       body += `<div class="bar"><button class="b" id="pick">🎯 Pick a comment on the page</button><button class="b" id="rescan">↻ Rescan</button></div>`;
       body += n ? S.comments.map((c, i) => `<div class="c" data-i="${i}"><div class="a">${esc(c.author)}</div><div class="t">${esc(c.text)}</div><div><button class="b p" data-draft="${i}">✦ Draft a reply</button></div></div>`).join('')
-        : `<div class="warn"><b>No comments found yet.</b> Open a post and scroll to its comments, then press Rescan.<br>Comments are on screen but nothing shows? The site may have changed its page. <a class="l" id="report">Report a problem</a> — it takes 10 seconds.</div>`;
+        : `<div class="warn"><b>No comments found yet.</b> ${A.platformId() === 'facebook' ? 'Open a post and scroll to its comments' : 'Open the comments first — tap the 💬 speech-bubble icon on the post or video'}; they appear here by themselves (or press Rescan).<br>Comments are on screen but nothing shows? The site may have changed its page. <a class="l" id="report">Report a problem</a> — it takes 10 seconds.</div>`;
       const un = unanswered(); if (un.length) body = body.replace('<div class="c"', `<button class="b p" id="qstart" style="justify-self:start">▶ Reply to unanswered comments (${un.length})</button><div class="c"`);
     } else if (S.view === 'report') {
       body += `<div class="q"><b>Report a problem</b>Tell us what went wrong. We copy a few technical details about the page (no names, no comments) so we can fix it faster.</div><div class="bar"><button class="b p" id="repTg">💬 Telegram channel (fastest)</button><button class="b" id="repMail">✉ Email</button></div><div class="bar"><button class="b" id="back">← Back</button></div>`;
@@ -147,7 +147,7 @@
     } else {
       let copied = false; try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
       logUse('copied', text, i);
-      S.done = (copied ? 'Copied. ' : '') + 'I could not open that comment\'s reply box by myself. Click Reply on the comment, click inside its box, and I will fill it in for you — or press Ctrl+V to paste.';
+      S.done = A.platformId() === 'tiktok' ? (copied ? 'Copied ✓ ' : '') + 'TikTok needs you to type in its box yourself: click Reply on the comment, click inside the box and press Ctrl+V (Cmd+V on a Mac).' : (copied ? 'Copied. ' : '') + 'I could not open that comment\'s reply box by myself. Click Reply on the comment, click inside its box, and I will fill it in for you — or press Ctrl+V to paste.';
       S.waiting = true; render();
       const el = await A.waitForBox(45000); S.waiting = false;
       if (el && A.setText(el, text)) { logUse('inserted', text, i); S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render(); toast(S.done); }
