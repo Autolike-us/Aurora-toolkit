@@ -84,7 +84,7 @@
   };
 
   /** Facts about the page's shape (no names, no comment text) for a "report a problem" message. */
-  A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]') });
+  A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]'), lastReplyAttempt: A.lastTrace });
 
   /* ---------- the post ---------- */
   A.postContext = () => {
@@ -103,43 +103,83 @@
 
   /* ---------- the reply box ---------- */
   const isEditable = (el) => !!el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.type || '')) || el.isContentEditable);
-  A.editables = (scope) => Array.from((scope || document).querySelectorAll('textarea, input, [contenteditable="true"], [contenteditable=""], [role="textbox"]')).filter((e) => isEditable(e) && visible(e));
+  A.editables = (scope) => Array.from((scope || document).querySelectorAll('textarea, input, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"], [role="textbox"], [data-lexical-editor="true"]')).filter((e) => isEditable(e) && visible(e));
   const valOf = (e) => (e.tagName === 'TEXTAREA' || e.tagName === 'INPUT' ? e.value : e.textContent) || '';
-  /** Did clicking Reply really switch a box into "replying to this comment"? Never accepts the plain main box. */
+  const hintOf = (e) => (e.getAttribute('placeholder') || '') + ' ' + (e.getAttribute('aria-label') || '') + ' ' + (e.getAttribute('aria-placeholder') || '') + ' ' + (e.getAttribute('data-placeholder') || '');
+  const hasMention = (e) => /^\s*@\S/.test(valOf(e)) || (!!e.querySelector && !!e.querySelector('a, [contenteditable="false"], [data-lexical-mention], [data-text="true"] a'));
+  /** How likely is this box "the reply box of that comment, just opened by our click"? The plain main comment box scores low. */
+  function score(e, c, snap) {
+    const act = document.activeElement; let s = 0;
+    const isAct = act === e || (e.contains && e.contains(act));
+    const isNew = !snap.before.has(e), focusNow = isAct && snap.active !== act && snap.active !== e;
+    const replHint = /repl|répon|respon|antwort|rispond/i.test(hintOf(e)), mention = hasMention(e);
+    const v = valOf(e), changed = !!v.trim() && v !== snap.vals.get(e);
+    if (!(isNew || focusNow || mention || changed || (replHint && isAct))) return 0; // nothing says our click did anything to this box
+    if (isNew) s += 4;
+    if (isAct) s += 3; if (focusNow) s += (A.platformId() === 'tiktok' ? 3 : 1);
+    if (replHint) s += 3;
+    if (mention) s += 3;
+    if (changed) s += 2;
+    for (let el = c.el, i = 0; el && i < 8; el = el.parentElement, i++) if (el.contains(e)) { s += i < 5 ? 2 : 1; break; }
+    try { const r = e.getBoundingClientRect(), cr = c.el.getBoundingClientRect(); if (Math.abs(r.top - cr.bottom) < 420) s += 1; } catch (_) {}
+    return s;
+  }
   function findBox(c, snap) {
-    const act = document.activeElement;
-    const fresh = (e) => !snap.before.has(e);
-    if (isEditable(act) && visible(act) && fresh(act)) return act;
-    for (let el = c.el, i = 0; el && i < 5; el = el.parentElement, i++) { const n = A.editables(el).filter(fresh); if (n.length) return n[n.length - 1]; }
-    if (isEditable(act) && visible(act)) {
-      const v = valOf(act), hint = (act.getAttribute('placeholder') || '') + ' ' + (act.getAttribute('aria-label') || '') + ' ' + (act.getAttribute('aria-placeholder') || '');
-      const mention = /^\s*@\S/.test(v) || (act.querySelector && !!act.querySelector('a, [contenteditable="false"], [data-lexical-mention]'));
-      const changed = v !== snap.vals.get(act), focusedNow = snap.active !== act;
-      if (mention || /repl/i.test(hint) || (changed && v.trim()) || (focusedNow && A.platformId() === 'tiktok')) return act;
-    }
-    return null;
+    let best = null, bs = 0;
+    for (const e of A.editables()) { const s = score(e, c, snap); if (s > bs) { bs = s; best = e; } }
+    return bs >= 5 ? best : null;
   }
   function realClick(el) {
-    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
+    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, composed: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
     for (const t of ['pointerover', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
       try { el.dispatchEvent(t.startsWith('pointer') ? new PointerEvent(t, { ...o, pointerType: 'mouse', isPrimary: true }) : new MouseEvent(t, o)); } catch (_) {}
     }
   }
+  /** What a person would really be clicking: the innermost thing under the Reply label first, then the button around it, then the outer wrapper.
+      (Clicking a wrapper does nothing when the site's click handler sits on the button inside it.) */
+  function clickTargets(c) {
+    const out = []; const add = (e) => { if (e && e.nodeType === 1 && !out.includes(e)) out.push(e); };
+    const r = c.btn.getBoundingClientRect();
+    let at = null; try { at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); } catch (_) {}
+    if (at && (c.btn.contains(at) || at.contains(c.btn))) add(at);
+    let leaf = c.btn; while (leaf.children && leaf.children.length === 1) leaf = leaf.firstElementChild; add(leaf);
+    add(((at && c.btn.contains(at) ? at : leaf)).closest('[role="button"], button, a')); add(c.btn);
+    return out;
+  }
+  const kind = (e) => (e ? { tag: e.tagName.toLowerCase(), role: e.getAttribute('role') || '', ce: !!e.isContentEditable, hint: /repl/i.test(hintOf(e)), mention: hasMention(e), inDialog: !!(e.closest && e.closest('[role="dialog"]')) } : null);
   /** Click the comment's own Reply button and wait until that comment's reply box is ready. Returns null when it can't be sure
       (so nothing ever lands in the main comment box by mistake). Never sends anything. */
-  A.openReply = async (c, { wait = 3500 } = {}) => {
+  A.lastTrace = null;
+  A.openReply = async (c, { wait = 1500 } = {}) => {
     const eds = A.editables();
     const snap = { before: new Set(eds), vals: new Map(eds.map((e) => [e, valOf(e)])), active: document.activeElement };
+    const trace = A.lastTrace = { platform: A.platformId(), editablesBefore: eds.length, btn: { tag: c.btn.tagName.toLowerCase(), role: c.btn.getAttribute('role') || '', w: Math.round(c.btn.getBoundingClientRect().width), h: Math.round(c.btn.getBoundingClientRect().height) }, tries: [], result: 'none' };
     try { c.el.scrollIntoView({ block: 'center' }); } catch (_) {}
-    await sleep(150);
-    try { c.btn.click(); } catch (_) {}
-    for (let t = 0, retried = false; t < wait; t += 100) {
-      await sleep(100);
-      const box = findBox(c, snap); if (box) return box;
-      if (!retried && t >= 1000) { retried = true; realClick(c.btn); }
+    await sleep(200);
+    const targets = clickTargets(c).slice(0, 4);
+    for (let i = 0; i < targets.length; i++) {
+      const tg = targets[i]; const t = { target: tg.tagName.toLowerCase() + (tg.getAttribute('role') ? '[' + tg.getAttribute('role') + ']' : ''), box: null };
+      trace.tries.push(t);
+      try { tg.click(); } catch (_) {}
+      for (let ms = 0; ms < wait; ms += 100) {
+        await sleep(100);
+        if (ms === 500) realClick(tg);
+        const box = findBox(c, snap);
+        if (box) { t.box = kind(box); t.box.isNew = !snap.before.has(box); trace.result = 'found'; return box; }
+      }
+      t.after = { editables: A.editables().length, active: kind(document.activeElement && isEditable(document.activeElement) ? document.activeElement : null) };
     }
     return null;
   };
+  /** Last resort: the person clicks inside the reply box themselves and we fill the first box they focus. */
+  A.waitForBox = (ms = 30000) => new Promise((res) => {
+    let done = false; const finish = (v) => { if (done) return; done = true; document.removeEventListener('focusin', on, true); clearTimeout(tm); A._cancelWait = null; res(v); };
+    const on = (e) => { const el = e.target; if (isEditable(el) && visible(el)) finish(el); };
+    const tm = setTimeout(() => finish(null), ms);
+    if (A._cancelWait) A._cancelWait();
+    A._cancelWait = () => finish(null);
+    document.addEventListener('focusin', on, true);
+  });
   /** Put text in the box the way a person typing would (frameworks listen for input events). Keeps an @mention the site added. */
   A.setText = (el, text) => {
     el.focus();

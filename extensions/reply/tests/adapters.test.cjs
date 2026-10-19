@@ -59,5 +59,24 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('a page without comments yields none (and does not crash)', (await find()).length === 0);
   const miss = await pg.evaluate(async () => { const el = document.createElement('div'); document.body.appendChild(el); const box = await AuroraReplyAdapters.openReply({ el, btn: el }, { wait: 300 }); return box; });
   check('when no reply box ever appears, openReply gives up politely', miss === null);
+
+  // Harder pages: the click handler sits on a button INSIDE a wrapper that has the same text, and the new box is far from the comment, unfocused and unlabelled.
+  const HARD = (boxAttrs, focus, handlerWorks = true) => `<!doctype html><body><div role="main"><div role="article"><h3><a href="/p">Shop</a></h3><div data-ad-preview="message">Fresh bread</div>
+   <ul id="thread"><li id="th1"><div><div><div><div><div><div><div id="cm"><a href="/amy">Amy L</a><div dir="auto">Do you ship to Canada?</div>
+     <div><span>Like</span> <div class="wrap"><div role="button" tabindex="0" class="rp"><span>Reply</span></div></div> <span>1h</span></div></div></div></div></div></div></div></div></li></ul>
+   <div id="mainwrap"><div contenteditable="true" role="textbox" aria-label="Write a comment" id="main-box"></div></div></div></div>
+   <script>document.addEventListener('click',e=>{ if(!${handlerWorks}) return; const b=e.target.closest('.rp'); if(!b||document.getElementById('rbox'))return; const d=document.createElement('div'); d.innerHTML='<div contenteditable="true" role="textbox" id="rbox" ${boxAttrs}></div>'; document.getElementById('th1').appendChild(d); ${focus ? "document.getElementById('rbox').focus();" : ''} });</script></body>`;
+  for (const [name, attrs, focus] of [['a labelled box that is not focused', 'aria-label="Write a reply…"', false], ['a plain box that is not labelled or focused', '', false], ['a box that takes focus', '', true]]) {
+    await load('https://www.facebook.com/hard', HARD(attrs, focus));
+    const r = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c); return { id: box && box.id, ok: !!box && AuroraReplyAdapters.setText(box, 'We do ship to Canada!'), main: document.getElementById('main-box').textContent }; });
+    check('Harder page, ' + name + ': the click reaches the real button and the comment\'s own box is found', r.id === 'rbox' && r.ok && r.main === '', JSON.stringify(r));
+  }
+  await load('https://www.facebook.com/hard', HARD('', false, false));
+  const stuck = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c, { wait: 400 }); return { box: box === null, trace: AuroraReplyAdapters.lastTrace, diag: JSON.stringify(AuroraReplyAdapters.diagnose()) }; });
+  check('when nothing opens, we give up and leave a trace without any comment text or names', stuck.box && stuck.trace.tries.length >= 2 && !/Amy|Canada/.test(stuck.diag), JSON.stringify(stuck.trace));
+  const guided = await pg.evaluate(async () => { const p = AuroraReplyAdapters.waitForBox(5000); setTimeout(() => { const e = document.createElement('div'); e.contentEditable = 'true'; e.id = 'mine'; document.body.appendChild(e); e.focus(); }, 200); const el = await p; return el && el.id; });
+  check('guided fallback: after the person clicks a box, that is the box we fill', guided === 'mine');
+  const quiet = await pg.evaluate(async () => AuroraReplyAdapters.waitForBox(300));
+  check('guided fallback: gives up quietly when no box is clicked', quiet === null);
   await b.close(); done();
 })();

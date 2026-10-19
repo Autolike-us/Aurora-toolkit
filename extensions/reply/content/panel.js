@@ -144,8 +144,13 @@
       S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render();
       toast(S.done); try { box.focus(); } catch (_) {}
     } else {
-      try { await navigator.clipboard.writeText(text); logUse('copied', text, i); S.done = 'Could not find the reply box, so the reply is copied. Click Reply on that comment and paste it (Ctrl+V).'; } catch (_) { S.done = 'Could not find the reply box. Select the text above, copy it, and paste it into the comment yourself.'; }
-      render();
+      let copied = false; try { await navigator.clipboard.writeText(text); copied = true; } catch (_) {}
+      logUse('copied', text, i);
+      S.done = (copied ? 'Copied. ' : '') + 'I could not open that comment\'s reply box by myself. Click Reply on the comment, click inside its box, and I will fill it in for you — or press Ctrl+V to paste.';
+      S.waiting = true; render();
+      const el = await A.waitForBox(45000); S.waiting = false;
+      if (el && A.setText(el, text)) { logUse('inserted', text, i); S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render(); toast(S.done); }
+      else render();
     }
   }
   let tt; function toast(msg) {
