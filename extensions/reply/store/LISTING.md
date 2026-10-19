@@ -44,8 +44,9 @@ PRIVATE BY DESIGN
 • The comment you choose, the post caption and your voice settings are sent to Aurora's server, which asks an AI service (Anthropic) to write the drafts. The server keeps only a count of drafts — not your comments or replies
 • Your voice, history and quick replies stay in your browser
 
-REQUIRES AN AURORA REPLY KEY
-Aurora Reply is a paid tool with a monthly draft allowance. Get your key at getaurorastudios.com. Not affiliated with Facebook, Instagram, TikTok or Meta. Replies are suggestions — check them before you send and follow each platform's rules.
+FREE TO START — AURORA ACCOUNT NEEDED
+Create a free account at getaurorastudios.com and paste your key into the extension. New accounts get a 3-day trial with every feature, then 10 free replies every month. Need more? Reply packs and a monthly subscription are available at getaurorastudios.com/reply.
+Not affiliated with Facebook, Instagram, TikTok or Meta. Replies are suggestions — check them before you send and follow each platform's rules.
 ```
 
 ## 2. Graphics
@@ -73,15 +74,23 @@ Aurora Reply is a paid tool with a monthly draft allowance. Get your key at geta
 
 **Privacy policy URL:** `https://getaurorastudios.com/legal/privacy/`
 
+**Support URL / homepage (Store listing tab):** support `https://getaurorastudios.com/support/`, homepage `https://getaurorastudios.com/reply/`
+
+## 3b. Distribution tab
+- **Pricing:** Free (the extension itself is free; it needs an Aurora account and has optional paid plans on the website — say so in the description, as done above).
+- **Visibility:** Public.   **Regions:** all regions (or just the ones you serve).
+- **Trader status** (EU/UK): already declared for Extract; it applies to the whole publisher.
+
 ## 4. Test instructions for the reviewer
-Create a reviewer key in `aurora-master-keys.json` (note "Chrome reviewer", an `until` date about 60 days out, quota ~100), then paste this into the dashboard's "Test instructions" box (replace KEY):
+1. Make a one-time reviewer code: upload `master-key-ONE-TIME.php` (included) to `public_html/api/`, open `https://getaurorastudios.com/api/master-key-ONE-TIME.php?go=1&note=chrome-reviewer&days=60&products=reply&quota=100`, copy the code it prints (shown only once), and the script deletes itself. It only works for Aurora Reply, for 60 days, 100 replies.
+2. Paste this into the dashboard's **Test instructions** box (replace KEY with that code):
 
 ```
-Aurora Reply needs a license key. Use this reviewer key: KEY
-1. Open the extension's dashboard (click the toolbar icon > Open dashboard) > "Settings & key", paste the key, press "Save & check" (it should say "Key accepted").
+Aurora Reply needs an Aurora key. Use this reviewer key: KEY
+1. Click the extension icon > "Open dashboard" > "Settings & key", paste the key, press "Save & check" (it should say "Key accepted").
 2. Open any public post with comments on instagram.com, facebook.com or tiktok.com (you must be logged in to those sites).
 3. A black "Reply" button appears bottom-right. Click it, press "Draft a reply" next to a comment, then "Use this reply". The text is placed in that comment's reply box. The extension never presses Send.
-Nothing is posted by the extension. The server stores only a count of drafts per key.
+Nothing is posted by the extension. Voice settings, history and quick replies stay in the browser. The server keeps only a count of replies per key.
 ```
 
 ## 5. After approval
