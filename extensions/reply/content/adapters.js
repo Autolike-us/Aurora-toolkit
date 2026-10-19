@@ -107,6 +107,28 @@
   /** Facts about the page's shape (no names, no comment text) for a "report a problem" message. */
   A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]'), lastReplyAttempt: A.lastTrace });
 
+  /** Only the words a person can see. Facebook hides decoy text (random letters and digits) inside posts to confuse scrapers:
+      skip anything hidden, zero-sized or clipped, then drop any leftover token that looks like a random id. */
+  function visibleText(el) {
+    const out = [];
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    for (let n; (n = w.nextNode());) {
+      if (n.nodeType === 1) { if (n.tagName === 'BR' || getComputedStyle(n).display !== 'inline') out.push(' '); continue; } // line and block breaks keep words apart
+      const raw = n.nodeValue.replace(/\s+/g, ' ');
+      if (!raw.trim()) { out.push(' '); continue; }
+      let hide = false;
+      for (let q = n.parentElement; q; q = q.parentElement) {
+        if (q.getAttribute && q.getAttribute('aria-hidden') === 'true') { hide = true; break; }
+        const cs = getComputedStyle(q);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.05 || parseFloat(cs.fontSize) < 1 || (cs.position === 'absolute' && (/rect\(\s*0/.test(cs.clip) || /inset\(/.test(cs.clipPath || '') || (parseFloat(cs.width) <= 2 && parseFloat(cs.height) <= 2)))) { hide = true; break; }
+        if (q === el) break;
+      }
+      if (!hide) { try { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); if (b.width < 1 || b.height < 1) hide = true; } catch (_) {} }
+      if (hide) continue;
+      out.push(raw);
+    }
+    return out.join('').replace(/\s+/g, ' ').split(' ').filter((t) => !(/^[A-Za-z0-9]{18,}$/.test(t) && /\d/.test(t) && /[A-Za-z]/.test(t))).join(' ').replace(/^[\s·•|]+/, '').trim();
+  }
   /** Facebook shows a post's words in a plain text block (photo viewer, reels, shared posts) without a stable label.
       Take the first real paragraph that sits above the comments: not a comment, not a button label, not the box. */
   function fbBodyText(post) {
@@ -114,7 +136,7 @@
     const out = [];
     for (const el of post.querySelectorAll('div[dir="auto"], span[dir="auto"], div[style*="text-align"]')) {
       if (skip(el) || el.querySelector('div[dir="auto"]')) continue;
-      const t = txt(el).replace(/\s+/g, ' ').trim();
+      const t = visibleText(el);
       if (t.length < 20 || ACTION.test(t) || REPLY_RE.test(t) || /^(write a (public )?comment|most relevant|all comments|see more)/i.test(t)) continue;
       out.push(t); if (out.join(' ').length > 500) break;
     }
@@ -129,7 +151,8 @@
     else if (p === 'facebook') {
       const posts = Array.from(document.querySelectorAll('[role="article"]')).filter((a) => !/^(comment|reply)/i.test(a.getAttribute('aria-label') || '') && !a.parentElement.closest('[role="article"]'));
       const post = scope || posts[0] || document;
-      caption = first(['[data-ad-preview="message"]', '[data-ad-comet-preview="message"]', '[data-ad-rendering-role="story_message"]'], post) || fbBodyText(post); author = first(['h2 a', 'h3 a', 'strong a', 'h2', 'h3'], post);
+      const firstV = (sels, sc) => { for (const q of sels) { const e = sc.querySelector(q); const t = e ? visibleText(e) : ''; if (t) return t; } return ''; };
+      caption = firstV(['[data-ad-preview="message"]', '[data-ad-comet-preview="message"]', '[data-ad-rendering-role="story_message"]'], post) || fbBodyText(post); author = first(['h2 a', 'h3 a', 'strong a', 'h2', 'h3'], post);
     }
     // the page's own description, only where the page IS one post (a photo, video, reel or post page) — never on a feed
     if (!caption && (!scope || /\/(photo|photos|posts|videos|watch|reel|reels|permalink|story)\b|[?&](story_fbid|fbid|v)=/.test(location.pathname + location.search))) { const m = document.querySelector('meta[property="og:description"]'); caption = (m && m.content) || ''; }

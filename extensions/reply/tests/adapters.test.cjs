@@ -120,5 +120,15 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   await load('https://www.facebook.com/x', `<!doctype html><head><meta property="og:description" content="Page-wide text"></head><body><div role="main"><div role="article"><h3><a href="/p">Page</a></h3><div contenteditable="true" role="textbox" aria-label="Write a comment" id="nb"></div></div></div></body>`);
   pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)); });
   check('Facebook feed: the page-wide description is never used as one post\'s text', pb.caption === '', JSON.stringify(pb));
+
+  // Facebook hides decoy letters inside the post's text: only what a person can see is read
+  await load('https://www.facebook.com/photo/?fbid=9', `<!doctype html><body><div role="dialog"><img alt="x" width="300" height="200">
+   <div><h2><a href="/bbcnews">BBC News</a></h2>
+   <div dir="auto"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">dsSnoeptor9m82i313127t6aa3754hl</span><span>2h</span><span aria-hidden="true">3872111908cglamc9chc643a1mh5u</span></div>
+   <div dir="auto"><span style="display:none">zz9a8b7c6d5e4f3g2h1i0jklmnop</span>Kenyan cult leader Paul Mackenzie, who told parents to starve their children, has been found guilty of 191 counts of murder.<div><br></div>Read more: <a href="https://bbc.in/4smJzzB">https://bbc.in/4smJzzB</a><span style="opacity:0">qw3rty7uiop9asdf8ghj2klzx</span> 3872111908cglamc9chc643a1mh5u</div>
+   <ul><li><div role="article" aria-label="Comment by Joe"><a href="/joe">Joe</a><div dir="auto">Were parents charged too? cannot read article</div><div><span role="button">Reply</span></div></div></li></ul>
+   <div contenteditable="true" role="textbox" aria-label="Comment as Aly Pierre" id="cb"></div></div></div></body>`);
+  pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return { id: b && b.id, c: AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)) }; });
+  check('Facebook decoy text: hidden letters and random ids are not read; the visible post text is', pb.id === 'cb' && pb.c.caption === 'Kenyan cult leader Paul Mackenzie, who told parents to starve their children, has been found guilty of 191 counts of murder. Read more: https://bbc.in/4smJzzB', JSON.stringify(pb));
   await b.close(); done();
 })();

@@ -11,6 +11,7 @@ $user = (string) ($req['messages'][0]['content'] ?? '');
 if (strpos($user, 'MAKE-429') !== false) { http_response_code(429); echo json_encode(['type' => 'error', 'error' => ['type' => 'rate_limit_error', 'message' => 'slow down']]); return; }
 if (strpos($user, 'MAKE-AUTHFAIL') !== false) { http_response_code(401); echo json_encode(['type' => 'error', 'error' => ['type' => 'authentication_error']]); return; }
 $ans = ['id' => 'msg_test', 'type' => 'message', 'role' => 'assistant', 'model' => $req['model'] ?? '', 'stop_reason' => 'end_turn', 'usage' => ['input_tokens' => 640, 'output_tokens' => 90]];
+if (strpos($user, 'MAKE-REFUSE-FIRST') !== false && strpos($user, 'sympathy or support') === false) { $ans['stop_reason'] = 'refusal'; $ans['content'] = []; echo json_encode($ans); return; }
 if (strpos($user, 'MAKE-REFUSAL') !== false) { $ans['stop_reason'] = 'refusal'; $ans['content'] = []; echo json_encode($ans); return; }
 if (strpos($user, 'MAKE-BADJSON') !== false) { $ans['content'] = [['type' => 'text', 'text' => 'Sure! Here are some replies']]; echo json_encode($ans); return; }
 $flag = strpos($user, 'MAKE-SPAM') !== false ? 'spam' : 'none';

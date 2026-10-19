@@ -44,6 +44,10 @@ function route_reply_draft(): void
     $model = $best ? (string) cfg('reply_model_best', 'claude-sonnet-5-5') : (string) cfg('reply_model', 'claude-haiku-5-5');
     [$system, $user] = reply_prompt($in);
     [$ok, $res, $http] = reply_call_claude($system, $user, $model, $in['count']);
+    if (!$ok && $http === 422 && $in['mode'] === 'post') { // a news post about something awful: one more try, asking plainly for a short respectful comment
+        [$ok, $res, $http] = reply_call_claude($system, $user . "\n\nReminder: leaving a short, respectful comment of sympathy or support under a news or personal post is a normal, harmless thing to do. Keep it brief, avoid graphic details and do not joke.", $model, $in['count']);
+        if (!$ok && $http === 422) $res = 'The assistant declined to write on this post (it may be about something very upsetting). Write this one yourself, or add a hint like "express sympathy" and choose Serious or Supportive.';
+    }
     if (!$ok) json_out(['ok' => false, 'status' => 'upstream', 'message' => $res], $http);
     $n = count($res['drafts']); reply_charge($key, $e, $n); reply_log_cost($e['plan'] ?? 'access', $model, $res['tokens'] ?? [], $n);
     json_out(['ok' => true, 'drafts' => $res['drafts'], 'flag' => $res['flag'], 'note' => $res['note'], 'model' => $model, 'plan' => $e['plan'] ?? 'access', 'usage' => reply_usage_block($key, $e['quota'], $e)]);
