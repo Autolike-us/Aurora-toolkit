@@ -171,7 +171,7 @@ function applyPrefs() {
 }
 async function showBackup() {
   const st = await get('syncState', null); const el = $('#bkStatus'); if (!el) return;
-  el.textContent = S.prefs.backup === false ? 'Backup is off. Your voices stay only in this browser.' : !S.hasKey ? 'Add your key to turn backup on.' : !st ? 'Not backed up yet.' : st.ok ? 'Backed up ' + new Date(st.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ✓' : st.status === 'network' ? 'Could not reach Aurora. It will try again later.' : 'Backup did not work. Try again in a moment.';
+  el.textContent = S.prefs.backup === false ? 'Backup is off. Your voices stay only in this browser.' : !S.hasKey ? 'Add your key to turn backup on.' : !st ? 'Not backed up yet.' : st.ok ? 'Backed up ' + new Date(st.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ✓' : st.status === 'network' ? 'Could not reach Aurora. It will try again later.' : st.http === 404 || st.http === 405 ? 'Backup is not switched on at the server yet (the server needs the latest update). Your voices are still safe in this browser.' : 'Backup did not work (' + (st.status || 'error') + (st.http ? ', ' + st.http : '') + '). Try again in a moment.';
 }
 async function afterRestore() { S.voice = await get('voice', {}); S.quick = await get('quick', []); fillVoice(); await renderProfiles(); renderAll(); await showBackup(); }
 async function checkKey() {

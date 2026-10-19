@@ -45,7 +45,7 @@
     try {
       const r = await fetch(base + '/reply/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, installId, action, data }), signal: ctl.signal });
       let j = {}; try { j = await r.json(); } catch (_) {}
-      return r.ok && j.ok ? j : { ok: false, status: j.status || 'error', message: j.message };
+      return r.ok && j.ok ? j : { ok: false, status: j.status || 'error', http: r.status, message: j.message };
     } catch (_) { return { ok: false, status: 'network' }; } finally { clearTimeout(t); }
   }
   const enabled = async () => (await get('prefs', {})).backup !== false;
@@ -57,12 +57,12 @@
       if (!hasContent(cur) && !(await get('syncMeta', { sig: '' })).sig) return { ok: true, skipped: true }; // never overwrite a saved backup with a blank start
       const r = await call('put', cur);
       if (r.ok) { await set({ syncMeta: { at: r.updatedAt, sig: sig(cur) }, syncState: { at: Date.now(), ok: true } }); return { ok: true, pushed: true }; }
-      await set({ syncState: { at: Date.now(), ok: false, status: r.status } }); return r;
+      await set({ syncState: { at: Date.now(), ok: false, status: r.status, http: r.http } }); return r;
     },
     /* Brings in the saved voices when this browser has none (a reinstall), or when another computer saved newer ones. This browser's own unsaved changes always win. */
     async pull() {
       if (!(await enabled())) return { ok: false, status: 'off' };
-      const r = await call('get'); if (!r.ok) { await set({ syncState: { at: Date.now(), ok: false, status: r.status } }); return r; }
+      const r = await call('get'); if (!r.ok) { await set({ syncState: { at: Date.now(), ok: false, status: r.status, http: r.http } }); return r; }
       const cur = clean(await snapshot()), meta = await get('syncMeta', { at: 0, sig: '' });
       if (!r.data) { if (hasContent(cur)) return S.push(); await set({ syncState: { at: Date.now(), ok: true } }); return { ok: true }; }
       const rem = clean(r.data), remSig = sig(rem), curSig = sig(cur);
