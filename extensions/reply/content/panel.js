@@ -147,6 +147,7 @@
     if (r.usage) S.usage = r.usage;
     if (r.ok) { S.hid = r.historyId || ''; S.qmark = {}; S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status, upgrade: r.upgrade || '' };
     render();
+    if (c.isPost && S.error && S.error.status === 'empty') { const h = root.querySelector('#hint'); if (h) h.focus(); }
   }
   function logUse(action, text, i) { if (S.hid) ask('histUpdate', { id: S.hid, action, chosen: text, quick: !!S.qmark[i] }); }
   async function use(i) {

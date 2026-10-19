@@ -107,5 +107,18 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   await pg.evaluate(() => document.getElementById('b2').scrollIntoView({ block: 'center' }));
   pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return { id: b.id, c: AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)) }; });
   check('post box (feed): the box nearest the middle of the screen is used, with that post\'s text', pb.id === 'b2' && pb.c.caption === 'Second post text' && pb.c.author === 'Second Page', JSON.stringify(pb));
+
+  // Facebook photo viewer: the post's words are in a side panel with no stable label
+  await load('https://www.facebook.com/photo/?fbid=123', `<!doctype html><body><div role="dialog"><div><img alt="BREAKING Kenya pastor convicted" width="400" height="300"></div>
+   <div><div><h2><a href="/bbcnews">BBC News</a></h2><span>2h</span></div>
+   <div dir="auto">Kenyan cult leader Paul Mackenzie, who told his followers to starve to death, has been convicted.</div>
+   <div role="button"><span>Like</span></div><div role="button"><span>Share</span></div>
+   <ul><li><div role="article" aria-label="Comment by Joe"><a href="/joe">Joe</a><div dir="auto">This is horrifying news, thoughts with the families</div><div><span role="button">Like</span> <span role="button">Reply</span></div></div></li></ul>
+   <div><div contenteditable="true" role="textbox" aria-label="Write a comment…" id="vb"></div></div></div></div></body>`);
+  pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return { id: b && b.id, c: AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)) }; });
+  check('Facebook photo viewer: reads the post\'s text and author from the side panel, not a comment or a button', pb.id === 'vb' && /^Kenyan cult leader Paul Mackenzie/.test(pb.c.caption) && !/horrifying|Like|Share/.test(pb.c.caption) && pb.c.author === 'BBC News', JSON.stringify(pb));
+  await load('https://www.facebook.com/x', `<!doctype html><head><meta property="og:description" content="Page-wide text"></head><body><div role="main"><div role="article"><h3><a href="/p">Page</a></h3><div contenteditable="true" role="textbox" aria-label="Write a comment" id="nb"></div></div></div></body>`);
+  pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)); });
+  check('Facebook feed: the page-wide description is never used as one post\'s text', pb.caption === '', JSON.stringify(pb));
   await b.close(); done();
 })();

@@ -107,6 +107,19 @@
   /** Facts about the page's shape (no names, no comment text) for a "report a problem" message. */
   A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]'), lastReplyAttempt: A.lastTrace });
 
+  /** Facebook shows a post's words in a plain text block (photo viewer, reels, shared posts) without a stable label.
+      Take the first real paragraph that sits above the comments: not a comment, not a button label, not the box. */
+  function fbBodyText(post) {
+    const skip = (el) => { const a = el.closest('[role="article"]'); return (a && a !== post && a.getAttribute('aria-label')) || el.closest('form, [contenteditable], [role="textbox"], nav, [role="navigation"], [role="button"], button'); };
+    const out = [];
+    for (const el of post.querySelectorAll('div[dir="auto"], span[dir="auto"], div[style*="text-align"]')) {
+      if (skip(el) || el.querySelector('div[dir="auto"]')) continue;
+      const t = txt(el).replace(/\s+/g, ' ').trim();
+      if (t.length < 20 || ACTION.test(t) || REPLY_RE.test(t) || /^(write a (public )?comment|most relevant|all comments|see more)/i.test(t)) continue;
+      out.push(t); if (out.join(' ').length > 500) break;
+    }
+    return out.join(' ');
+  }
   /* ---------- the post ---------- */
   A.postContext = (scope) => {
     const p = A.platformId(); let caption = '', author = '';
@@ -116,9 +129,10 @@
     else if (p === 'facebook') {
       const posts = Array.from(document.querySelectorAll('[role="article"]')).filter((a) => !/^(comment|reply)/i.test(a.getAttribute('aria-label') || '') && !a.parentElement.closest('[role="article"]'));
       const post = scope || posts[0] || document;
-      caption = first(['[data-ad-preview="message"]', '[data-ad-comet-preview="message"]'], post); author = first(['h2 a', 'h3 a', 'strong a'], post);
+      caption = first(['[data-ad-preview="message"]', '[data-ad-comet-preview="message"]', '[data-ad-rendering-role="story_message"]'], post) || fbBodyText(post); author = first(['h2 a', 'h3 a', 'strong a', 'h2', 'h3'], post);
     }
-    if (!caption && !scope) { const m = document.querySelector('meta[property="og:description"]'); caption = (m && m.content) || ''; }
+    // the page's own description, only where the page IS one post (a photo, video, reel or post page) — never on a feed
+    if (!caption && (!scope || /\/(photo|photos|posts|videos|watch|reel|reels|permalink|story)\b|[?&](story_fbid|fbid|v)=/.test(location.pathname + location.search))) { const m = document.querySelector('meta[property="og:description"]'); caption = (m && m.content) || ''; }
     return { caption: caption.replace(/\s+/g, ' ').trim().slice(0, 800), author: author.replace(/\s+/g, ' ').trim().slice(0, 80) };
   };
 

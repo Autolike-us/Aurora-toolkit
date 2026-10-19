@@ -337,7 +337,7 @@ if (is_file(__DIR__ . '/../api/lib/reply.php')) { if (!function_exists('reply_pr
 {
     [$sysP, $usrP] = reply_prompt(reply_input(['mode' => 'post', 'tone' => 'funny', 'post' => ['caption' => 'Fresh sourdough out of the oven at 7am! #bread', 'author' => 'Sunrise Bakery'], 'voice' => ['name' => 'Sam', 'about' => 'Me gusta el pan.', 'language' => 'auto', 'samples' => ['¡Qué rico!']], 'count' => 2]));
     check('Post comment: asks for a comment under the post, in the post\'s language, in the chosen style', str_contains($sysP, 'under someone else\'s') && str_contains($sysP, 'language the POST is written in') && str_contains($sysP, 'style "funny"') && str_contains($usrP, 'Draft two comments') && str_contains($usrP, 'Fresh sourdough'));
-    check('Post comment: never speaks as the owner, no promo, and sees only text', str_contains($sysP, 'NOT the owner') && str_contains($sysP, 'never its picture or video'));
+    check('Post comment: never speaks as the owner, no promo, and sees only text', str_contains($sysP, 'NOT the owner') && str_contains($sysP, 'never its picture or video') && str_contains($sysP, 'NEVER joke'));
     [$sysR, $usrR] = reply_prompt(reply_input(['mode' => 'post', 'post' => ['caption' => '', 'author' => 'X'], 'hint' => 'congratulate them']));
     check('Post comment: a post with no text still works when the person gives a hint', str_contains($usrR, 'only a picture or video') && str_contains($usrR, 'congratulate them'));
     [$sysQ, ] = reply_prompt(reply_input(['comment' => ['text' => 'Hola'], 'voice' => ['language' => 'auto']]));
