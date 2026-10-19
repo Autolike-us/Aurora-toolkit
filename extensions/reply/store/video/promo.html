@@ -1,0 +1,192 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Aurora Reply promo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1280px;height:720px;overflow:hidden;background:#14110e;font-family:Inter,"Inter Display",system-ui,sans-serif;color:#fff}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(900px 500px at 85% 0%,#7a3b10 0%,rgba(20,17,14,0) 70%),radial-gradient(700px 500px at 0% 100%,#4a3a14 0%,rgba(20,17,14,0) 70%),#14110e}
+.layer{position:absolute;inset:0;opacity:0}
+.grad{background:linear-gradient(90deg,#f97316,#fbbf24);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* intro */
+#intro .big{position:absolute;left:0;right:0;text-align:center;font-weight:800;letter-spacing:-.03em}
+#i1{top:262px;font-size:76px}
+#i2{top:360px;font-size:76px}
+.bub{position:absolute;background:#f3efe9;color:#1a1612;border-radius:20px;padding:12px 18px;font-size:22px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.4);white-space:nowrap}
+/* demo */
+#demo{background:#e9ebef}
+#cap{position:absolute;left:0;right:0;top:28px;text-align:center;font-size:34px;font-weight:800;letter-spacing:-.02em;color:#1a1612}
+#cap b{display:inline-block;background:linear-gradient(90deg,#f97316,#fbbf24);color:#1a1612;border-radius:999px;padding:2px 16px;margin-right:12px;font-size:28px}
+#card{color:#1a1612;position:absolute;left:110px;top:110px;width:520px;height:570px;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.18);overflow:hidden}
+#hero{height:120px;background:linear-gradient(135deg,#fbbf24,#f97316 60%,#c2410c);display:flex;align-items:center;justify-content:center;font-size:70px}
+.row{position:absolute;left:18px;right:18px}
+.av{position:absolute;left:0;width:34px;height:34px;border-radius:50%}
+.nm{font-weight:700}
+.cm{position:absolute;left:44px;background:#f0f2f5;border-radius:18px;padding:8px 14px;font-size:16px;line-height:1.3;max-width:420px}
+.cm b{font-weight:700}
+.act{position:absolute;left:58px;font-size:13px;font-weight:700;color:#65676b}
+.act span{margin-right:12px}
+#hl{position:absolute;left:36px;width:448px;height:62px;border:3px solid #f97316;border-radius:16px;opacity:0}
+#rbox{position:absolute;left:58px;top:276px;width:430px;height:56px;border-radius:18px;background:#f0f2f5;border:2px solid transparent;padding:9px 14px;font-size:16px;opacity:0}
+#rtxt{color:#1a1612;line-height:1.3;min-height:20px}
+#rph{position:absolute;left:14px;top:9px;color:#8a8d91}
+#send{position:absolute;right:10px;bottom:7px;background:#1877f2;color:#fff;font-weight:700;font-size:13px;padding:5px 14px;border-radius:999px;opacity:0}
+#posted{position:absolute;left:58px;top:276px;opacity:0;background:#fff3e6;border-radius:18px;padding:8px 14px;font-size:16px;line-height:1.3;max-width:430px}
+#addbar{position:absolute;left:18px;right:18px;bottom:18px;height:46px;background:#f0f2f5;border-radius:23px;padding:12px 16px;color:#8a8d91;font-size:15px}
+/* panel */
+#panel{position:absolute;left:680px;top:110px;width:460px;height:570px;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.28);overflow:hidden;opacity:0}
+#ph{height:64px;background:#251a10;padding:12px 18px;display:flex;align-items:center;gap:12px}
+#ph img{width:34px;height:34px;border-radius:9px}
+#ph b{display:block;font-size:16px}
+#ph small{font-size:12px;opacity:.7}
+#pb{padding:14px 18px}
+#quote{border-left:3px solid #f97316;padding:2px 10px;color:#1a1612;font-size:15px}
+#quote small{display:block;font-weight:700;color:#65676b;font-size:12px}
+#chips{margin:12px 0;display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid #d6d6d6;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600;color:#1a1612}
+.chip.on{background:#f97316;border-color:#f97316;color:#fff}
+#draftbtn{display:block;width:100%;height:46px;border-radius:12px;background:linear-gradient(90deg,#f97316,#fbbf24);color:#1a1612;font-weight:800;font-size:16px;text-align:center;line-height:46px}
+#wait{height:0;overflow:hidden}
+.dr{position:relative;margin-top:10px;border:1px solid #e3e3e3;border-radius:12px;padding:10px 12px 8px;color:#1a1612;font-size:14.5px;line-height:1.35;opacity:0}
+.dr.first{border-color:#f97316;background:#fff7ed}
+.dr .b{display:inline-block;margin-top:7px;background:linear-gradient(90deg,#f97316,#fbbf24);color:#1a1612;font-weight:800;font-size:13px;padding:6px 12px;border-radius:9px}
+.dr .b2{display:inline-block;margin:7px 0 0 6px;border:1px solid #d6d6d6;font-weight:700;font-size:13px;padding:5px 12px;border-radius:9px}
+/* cursor */
+#cur{position:absolute;left:0;top:0;width:30px;height:30px;opacity:0;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));z-index:50}
+#rip{position:absolute;width:44px;height:44px;border-radius:50%;border:3px solid #f97316;opacity:0;z-index:49}
+/* outro */
+#outro{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#outro img{width:132px;height:132px;border-radius:30px;box-shadow:0 14px 50px rgba(249,115,22,.4)}
+#o1{font-size:92px;font-weight:800;letter-spacing:-.035em;margin-top:22px}
+#o2{font-size:32px;color:#eadfd2;margin-top:10px;font-weight:500}
+#o3{margin-top:28px;background:linear-gradient(90deg,#f97316,#fbbf24);color:#1a1612;font-weight:800;font-size:28px;padding:14px 34px;border-radius:999px}
+#o4{margin-top:18px;font-size:18px;color:#c8b8a4}
+#o5{position:absolute;bottom:26px;left:0;right:0;font-size:14px;color:#8d7f6f}
+</style></head><body><div id="stage">
+
+<div id="intro" class="layer">
+  <div id="i1" class="big">Dozens of comments.</div>
+  <div id="i2" class="big grad">No time to answer.</div>
+</div>
+
+<div id="demo" class="layer">
+  <div id="cap"></div>
+  <div id="card">
+    <div id="hero">🥖</div>
+    <div class="row" style="top:134px"><div class="av" style="background:#1a1612;color:#fbbf24;text-align:center;line-height:34px;font-weight:800;font-size:13px">SB</div><div class="nm" style="margin-left:44px;line-height:34px">sunrisebakery</div></div>
+    <div class="row" style="top:180px;font-size:16px">Fresh sourdough, out of the oven at 7am! #bread</div>
+    <div class="av" style="left:18px;top:216px;background:#fb923c"></div>
+    <div class="cm" style="left:62px;top:212px"><b>maya.k</b> Do you deliver on Sundays? 🥖</div>
+    <div class="act" style="left:76px;top:252px"><span>2h</span><span>Like</span><span id="replyLink">Reply</span></div>
+    <div id="hl" style="left:54px;top:208px"></div>
+    <div id="rbox"><div id="rph">Write a reply…</div><div id="rtxt"></div><div id="send">Send</div></div>
+    <div id="posted"><b>sunrisebakery</b> Hi Maya! Sundays are pick-up only 🥖 Order by Saturday and it's ready.</div>
+    <div class="av" style="left:18px;top:376px;background:#fbbf24"></div>
+    <div class="cm" style="left:62px;top:372px"><b>tom_b</b> Love the rye! How much for a whole loaf?</div>
+    <div class="act" style="left:76px;top:412px"><span>3h</span><span>Like</span><span>Reply</span></div>
+    <div class="av" style="left:18px;top:446px;background:#a3a3a3"></div>
+    <div class="cm" style="left:62px;top:442px"><b>priya_n</b> Do you have gluten-free options?</div>
+    <div class="act" style="left:76px;top:482px"><span>5h</span><span>Like</span><span>Reply</span></div>
+    <div id="addbar">Add a comment…</div>
+  </div>
+  <div id="panel">
+    <div id="ph"><img src="../../icons/icon128.png"><div><b>Aurora Reply</b><small>142 of 1500 drafts used this month</small></div></div>
+    <div id="pb">
+      <div id="quote"><small>maya.k wrote</small>Do you deliver on Sundays? 🥖</div>
+      <div id="chips"><span class="chip">Friendly</span><span class="chip on">Warm</span><span class="chip">Professional</span><span class="chip">Playful</span></div>
+      <div id="draftbtn">✦ Draft a reply</div>
+      <div class="dr first" id="d1">Hi Maya! Sundays are pick-up only 🥖 Order by Saturday and it's ready.<br><span class="b" id="useBtn">Use this reply</span><span class="b2">Copy</span></div>
+      <div class="dr" id="d2">Great question — we deliver Tue to Sat, Sundays are pick-up. See you soon!<br><span class="b">Use this reply</span><span class="b2">Copy</span></div>
+      <div class="dr" id="d3">Sundays are pick-up only. Order by Sat and we'll hold it for you 🙌<br><span class="b">Use this reply</span><span class="b2">Copy</span></div>
+    </div>
+  </div>
+  <svg id="cur" viewBox="0 0 24 24"><path d="M3 2l17 9-7.5 2L9.5 21z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  <div id="rip"></div>
+</div>
+
+<div id="outro" class="layer">
+  <img src="../../icons/icon128.png">
+  <div id="o1">Aurora <span class="grad">Reply</span></div>
+  <div id="o2">Your voice. Your comments. Your Send.</div>
+  <div id="o3">Free to start · getaurorastudios.com/reply</div>
+  <div id="o4">For Facebook, Instagram &amp; TikTok</div>
+  <div id="o5">Not affiliated with Facebook, Instagram, TikTok or Meta.</div>
+</div>
+</div>
+<script>
+const $=(i)=>document.getElementById(i);
+const cl=(x)=>Math.max(0,Math.min(1,x));
+const ramp=(t,a,b)=>cl((t-a)/(b-a));
+const ease=(x)=>1-Math.pow(1-x,3);
+const eio=(x)=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const R=(t,a,b)=>ease(ramp(t,a,b));
+// bubbles for intro
+const BUBS=[['Do you deliver on Sundays?',90,70,.15],['How much for a whole loaf?',760,110,.35],['Gluten-free options??',60,560,.55],['Are you open today?',840,520,.75],['Price? 😍',470,40,.95],['Can I order for Friday?',380,610,1.15],['Hello?? Anyone there?',900,170,1.35],['Love it! Where are you?',20,170,1.55]];
+const sg=$('intro');BUBS.forEach((b,i)=>{const e=document.createElement('div');e.className='bub';e.textContent=b[0];e.style.left=b[1]+'px';e.style.top=b[2]+'px';e.id='bub'+i;sg.appendChild(e)});
+// cursor targets are measured from the page
+const ctr=(el)=>{const r=el.getBoundingClientRect();return [r.left+r.width/2-4,r.top+r.height/2-4]};
+let P=null;
+function paths(){
+  P={reply:[0,0],draft:[0,0],use:[0,0],send:[0,0]};
+  setT(11);
+  P={reply:ctr($('replyLink')),draft:ctr($('draftbtn')),use:ctr($('useBtn')),send:ctr($('send'))};
+}
+const KEYS=()=>[[2.2,[1000,640]],[3.4,P.reply],[4.0,P.reply],[5.0,P.draft],[5.6,P.draft],[7.8,P.use],[8.5,P.use],[11.0,P.send],[11.5,P.send],[12.6,[1100,420]]];
+function cursor(t){
+  const k=KEYS();let pos=k[0][1];
+  for(let i=0;i<k.length-1;i++){const [t0,p0]=k[i],[t1,p1]=k[i+1];if(t>=t0&&t<=t1){const u=eio(cl((t-t0)/(t1-t0)));pos=[p0[0]+(p1[0]-p0[0])*u,p0[1]+(p1[1]-p0[1])*u];break}if(t>t1)pos=p1}
+  const c=$('cur');c.style.transform=`translate(${pos[0]}px,${pos[1]}px)`;
+  c.style.opacity=ramp(t,2.2,2.6)*(1-ramp(t,12.2,12.6));
+  // click ripples
+  const clicks=[[4.0,P.reply],[5.6,P.draft],[8.5,P.use],[11.5,P.send]];let rp=0,rpos=[0,0];
+  for(const [ct,cp] of clicks){const u=(t-ct)/.5;if(u>=0&&u<=1){rp=1-u;rpos=cp;const s=1+u*1.1;const r=$('rip');r.style.transform=`translate(${cp[0]-14}px,${cp[1]-14}px) scale(${s})`}}
+  $('rip').style.opacity=rp*.9;
+}
+const CAPS=[[2.5,'1','Open any comment'],[5.0,'2','Get replies in your voice'],[7.8,'3','One click to insert'],[10.2,'4','You read, edit & press Send']];
+const TXT="Hi Maya! Sundays are pick-up only 🥖 Order by Saturday and it's ready.";
+function setT(t){
+  // intro 0–2.6
+  const iv=1-ramp(t,2.15,2.6);
+  $('intro').style.opacity=t<2.6?iv:0;
+  BUBS.forEach((b,i)=>{const e=$('bub'+i);const u=R(t,b[3]*0.55,b[3]*0.55+.35);e.style.opacity=u;e.style.transform=`translateY(${(1-u)*30}px) scale(${.85+.15*u}) rotate(${(i%2?1:-1)*(1-u)*6}deg)`});
+  $('i1').style.opacity=R(t,.1,.5);$('i1').style.transform=`translateY(${(1-R(t,.1,.5))*24}px)`;
+  $('i2').style.opacity=R(t,1.0,1.4);$('i2').style.transform=`translateY(${(1-R(t,1.0,1.4))*24}px)`;
+  // demo 2.3–12.6
+  const dv=ramp(t,2.3,2.7)*(1-ramp(t,12.2,12.6));
+  $('demo').style.opacity=dv;
+  // caption
+  let cap=null;for(const c of CAPS)if(t>=c[0])cap=c;
+  if(cap){const nt=`<b>${cap[1]}</b>${cap[2]}`;if($('cap').dataset.k!==cap[1]){$('cap').innerHTML=nt;$('cap').dataset.k=cap[1]}const st=cap[0];$('cap').style.opacity=R(t,st,st+.3);$('cap').style.transform=`translateY(${(1-R(t,st,st+.3))*14}px)`}else{$('cap').style.opacity=0;$('cap').dataset.k=''}
+  // highlight + panel
+  $('hl').style.opacity=R(t,2.9,3.2)*(1-ramp(t,8.6,9));
+  $('panel').style.opacity=R(t,3.0,3.5);$('panel').style.transform=`translateX(${(1-R(t,3.0,3.6))*60}px)`;
+  // reply box shows on Reply click (4.0), types from 8.6
+  const rb=$('rbox');const showBox=t>=4.0&&t<12.4;
+  rb.style.opacity=t<10.8?R(t,4.0,4.3):1;
+  const posted=t>=11.7;
+  rb.style.display=posted?'none':'block';
+  $('posted').style.opacity=posted?R(t,11.7,12.0):0;
+  const nT=Math.floor(TXT.length*cl((t-8.7)/1.6));
+  const chars=Array.from(TXT);$('rtxt').textContent=chars.slice(0,Math.floor(chars.length*cl((t-8.7)/1.6))).join('');
+  $('rph').style.opacity=t>=8.7?0:1;
+  rb.style.height=t>=8.7?'auto':'56px';rb.style.minHeight='56px';rb.style.paddingBottom=t>=8.7?'34px':'9px';
+  rb.style.borderColor=t>=8.7?'#f97316':'transparent';
+  $('send').style.opacity=R(t,10.3,10.6);
+  $('send').style.transform=(t>=11.4&&t<11.7)?'scale(.92)':'none';
+  // drafting
+  const btn=$('draftbtn');
+  btn.textContent=(t>=5.6&&t<6.6)?'Writing…':'✦ Draft a reply';
+  btn.style.opacity=(t>=5.6&&t<6.6)?(.6+.4*Math.abs(Math.sin(t*9))):1;
+  btn.style.transform=(t>=5.5&&t<5.7)?'scale(.97)':'none';
+  [['d1',6.6],['d2',6.85],['d3',7.1]].forEach(([id,st])=>{const e=$(id);const u=R(t,st,st+.35);e.style.opacity=u;e.style.transform=`translateY(${(1-u)*14}px)`});
+  $('d1').style.boxShadow=(t>=8.2&&t<8.6)?'0 0 0 3px rgba(249,115,22,.35)':'none';
+  $('d2').style.opacity=cl(R(t,6.85,7.2))*(t>=8.7?.35:1);$('d3').style.opacity=cl(R(t,7.1,7.45))*(t>=8.7?.35:1);
+  cursor(t);
+  // outro 12.4–15
+  const ov=ramp(t,12.4,12.9);$('outro').style.opacity=ov;
+  const sc=1+(1-R(t,12.4,13.2))*.06;$('outro').style.transform=`scale(${sc})`;
+  const items=[['outro img',12.5],['o1',12.7],['o2',13.1],['o3',13.5],['o4',13.8],['o5',14.0]];
+  items.forEach(([s,st])=>{const e=s.includes(' ')?document.querySelector('#'+s.replace(' ',' ')):$(s);const u=R(t,st,st+.45);e.style.opacity=u;e.style.transform=`translateY(${(1-u)*18}px)`});
+  // global fade out at the very end
+  $('stage').style.opacity=1-ramp(t,14.75,15);
+}
+window.setT=setT;window.init=()=>{paths();setT(0)};
+</script></body></html>
