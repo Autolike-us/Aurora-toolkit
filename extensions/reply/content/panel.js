@@ -128,6 +128,7 @@
   async function draft(c) {
     S.sel = c; S.view = 'draft'; S.loading = true; S.error = null; S.drafts = []; S.flag = 'none'; S.note = ''; S.done = ''; render();
     try { c.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+    if (c.orig) { try { await A.revealOriginal(c); } catch (_) {} render(); }
     const post = A.postContext();
     const r = await ask('draft', { platform: A.platformId(), tone: S.tone || undefined, quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: { text: c.text, author: c.author }, post, count: nReplies() });
     S.loading = false;

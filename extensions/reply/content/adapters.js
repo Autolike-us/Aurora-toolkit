@@ -11,8 +11,11 @@
   const LIKE_WORDS = ['like', 'liked', "j'aime", 'me gusta', 'gefällt mir', 'mi piace', 'curtir', 'curtiu', 'gostar', 'vind ik leuk', 'gilla', 'lubię to', 'нравится', 'подобається', 'beğen', 'suka', 'thích', 'ถูกใจ', 'tykkää', 'μου αρέσει', '赞', '讚', 'いいね', '좋아요', 'أعجبني', 'लाइक'];
   const escRe = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const REPLY_RE = new RegExp('^\\s*(?:' + REPLY_WORDS.map(escRe).join('|') + ')\\s*$', 'i');
-  const ACTION_BASE = /^(like|liked|reply|replied|share|hide|edit|edited|delete|report|pin|pinned|see translation|translate|view( all)? \d+ (more )?repl(y|ies)|view more repl(y|ies)|hide repl(y|ies)|author|top fan|creator|follow|following|verified|just now|yesterday|·|\d+[smhdwy]|\d+\s*(sec|secs|min|mins|hr|hrs|hour|hours|day|days|week|weeks|month|months|year|years)( ago)?|\d+ likes?|\d+ repl(y|ies)|liked by creator|more|\.\.\.|…|[\d.,]+[kKmM]?)$/i;
-  const ACTION = { test: (t) => ACTION_BASE.test(t) || REPLY_RE.test(t) || LIKE_WORDS.includes(String(t).trim().toLowerCase().replace(/[’‘`]/g, "'").replace(/[!！.。]+$/, '')) || /^\d+\s*\p{L}{1,6}\.?$/u.test(t) };
+  // "See original" in the languages the platforms use: shown on a comment the platform has translated for the viewer.
+  const ORIG_WORDS = ['see original', 'show original', 'view original', 'voir l\'original', 'voir l’original', 'afficher l\'original', 'afficher l’original', 'ver original', 'mostrar original', 'original anzeigen', 'mostra originale', 'visualizza originale', 'origineel bekijken', 'toon origineel', 'visa original', 'zobacz oryginał', 'показать оригинал', 'orijinali göster', 'orijinalini gör', 'lihat asli', 'lihat aslinya', 'xem bản gốc', 'ดูต้นฉบับ', '원문 보기', '原文を表示', '原文を見る', '查看原文', '顯示原文', '显示原文', 'عرض الأصل'];
+  const ORIG_RE = new RegExp('^\\s*(?:' + ORIG_WORDS.map(escRe).join('|') + ')\\s*$', 'i');
+  const ACTION_BASE = /^(like|liked|reply|replied|share|hide|edit|edited|delete|report|pin|pinned|see translation|translate|see original|show original|view original|rate this translation|translated by [\p{L} ]+|view( all)? \d+ (more )?repl(y|ies)|view more repl(y|ies)|hide repl(y|ies)|author|top fan|creator|follow|following|verified|just now|yesterday|·|\d+[smhdwy]|\d+\s*(sec|secs|min|mins|hr|hrs|hour|hours|day|days|week|weeks|month|months|year|years)( ago)?|\d+ likes?|\d+ repl(y|ies)|liked by creator|more|\.\.\.|…|[\d.,]+[kKmM]?)$/iu;
+  const ACTION = { test: (t) => ACTION_BASE.test(t) || ORIG_RE.test(t) || REPLY_RE.test(t) || LIKE_WORDS.includes(String(t).trim().toLowerCase().replace(/[’‘`]/g, "'").replace(/[!！.。]+$/, '')) || /^\d+\s*\p{L}{1,6}\.?$/u.test(t) };
 
   A.platformId = () => { const h = location.hostname; return /facebook\.com$/.test(h) ? 'facebook' : /instagram\.com$/.test(h) ? 'instagram' : /tiktok\.com$/.test(h) ? 'tiktok' : 'other'; };
   const visible = (el) => { if (!el || !el.getBoundingClientRect) return false; const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1) return false; const cs = getComputedStyle(el); return cs.visibility !== 'hidden' && cs.display !== 'none'; };
@@ -56,6 +59,24 @@
     }
     return null;
   }
+  /** The "See original" link of a comment the platform has translated for the viewer, or null. */
+  function originalLink(container, lab) {
+    const others = replyLabels(container).filter((l) => l !== lab && !l.contains(lab) && !lab.contains(l));
+    for (const el of container.querySelectorAll('span, div, a, button, [role="button"]')) {
+      if (el.children.length > 1) continue;
+      const t = el.textContent || ''; if (t.length > 30 || !ORIG_RE.test(t) || !visible(el)) continue;
+      if (others.some((o) => { let p = el; while (p && p !== container) { if (p.contains(o)) return true; p = p.parentElement; } return false; })) continue;
+      return el.closest('[role="button"], button, a') || el;
+    }
+    return null;
+  }
+  /** Replies must be in the language the commenter wrote, so a translated comment is switched back to its original text first. */
+  A.revealOriginal = async (c) => {
+    if (!c || !c.orig || !document.contains(c.orig)) return c ? c.text : '';
+    const link = c.orig; c.orig = null; try { link.click(); } catch (_) { return c.text; }
+    for (let i = 0; i < 8; i++) { await sleep(150); const p = parse(c.el, c.lab); if (p.text && p.text !== c.text) { c.text = p.text; c.translated = true; return p.text; } }
+    return c.text;
+  };
   /** All comments currently on screen with their reply buttons. */
   A.findComments = (scope) => {
     scope = scope || document.body;
@@ -67,7 +88,7 @@
       const key = author + '|' + text.slice(0, 60);
       if (seen.has(key)) continue; seen.add(key);
       const replied = replyLabels(el).length > 1 || /\b(view|see|show|voir|afficher|ver|mostrar|anzeigen|visualizza)\b[^\n]{0,24}\b(repl|rép|resp|antwort|risposte)/i.test(el.textContent || '');
-      out.push({ el, btn: lab.closest('[role="button"], button, a') || lab, author, text, key, replied });
+      out.push({ el, lab, btn: lab.closest('[role="button"], button, a') || lab, author, text, key, replied, orig: originalLink(el, lab) });
       out[out.length - 1].own = !!me && author.toLowerCase() === me;
       if (out.length >= 80) break;
     }

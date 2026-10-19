@@ -201,7 +201,9 @@ function reply_prompt(array $in): array
     $n = bin2hex(random_bytes(4));
     $emoji = ['none' => 'Do not use emoji.', 'few' => 'Use at most one emoji, and only if it fits the voice.', 'some' => 'Emoji are welcome, a few at most.'][$in['emoji']];
     $len = $in['length'] === 'medium' ? 'Each reply: 1–3 short sentences, under 400 characters.' : 'Each reply: one or two short sentences, under 220 characters.';
-    $lang = strtolower($in['language']) === 'auto' ? 'Reply in the same language as the comment.' : 'Reply in ' . $in['language'] . '.';
+    $lang = strtolower($in['language']) === 'auto'
+        ? 'LANGUAGE RULE (most important): write every reply in the language the COMMENT is written in (English comment → English reply, Spanish comment → Spanish reply). The language of the owner profile, business facts and past replies must NOT decide the reply language; translate any fact you use into the comment\'s language. If the comment is only an emoji or a name, use the language of the owner\'s past replies.'
+        : 'LANGUAGE RULE: write every reply in ' . $in['language'] . ', whatever language the comment is in.';
     $cw = [1 => 'one', 2 => 'two', 3 => 'three'][$in['count']]; $rw = $in['count'] === 1 ? 'reply' : 'replies';
     $system = <<<TXT
 You are a ghostwriter who drafts replies to public comments on {$in['platform']} for the account owner. A human will read, edit and send the reply — you never post anything.
@@ -222,7 +224,8 @@ TXT;
     if ($in['post'] !== '' || $in['owner'] !== '') $parts[] = "<post_{$n}>\nBy: {$in['owner']}\n{$in['post']}\n</post_{$n}>";
     $parts[] = "<comment_{$n}>\nFrom: " . ($in['commenter'] ?: 'a follower') . "\n{$in['comment']}\n</comment_{$n}>";
     if ($in['hint'] !== '') $parts[] = "<owner_hint_{$n}>\n{$in['hint']}\n</owner_hint_{$n}>";
-    return [$system, "Draft {$cw} {$rw} to the comment below.\n\n" . implode("\n\n", $parts)];
+    $again = strtolower($in['language']) === 'auto' ? ' Reply in the same language as the comment above, even if the profile and past replies are in another language.' : ' Reply in ' . $in['language'] . '.';
+    return [$system, "Draft {$cw} {$rw} to the comment below.{$again}\n\n" . implode("\n\n", $parts)];
 }
 
 /** One call to the Messages API (raw HTTP: the hosting plan has no Composer). Returns [ok, data|message, httpStatusForClient]. */

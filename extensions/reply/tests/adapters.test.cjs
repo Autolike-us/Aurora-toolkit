@@ -78,5 +78,15 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('guided fallback: after the person clicks a box, that is the box we fill', guided === 'mine');
   const quiet = await pg.evaluate(async () => AuroraReplyAdapters.waitForBox(300));
   check('guided fallback: gives up quietly when no box is clicked', quiet === null);
+
+  // Translated comments: the platform shows the viewer's language; the reply must go in the original one.
+  await load('https://www.facebook.com/x', `<!doctype html><body><div role="main"><div role="article"><h3><a href="/p">Panadería</a></h3><div data-ad-preview="message">Pan fresco</div>
+   <div role="article" aria-label="Comment"><a href="/tom">Tom B</a><div dir="auto" id="tt">Do you deliver on Sundays?</div><div><span role="button">Like</span> <span role="button" class="rp">Reply</span> <span role="button" id="tg">See original</span> <span>Rate this translation</span></div></div>
+   <div role="article" aria-label="Comment"><a href="/ana">Ana</a><div dir="auto">¿Abren los domingos?</div><div><span role="button">Me gusta</span> <span role="button" class="rp">Responder</span> <span role="button">See translation</span></div></div>
+   </div></div><script>document.getElementById('tg').addEventListener('click',function(){var t=document.getElementById('tt');t.textContent='¿Hacen entregas los domingos?';this.textContent='See translation';});</script></body>`);
+  const tr0 = await pg.evaluate(() => AuroraReplyAdapters.findComments().map((c) => ({ text: c.text, hasOrig: !!c.orig })));
+  check('translated: the "See original" link is found, and neither it nor "Rate this translation" is part of the text', tr0[0].hasOrig && tr0[0].text === 'Do you deliver on Sundays?' && !tr0[1].hasOrig && tr0[1].text === '¿Abren los domingos?', JSON.stringify(tr0));
+  const tr1 = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const t = await AuroraReplyAdapters.revealOriginal(c); const again = await AuroraReplyAdapters.revealOriginal(c); return { t, again, now: document.getElementById('tt').textContent, c2: AuroraReplyAdapters.findComments().map((x) => x.text) }; });
+  check('translated: asking for the original shows it, returns the original text, and does not toggle it back', tr1.t === '¿Hacen entregas los domingos?' && tr1.again === tr1.t && tr1.now === tr1.t && tr1.c2[0] === tr1.t, JSON.stringify(tr1));
   await b.close(); done();
 })();
