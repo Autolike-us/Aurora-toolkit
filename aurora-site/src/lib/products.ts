@@ -82,6 +82,10 @@ export const EXTRACT = {
 /** Aurora Reply — AI comment replies in the owner's own voice (early access). */
 export const REPLY = {
   name: 'Aurora Reply',
+  version: '1.1.0',
+  zip: '/downloads/aurora-reply-latest.zip',
+  /** Chrome Web Store listing: set NEXT_PUBLIC_CWS_REPLY when you have the link. */
+  store: process.env.NEXT_PUBLIC_CWS_REPLY || '',
   tagline: 'Answer your Facebook, Instagram and TikTok comments in your own voice — in seconds. You read, edit and press Send.',
   steps: [
     { n: '01', title: 'Open a post', text: 'A black ✦ Reply button appears in the corner of any post with comments.' },
