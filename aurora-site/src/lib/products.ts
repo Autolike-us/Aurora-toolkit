@@ -84,8 +84,8 @@ export const REPLY = {
   name: 'Aurora Reply',
   version: '1.1.0',
   zip: '/downloads/aurora-reply-latest.zip',
-  /** Chrome Web Store listing: set NEXT_PUBLIC_CWS_REPLY when you have the link. */
-  store: process.env.NEXT_PUBLIC_CWS_REPLY || '',
+  /** The live Chrome Web Store listing (NEXT_PUBLIC_CWS_REPLY can override it). */
+  store: process.env.NEXT_PUBLIC_CWS_REPLY || 'https://chromewebstore.google.com/detail/aurora-reply-%E2%80%94-comment-re/aedgckbfhmkifkhmgpiilpjfcbmeeknd',
   tagline: 'Answer your Facebook, Instagram and TikTok comments in your own voice — in seconds. You read, edit and press Send.',
   steps: [
     { n: '01', title: 'Open a post', text: 'A black ✦ Reply button appears in the corner of any post with comments.' },
