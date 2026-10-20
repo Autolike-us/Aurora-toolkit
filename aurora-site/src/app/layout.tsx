@@ -3,6 +3,7 @@ import './globals.css';
 import { Footer } from '@/components/Footer';
 import { Announcement } from '@/components/Announcement';
 import { Nav } from '@/components/Nav';
+import { Analytics } from '@/components/Analytics';
 
 export const metadata: Metadata = {
   title: { default: 'Aurora — thoughtful growth tools for Facebook, Instagram & TikTok', template: '%s · Aurora' },
@@ -23,6 +24,6 @@ const THEME_BOOT = "try{if(localStorage.getItem('aurora-theme')==='dark')documen
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head><body><Announcement /><Nav />{children}<Footer /></body></html>
+    <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head><body><Announcement /><Nav />{children}<Footer /><Analytics /></body></html>
   );
 }
