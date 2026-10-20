@@ -367,5 +367,18 @@ $r = $sy(['action' => 'delete', 'key' => 'AUR-REPL-BBBB-2222']); check('Voice ba
 $r = $sy(['action' => 'put', 'data' => ['profiles' => ['default' => ['label' => 'x', 'voice' => ['about' => str_repeat('a', 95000)]]]]]); check('Voice backup: an oversized backup is refused', $r['status'] === 413);
 $r = $sy(['action' => 'get']); check('Voice backup: a refused save leaves the earlier backup untouched', ($r['json']['data']['profiles']['default']['label'] ?? '') === 'Main');
 
+// ---- Owner overview (business dashboard) ----
+$r = call('POST', '/owner/overview', ['key' => 'AUR-MSTR-AAAA-1111']); check('Owner overview: refused for a key that is not marked admin', $r['status'] === 403);
+$r = call('POST', '/owner/overview', ['key' => 'nonsense']); check('Owner overview: refused for something that is not a key', $r['status'] === 403);
+$pdo->exec("DELETE FROM subscriptions");
+$ins = $pdo->prepare('INSERT INTO subscriptions (id, user_id, provider, provider_sub_id, plan, status, current_period_end, launch_price, cancel_at_period_end, updated_at, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+$t = gmdate('Y-m-d H:i:s');
+foreach ([['o1', 'bundle', 1], ['o2', 'bundle', 0], ['o3', 'reply', 0], ['o4', 'reply_pro', 0], ['o5', 'facebook', 0]] as [$id, $plan, $lp]) $ins->execute([$id, 'ownr', 'stripe', "sub_$id", $plan, 'active', $t, $lp, 0, $t, $t]);
+$ins->execute(['o6', 'ownr', 'paypal', 'I-OLD', 'tiktok', 'canceled', $t, 0, 0, $t, $t]);
+$r = call('POST', '/owner/overview', ['key' => 'AUR-MSTR-ADMN-0000']); $j = $r['json'] ?? [];
+check('Owner overview: counts people and shows 30 days of sign-ups', $r['status'] === 200 && ($j['users']['total'] ?? 0) >= 1 && count($j['users']['byDay'] ?? []) === 30 && ($j['users']['last30'] ?? 0) >= 1, $j['users'] ?? $r);
+check('Owner overview: monthly recurring revenue adds up each plan (launch bundle 10, bundle 20, Reply 12, Agency 29, one studio 10 = 81)', ($j['subs']['active'] ?? 0) === 5 && abs(($j['subs']['mrrUsd'] ?? 0) - 81.0) < 0.001 && ($j['subs']['canceled'] ?? 0) === 1 && ($j['subs']['byPlan']['bundle'] ?? 0) === 2, $j['subs'] ?? []);
+check('Owner overview: includes pack sales, Reply cost, trials, installs and recent lists', isset($j['reply']['packsByMonth']) && ($j['reply']['packRevenueThisMonthUsd'] ?? -1) >= 0 && ($j['reply']['costThisMonthUsd'] ?? -1) > 0 && isset($j['trials']['active']) && is_array($j['installs'] ?? null) && is_array($j['recentUsers'] ?? null) && is_array($j['recentOrders'] ?? null), $j['reply'] ?? []);
+
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);
