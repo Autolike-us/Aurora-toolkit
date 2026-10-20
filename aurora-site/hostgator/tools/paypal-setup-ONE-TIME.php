@@ -1,11 +1,12 @@
 <?php
 // ONE-TIME SETUP. Upload to public_html/api/, open it once in your browser, then DELETE it.
-// Creates the Aurora product and the 5 monthly PayPal plans in the PayPal account whose credentials are in aurora-config.php,
+// Creates the Aurora products and the monthly PayPal plans (3 studios plans + the 2 Aurora Reply plans) in the PayPal account whose credentials are in aurora-config.php,
 // and saves the plan IDs back into aurora-config.php (a .bak copy is made first). It never prints your secrets.
 declare(strict_types=1);
 header('Content-Type: text/plain; charset=utf-8');
 require __DIR__ . '/lib/bootstrap.php';
 require __DIR__ . '/lib/paypal.php';
+require __DIR__ . '/lib/pricing.php';
 
 $env = cfg('paypal_env') === 'live' ? 'LIVE' : 'SANDBOX';
 echo "PayPal environment in your config: $env\n";
@@ -23,17 +24,27 @@ $plans = [
     'paypal_plan_instagram'     => ['Aurora - Instagram Studio', '10.00'],
     'paypal_plan_tiktok'        => ['Aurora - TikTok Studio', '10.00'],
 ];
+// Aurora Reply plans: prices come from reply_catalog() in api/lib/pricing.php
+foreach (reply_catalog()['subs'] as $id => $x) $plans['paypal_plan_' . $id] = [$x['name'], number_format((float) $x['usd'], 2, '.', '')];
 try {
     $todo = array_filter(array_keys($plans), fn($k) => (string) cfg($k, '') === '');
-    if (!$todo) { echo "All 5 plan IDs are already in your config. Nothing to do. Delete this file.\n"; exit; }
-    $product = paypal_call('POST', '/v1/catalogs/products', ['name' => 'Aurora Studios', 'description' => 'Aurora engagement studios for Facebook, Instagram and TikTok', 'type' => 'SERVICE', 'category' => 'SOFTWARE']);
-    echo "Product created: {$product['id']}\n";
+    if (!$todo) { echo "All plan IDs are already in your config. Nothing to do. Delete this file.\n"; exit; }
+    $products = [];
+    $productFor = function (string $key) use (&$products): array {
+        $isReply = strpos($key, 'paypal_plan_reply') === 0; $g = $isReply ? 'reply' : 'studios';
+        if (!isset($products[$g])) {
+            $products[$g] = $isReply ? paypal_call('POST', '/v1/catalogs/products', ['name' => 'Aurora Reply', 'description' => 'AI replies to your social media comments, in your own voice', 'type' => 'SERVICE', 'category' => 'SOFTWARE'])
+                                      : paypal_call('POST', '/v1/catalogs/products', ['name' => 'Aurora Studios', 'description' => 'Aurora engagement studios for Facebook, Instagram and TikTok', 'type' => 'SERVICE', 'category' => 'SOFTWARE']);
+            echo ucfirst($g) . " product created: {$products[$g]['id']}\n";
+        }
+        return $products[$g];
+    };
     $src = (string) file_get_contents($cfgPath);
     copy($cfgPath, $cfgPath . '.bak-' . date('Ymd-His'));
     foreach ($todo as $key) {
         [$name, $price] = $plans[$key];
         $plan = paypal_call('POST', '/v1/billing/plans', [
-            'product_id' => $product['id'], 'name' => $name, 'description' => $name . ', billed monthly', 'status' => 'ACTIVE',
+            'product_id' => $productFor($key)['id'], 'name' => $name, 'description' => $name . ', billed monthly', 'status' => 'ACTIVE',
             'billing_cycles' => [['frequency' => ['interval_unit' => 'MONTH', 'interval_count' => 1], 'tenure_type' => 'REGULAR', 'sequence' => 1, 'total_cycles' => 0,
                 'pricing_scheme' => ['fixed_price' => ['value' => $price, 'currency_code' => 'USD']]]],
             'payment_preferences' => ['auto_bill_outstanding' => true, 'setup_fee' => ['value' => '0', 'currency_code' => 'USD'], 'setup_fee_failure_action' => 'CONTINUE', 'payment_failure_threshold' => 3],
@@ -41,7 +52,7 @@ try {
         $id = (string) $plan['id'];
         $count = 0;
         $src = preg_replace("/('" . preg_quote($key, '/') . "'\s*=>\s*)'[^']*'/", "\${1}'" . $id . "'", $src, 1, $count);
-        if ($count === 0) $src = preg_replace('/\];\s*$/', "    '$key' => '$id',\n];\n", $src, 1);
+        if ($count === 0) $src = preg_replace('/,?(\s*)\];\s*$/', ",\n    '$key' => '$id',\n];\n", $src, 1);
         file_put_contents($cfgPath, $src); // save after each plan so a later failure never loses an ID
         echo "$key = $id   ($name, \$$price/month)\n";
     }

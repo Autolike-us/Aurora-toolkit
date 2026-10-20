@@ -117,15 +117,19 @@
 <section class="view" id="view-settings" hidden>
   <header><h1>Settings &amp; key</h1><p class="lead">Your key, how it looks, and your data.</p></header>
   <div class="card" id="licenseCard">
-    <h2>Your Aurora Reply key</h2><p class="sub">Paste the key from your Aurora account page (it looks like AUR-XXXX-XXXX-XXXX).</p>
+    <h2>Your Aurora Reply key</h2><p class="sub">Paste the key from your Aurora account page (My account → Aurora Reply). It looks like AUR-XXXX-XXXX-XXXX.</p>
     <div class="row"><input type="text" id="key" placeholder="AUR-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="flex:3 1 260px"><button class="btn p" id="check" style="flex:1 1 120px">Save &amp; check</button></div>
     <div id="keyStatus" class="note" style="margin-top:10px"></div>
-    <p class="note" style="margin:10px 0 0">No key yet? Aurora Reply is in early access — email <b>support@getaurorastudios.com</b> and we will set you up.</p>
+    <div class="row" style="margin-top:12px"><a class="btn p" href="https://getaurorastudios.com/signup/?next=reply" target="_blank" rel="noopener" style="flex:0 0 auto;text-decoration:none">Get my free key ↗</a><a class="btn" href="https://getaurorastudios.com/account/#reply" target="_blank" rel="noopener" style="flex:0 0 auto;text-decoration:none">My account &amp; plans ↗</a></div>
+    <p class="note" style="margin:10px 0 0">Create a free account, then copy your Aurora Reply key from <b>My account</b>. It includes a 3-day trial and 10 free replies every month.</p>
     <div id="meter" hidden><div class="meter"><i id="meterBar"></i></div><div class="note" id="meterText"></div></div>
   </div>
   <div class="card"><h2>Appearance</h2><p class="sub">Choose how the dashboard looks.</p>
     <div class="seg" id="theme"><button data-th="light">☀️ Light</button><button data-th="dark">🌙 Dark</button><button data-th="auto">Match my computer</button></div></div>
-  <div class="card"><h2>History</h2><p class="sub">Keep a private log of your drafts in this browser (newest 500).</p>
+  <div class="card"><h2>Voice backup</h2><p class="sub">Your voice profiles and quick replies are saved to your Aurora key, so you get them back if you reinstall the extension or use a new computer. History is never uploaded.</p>
+    <div class="seg" id="bkToggle"><button data-b="on">On</button><button data-b="off">Off</button></div>
+    <div class="row" style="margin-top:14px;align-items:center"><span class="note" id="bkStatus" style="flex:1">Not backed up yet.</span><button class="btn sm" id="bkNow" style="flex:0 0 auto">Back up now</button><button class="btn sm" id="bkRestore" style="flex:0 0 auto">Restore my voices</button></div></div>
+  <div class="card"><h2>History</h2><p class="sub">Keep a private log of your drafts in this browser (newest 500). It stays on this computer only and is not backed up — download a copy below whenever you want to keep it.</p>
     <div class="seg" id="histToggle"><button data-h="on">On</button><button data-h="off">Off</button></div>
     <div class="row" style="margin-top:14px"><button class="btn sm" id="export" style="flex:0 0 auto">Download everything (JSON)</button><button class="btn sm danger" id="wipe" style="flex:0 0 auto">Delete all my data</button></div></div>
   <div class="card priv">
@@ -133,7 +137,7 @@
     <ul class="note">
       <li><b>You stay in control.</b> Aurora Reply only reads a comment when you ask for a draft, and it never presses Send.</li>
       <li><b>What is sent:</b> the comment you chose, the post's caption, and your voice settings go to Aurora's server, which asks an AI service (Anthropic) to write the drafts. Nothing else on the page is read.</li>
-      <li><b>What is kept:</b> your voice, history and quick replies stay in this browser. Our server keeps only a count of drafts for your key — not the comments or the replies.</li>
+      <li><b>What is kept:</b> your history stays in this browser. If Voice backup is on (it is by default), your voice profiles and quick replies are also saved under your key so you can restore them. Our server otherwise keeps only a count of drafts for your key — not the comments or the replies.</li>
       <li><b>Please:</b> don't use it on private messages. It is built for public comments. Replies are suggestions — check them before you send, and follow each platform's rules.</li>
     </ul>
   </div>

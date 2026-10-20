@@ -11,8 +11,11 @@
   const LIKE_WORDS = ['like', 'liked', "j'aime", 'me gusta', 'gefällt mir', 'mi piace', 'curtir', 'curtiu', 'gostar', 'vind ik leuk', 'gilla', 'lubię to', 'нравится', 'подобається', 'beğen', 'suka', 'thích', 'ถูกใจ', 'tykkää', 'μου αρέσει', '赞', '讚', 'いいね', '좋아요', 'أعجبني', 'लाइक'];
   const escRe = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const REPLY_RE = new RegExp('^\\s*(?:' + REPLY_WORDS.map(escRe).join('|') + ')\\s*$', 'i');
-  const ACTION_BASE = /^(like|liked|reply|replied|share|hide|edit|edited|delete|report|pin|pinned|see translation|translate|view( all)? \d+ (more )?repl(y|ies)|view more repl(y|ies)|hide repl(y|ies)|author|top fan|creator|follow|following|verified|just now|yesterday|·|\d+[smhdwy]|\d+\s*(sec|secs|min|mins|hr|hrs|hour|hours|day|days|week|weeks|month|months|year|years)( ago)?|\d+ likes?|\d+ repl(y|ies)|liked by creator|more|\.\.\.|…|[\d.,]+[kKmM]?)$/i;
-  const ACTION = { test: (t) => ACTION_BASE.test(t) || REPLY_RE.test(t) || LIKE_WORDS.includes(String(t).trim().toLowerCase().replace(/[’‘`]/g, "'").replace(/[!！.。]+$/, '')) || /^\d+\s*\p{L}{1,6}\.?$/u.test(t) };
+  // "See original" in the languages the platforms use: shown on a comment the platform has translated for the viewer.
+  const ORIG_WORDS = ['see original', 'show original', 'view original', 'voir l\'original', 'voir l’original', 'afficher l\'original', 'afficher l’original', 'ver original', 'mostrar original', 'original anzeigen', 'mostra originale', 'visualizza originale', 'origineel bekijken', 'toon origineel', 'visa original', 'zobacz oryginał', 'показать оригинал', 'orijinali göster', 'orijinalini gör', 'lihat asli', 'lihat aslinya', 'xem bản gốc', 'ดูต้นฉบับ', '원문 보기', '原文を表示', '原文を見る', '查看原文', '顯示原文', '显示原文', 'عرض الأصل'];
+  const ORIG_RE = new RegExp('^\\s*(?:' + ORIG_WORDS.map(escRe).join('|') + ')\\s*$', 'i');
+  const ACTION_BASE = /^(like|liked|reply|replied|share|hide|edit|edited|delete|report|pin|pinned|see translation|translate|see original|show original|view original|rate this translation|translated by [\p{L} ]+|view( all)? \d+ (more )?repl(y|ies)|view more repl(y|ies)|hide repl(y|ies)|author|top fan|creator|follow|following|verified|just now|yesterday|·|\d+[smhdwy]|\d+\s*(sec|secs|min|mins|hr|hrs|hour|hours|day|days|week|weeks|month|months|year|years)( ago)?|\d+ likes?|\d+ repl(y|ies)|liked by creator|more|\.\.\.|…|[\d.,]+[kKmM]?)$/iu;
+  const ACTION = { test: (t) => ACTION_BASE.test(t) || ORIG_RE.test(t) || REPLY_RE.test(t) || LIKE_WORDS.includes(String(t).trim().toLowerCase().replace(/[’‘`]/g, "'").replace(/[!！.。]+$/, '')) || /^\d+\s*\p{L}{1,6}\.?$/u.test(t) };
 
   A.platformId = () => { const h = location.hostname; return /facebook\.com$/.test(h) ? 'facebook' : /instagram\.com$/.test(h) ? 'instagram' : /tiktok\.com$/.test(h) ? 'tiktok' : 'other'; };
   const visible = (el) => { if (!el || !el.getBoundingClientRect) return false; const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1) return false; const cs = getComputedStyle(el); return cs.visibility !== 'hidden' && cs.display !== 'none'; };
@@ -56,6 +59,24 @@
     }
     return null;
   }
+  /** The "See original" link of a comment the platform has translated for the viewer, or null. */
+  function originalLink(container, lab) {
+    const others = replyLabels(container).filter((l) => l !== lab && !l.contains(lab) && !lab.contains(l));
+    for (const el of container.querySelectorAll('span, div, a, button, [role="button"]')) {
+      if (el.children.length > 1) continue;
+      const t = el.textContent || ''; if (t.length > 30 || !ORIG_RE.test(t) || !visible(el)) continue;
+      if (others.some((o) => { let p = el; while (p && p !== container) { if (p.contains(o)) return true; p = p.parentElement; } return false; })) continue;
+      return el.closest('[role="button"], button, a') || el;
+    }
+    return null;
+  }
+  /** Replies must be in the language the commenter wrote, so a translated comment is switched back to its original text first. */
+  A.revealOriginal = async (c) => {
+    if (!c || !c.orig || !document.contains(c.orig)) return c ? c.text : '';
+    const link = c.orig; c.orig = null; try { link.click(); } catch (_) { return c.text; }
+    for (let i = 0; i < 8; i++) { await sleep(150); const p = parse(c.el, c.lab); if (p.text && p.text !== c.text) { c.text = p.text; c.translated = true; return p.text; } }
+    return c.text;
+  };
   /** All comments currently on screen with their reply buttons. */
   A.findComments = (scope) => {
     scope = scope || document.body;
@@ -67,7 +88,7 @@
       const key = author + '|' + text.slice(0, 60);
       if (seen.has(key)) continue; seen.add(key);
       const replied = replyLabels(el).length > 1 || /\b(view|see|show|voir|afficher|ver|mostrar|anzeigen|visualizza)\b[^\n]{0,24}\b(repl|rép|resp|antwort|risposte)/i.test(el.textContent || '');
-      out.push({ el, btn: lab.closest('[role="button"], button, a') || lab, author, text, key, replied });
+      out.push({ el, lab, btn: lab.closest('[role="button"], button, a') || lab, author, text, key, replied, orig: originalLink(el, lab) });
       out[out.length - 1].own = !!me && author.toLowerCase() === me;
       if (out.length >= 80) break;
     }
@@ -84,62 +105,162 @@
   };
 
   /** Facts about the page's shape (no names, no comment text) for a "report a problem" message. */
-  A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]') });
+  A.diagnose = () => ({ platform: A.platformId(), host: location.hostname, area: (location.pathname.split('/')[1] || '').slice(0, 20), lang: document.documentElement.lang || '', replyLabels: replyLabels(document.body).length, comments: A.findComments().length, editableBoxes: A.editables().length, dialog: !!document.querySelector('[role="dialog"]'), lastReplyAttempt: A.lastTrace });
 
-  /* ---------- the post ---------- */
-  A.postContext = () => {
-    const p = A.platformId(); let caption = '', author = '';
-    const first = (sels, scope) => { for (const s of sels) { const e = (scope || document).querySelector(s); const t = txt(e); if (t) return t; } return ''; };
-    if (p === 'tiktok') { caption = first(['[data-e2e="browse-video-desc"]', '[data-e2e="video-desc"]']); author = first(['[data-e2e="browse-username"]', '[data-e2e="video-author-uniqueid"]']); }
-    else if (p === 'instagram') { caption = first(['article h1', 'main article ul li h1', 'div[role="dialog"] h1']); author = first(['article header a[href^="/"]', 'div[role="dialog"] header a[href^="/"]']); }
-    else if (p === 'facebook') {
-      const posts = Array.from(document.querySelectorAll('[role="article"]')).filter((a) => !/^comment/i.test(a.getAttribute('aria-label') || '') && !a.parentElement.closest('[role="article"]'));
-      const post = posts[0] || document;
-      caption = first(['[data-ad-preview="message"]', '[data-ad-comet-preview="message"]'], post); author = first(['h2 a', 'h3 a', 'strong a'], post);
+  /** Only the words a person can see. Facebook hides decoy text (random letters and digits) inside posts to confuse scrapers:
+      skip anything hidden, zero-sized or clipped, then drop any leftover token that looks like a random id. */
+  function visibleText(el) {
+    const out = [];
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    for (let n; (n = w.nextNode());) {
+      if (n.nodeType === 1) { if (n.tagName === 'BR' || getComputedStyle(n).display !== 'inline') out.push(' '); continue; } // line and block breaks keep words apart
+      const raw = n.nodeValue.replace(/\s+/g, ' ');
+      if (!raw.trim()) { out.push(' '); continue; }
+      let hide = false;
+      for (let q = n.parentElement; q; q = q.parentElement) {
+        if (q.getAttribute && q.getAttribute('aria-hidden') === 'true') { hide = true; break; }
+        const cs = getComputedStyle(q);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.05 || parseFloat(cs.fontSize) < 1 || (cs.position === 'absolute' && (/rect\(\s*0/.test(cs.clip) || /inset\(/.test(cs.clipPath || '') || (parseFloat(cs.width) <= 2 && parseFloat(cs.height) <= 2)))) { hide = true; break; }
+        if (q === el) break;
+      }
+      if (!hide) { try { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); if (b.width < 1 || b.height < 1) hide = true; } catch (_) {} }
+      if (hide) continue;
+      out.push(raw);
     }
-    if (!caption) { const m = document.querySelector('meta[property="og:description"]'); caption = (m && m.content) || ''; }
+    return out.join('').replace(/\s+/g, ' ').split(' ').filter((t) => !(/^[A-Za-z0-9]{18,}$/.test(t) && /\d/.test(t) && /[A-Za-z]/.test(t))).join(' ').replace(/^[\s·•|]+/, '').trim();
+  }
+  /** Facebook shows a post's words in a plain text block (photo viewer, reels, shared posts) without a stable label.
+      Take the first real paragraph that sits above the comments: not a comment, not a button label, not the box. */
+  function fbBodyText(post) {
+    const skip = (el) => { const a = el.closest('[role="article"]'); return (a && a !== post && a.getAttribute('aria-label')) || el.closest('form, [contenteditable], [role="textbox"], nav, [role="navigation"], [role="button"], button'); };
+    const out = [];
+    for (const el of post.querySelectorAll('div[dir="auto"], span[dir="auto"], div[style*="text-align"]')) {
+      if (skip(el) || el.querySelector('div[dir="auto"]')) continue;
+      const t = visibleText(el);
+      if (t.length < 20 || ACTION.test(t) || REPLY_RE.test(t) || /^(write a (public )?comment|most relevant|all comments|see more)/i.test(t)) continue;
+      out.push(t); if (out.join(' ').length > 500) break;
+    }
+    return out.join(' ');
+  }
+  /* ---------- the post ---------- */
+  A.postContext = (scope) => {
+    const p = A.platformId(); let caption = '', author = '';
+    const first = (sels, sc) => { for (const s of sels) { const e = (sc || document).querySelector(s); const t = txt(e); if (t) return t; } return ''; };
+    if (p === 'tiktok') { caption = first(['[data-e2e="browse-video-desc"]', '[data-e2e="video-desc"]']); author = first(['[data-e2e="browse-username"]', '[data-e2e="video-author-uniqueid"]']); }
+    else if (p === 'instagram') { const sc = scope || document; caption = first(['article h1', 'main article ul li h1', 'div[role="dialog"] h1'], sc) || (scope ? first(['h1'], scope) : ''); author = first(['article header a[href^="/"]', 'div[role="dialog"] header a[href^="/"]', 'header a[href^="/"]'], sc); }
+    else if (p === 'facebook') {
+      const posts = Array.from(document.querySelectorAll('[role="article"]')).filter((a) => !/^(comment|reply)/i.test(a.getAttribute('aria-label') || '') && !a.parentElement.closest('[role="article"]'));
+      const post = scope || posts[0] || document;
+      const firstV = (sels, sc) => { for (const q of sels) { const e = sc.querySelector(q); const t = e ? visibleText(e) : ''; if (t) return t; } return ''; };
+      caption = firstV(['[data-ad-preview="message"]', '[data-ad-comet-preview="message"]', '[data-ad-rendering-role="story_message"]'], post) || fbBodyText(post); author = first(['h2 a', 'h3 a', 'strong a', 'h2', 'h3'], post);
+    }
+    // the page's own description, only where the page IS one post (a photo, video, reel or post page) — never on a feed
+    if (!caption && (!scope || /\/(photo|photos|posts|videos|watch|reel|reels|permalink|story)\b|[?&](story_fbid|fbid|v)=/.test(location.pathname + location.search))) { const m = document.querySelector('meta[property="og:description"]'); caption = (m && m.content) || ''; }
     return { caption: caption.replace(/\s+/g, ' ').trim().slice(0, 800), author: author.replace(/\s+/g, ' ').trim().slice(0, 80) };
+  };
+
+  /* ---------- the main comment box (a new comment under the post, not a reply) ---------- */
+  const COMMENT_HINT = /comment|commentaire|comentar|comentario|coment[aá]rio|kommentar|commento|reageer|reactie|kommentera|komentarz|комментар|коментар|yorum|bình luận|コメント|评论|評論|댓글|تعليق/i;
+  const REPLY_HINT = /repl|répon|respon|antwort|rispond|svara|odpow|ответ|yanıt|cevap|返信|回复|回覆|답글|رد/i;
+  /** Comment boxes that are not a reply box: every visible box that talks about "comment" and not about "reply", has no @mention in it. */
+  A.postBoxes = () => A.editables().filter((e) => visible(e) && !hasMention(e) && ((COMMENT_HINT.test(hintOf(e)) && !REPLY_HINT.test(hintOf(e))) || (!!e.closest && !!e.closest('[data-e2e="comment-input"]'))));
+  /** The one the person means: inside an open post window if there is one, otherwise the one nearest the middle of the screen. */
+  A.findPostBox = () => {
+    const boxes = A.postBoxes(); if (!boxes.length) return null;
+    const mid = innerHeight / 2, dist = (e) => { const r = e.getBoundingClientRect(); return Math.abs((r.top + r.bottom) / 2 - mid); };
+    const inDialog = boxes.filter((e) => e.closest('[role="dialog"]'));
+    const pool = inDialog.length ? inDialog : boxes;
+    return pool.slice().sort((a, b) => dist(a) - dist(b))[0];
+  };
+  /** The post a comment box belongs to (so the AI reads that post, even in a feed with many). */
+  A.postScope = (box) => {
+    for (let el = box && box.parentElement; el && el !== document.body; el = el.parentElement) {
+      if (el.getAttribute('role') === 'article' && !/^(comment|reply)/i.test(el.getAttribute('aria-label') || '')) return el;
+      if (el.tagName === 'ARTICLE') return el;
+      if (el.getAttribute('role') === 'dialog') return el;
+    }
+    return null;
   };
 
   /* ---------- the reply box ---------- */
   const isEditable = (el) => !!el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|)$/i.test(el.type || '')) || el.isContentEditable);
-  A.editables = (scope) => Array.from((scope || document).querySelectorAll('textarea, input, [contenteditable="true"], [contenteditable=""], [role="textbox"]')).filter((e) => isEditable(e) && visible(e));
+  A.editables = (scope) => Array.from((scope || document).querySelectorAll('textarea, input, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"], [role="textbox"], [data-lexical-editor="true"]')).filter((e) => isEditable(e) && visible(e));
   const valOf = (e) => (e.tagName === 'TEXTAREA' || e.tagName === 'INPUT' ? e.value : e.textContent) || '';
-  /** Did clicking Reply really switch a box into "replying to this comment"? Never accepts the plain main box. */
+  const hintOf = (e) => (e.getAttribute('placeholder') || '') + ' ' + (e.getAttribute('aria-label') || '') + ' ' + (e.getAttribute('aria-placeholder') || '') + ' ' + (e.getAttribute('data-placeholder') || '');
+  const hasMention = (e) => /^\s*@\S/.test(valOf(e)) || (!!e.querySelector && !!e.querySelector('a, [contenteditable="false"], [data-lexical-mention], [data-text="true"] a'));
+  /** How likely is this box "the reply box of that comment, just opened by our click"? The plain main comment box scores low. */
+  function score(e, c, snap) {
+    const act = document.activeElement; let s = 0;
+    const isAct = act === e || (e.contains && e.contains(act));
+    const isNew = !snap.before.has(e), focusNow = isAct && snap.active !== act && snap.active !== e;
+    const replHint = /repl|répon|respon|antwort|rispond/i.test(hintOf(e)), mention = hasMention(e);
+    const v = valOf(e), changed = !!v.trim() && v !== snap.vals.get(e);
+    if (!(isNew || focusNow || mention || changed || (replHint && isAct))) return 0; // nothing says our click did anything to this box
+    if (isNew) s += 4;
+    if (isAct) s += 3; if (focusNow) s += (A.platformId() === 'tiktok' ? 3 : 1);
+    if (replHint) s += 3;
+    if (mention) s += 3;
+    if (changed) s += 2;
+    for (let el = c.el, i = 0; el && i < 8; el = el.parentElement, i++) if (el.contains(e)) { s += i < 5 ? 2 : 1; break; }
+    try { const r = e.getBoundingClientRect(), cr = c.el.getBoundingClientRect(); if (Math.abs(r.top - cr.bottom) < 420) s += 1; } catch (_) {}
+    return s;
+  }
   function findBox(c, snap) {
-    const act = document.activeElement;
-    const fresh = (e) => !snap.before.has(e);
-    if (isEditable(act) && visible(act) && fresh(act)) return act;
-    for (let el = c.el, i = 0; el && i < 5; el = el.parentElement, i++) { const n = A.editables(el).filter(fresh); if (n.length) return n[n.length - 1]; }
-    if (isEditable(act) && visible(act)) {
-      const v = valOf(act), hint = (act.getAttribute('placeholder') || '') + ' ' + (act.getAttribute('aria-label') || '') + ' ' + (act.getAttribute('aria-placeholder') || '');
-      const mention = /^\s*@\S/.test(v) || (act.querySelector && !!act.querySelector('a, [contenteditable="false"], [data-lexical-mention]'));
-      const changed = v !== snap.vals.get(act), focusedNow = snap.active !== act;
-      if (mention || /repl/i.test(hint) || (changed && v.trim()) || (focusedNow && A.platformId() === 'tiktok')) return act;
-    }
-    return null;
+    let best = null, bs = 0;
+    for (const e of A.editables()) { const s = score(e, c, snap); if (s > bs) { bs = s; best = e; } }
+    return bs >= 5 ? best : null;
   }
   function realClick(el) {
-    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
+    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, composed: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
     for (const t of ['pointerover', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
       try { el.dispatchEvent(t.startsWith('pointer') ? new PointerEvent(t, { ...o, pointerType: 'mouse', isPrimary: true }) : new MouseEvent(t, o)); } catch (_) {}
     }
   }
+  /** What a person would really be clicking: the innermost thing under the Reply label first, then the button around it, then the outer wrapper.
+      (Clicking a wrapper does nothing when the site's click handler sits on the button inside it.) */
+  function clickTargets(c) {
+    const out = []; const add = (e) => { if (e && e.nodeType === 1 && !out.includes(e)) out.push(e); };
+    const r = c.btn.getBoundingClientRect();
+    let at = null; try { at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); } catch (_) {}
+    if (at && (c.btn.contains(at) || at.contains(c.btn))) add(at);
+    let leaf = c.btn; while (leaf.children && leaf.children.length === 1) leaf = leaf.firstElementChild; add(leaf);
+    add(((at && c.btn.contains(at) ? at : leaf)).closest('[role="button"], button, a')); add(c.btn);
+    return out;
+  }
+  const kind = (e) => (e ? { tag: e.tagName.toLowerCase(), role: e.getAttribute('role') || '', ce: !!e.isContentEditable, hint: /repl/i.test(hintOf(e)), mention: hasMention(e), inDialog: !!(e.closest && e.closest('[role="dialog"]')) } : null);
   /** Click the comment's own Reply button and wait until that comment's reply box is ready. Returns null when it can't be sure
       (so nothing ever lands in the main comment box by mistake). Never sends anything. */
-  A.openReply = async (c, { wait = 3500 } = {}) => {
+  A.lastTrace = null;
+  A.openReply = async (c, { wait = 1500 } = {}) => {
     const eds = A.editables();
     const snap = { before: new Set(eds), vals: new Map(eds.map((e) => [e, valOf(e)])), active: document.activeElement };
+    const trace = A.lastTrace = { platform: A.platformId(), editablesBefore: eds.length, btn: { tag: c.btn.tagName.toLowerCase(), role: c.btn.getAttribute('role') || '', w: Math.round(c.btn.getBoundingClientRect().width), h: Math.round(c.btn.getBoundingClientRect().height) }, tries: [], result: 'none' };
     try { c.el.scrollIntoView({ block: 'center' }); } catch (_) {}
-    await sleep(150);
-    try { c.btn.click(); } catch (_) {}
-    for (let t = 0, retried = false; t < wait; t += 100) {
-      await sleep(100);
-      const box = findBox(c, snap); if (box) return box;
-      if (!retried && t >= 1000) { retried = true; realClick(c.btn); }
+    await sleep(200);
+    const targets = clickTargets(c).slice(0, 4);
+    for (let i = 0; i < targets.length; i++) {
+      const tg = targets[i]; const t = { target: tg.tagName.toLowerCase() + (tg.getAttribute('role') ? '[' + tg.getAttribute('role') + ']' : ''), box: null };
+      trace.tries.push(t);
+      try { tg.click(); } catch (_) {}
+      for (let ms = 0; ms < wait; ms += 100) {
+        await sleep(100);
+        if (ms === 500) realClick(tg);
+        const box = findBox(c, snap);
+        if (box) { t.box = kind(box); t.box.isNew = !snap.before.has(box); trace.result = 'found'; return box; }
+      }
+      t.after = { editables: A.editables().length, active: kind(document.activeElement && isEditable(document.activeElement) ? document.activeElement : null) };
     }
     return null;
   };
+  /** Last resort: the person clicks inside the reply box themselves and we fill the first box they focus. */
+  A.waitForBox = (ms = 30000) => new Promise((res) => {
+    let done = false; const finish = (v) => { if (done) return; done = true; document.removeEventListener('focusin', on, true); clearTimeout(tm); A._cancelWait = null; res(v); };
+    const on = (e) => { const el = e.target; if (isEditable(el) && visible(el)) finish(el); };
+    const tm = setTimeout(() => finish(null), ms);
+    if (A._cancelWait) A._cancelWait();
+    A._cancelWait = () => finish(null);
+    document.addEventListener('focusin', on, true);
+  });
   /** Put text in the box the way a person typing would (frameworks listen for input events). Keeps an @mention the site added. */
   A.setText = (el, text) => {
     el.focus();

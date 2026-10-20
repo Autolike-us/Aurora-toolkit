@@ -13,9 +13,9 @@ export const metadata: Metadata = {
     type: 'website', siteName: 'Aurora', locale: 'en_US',
     title: 'Aurora — thoughtful growth tools for Facebook, Instagram & TikTok',
     description: 'Browser extensions that like, comment and follow at a human pace — plus Aurora Extract, a free data extractor. Preview first. 3-day free trial.',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Aurora — tools for Facebook, Instagram and TikTok' }],
+    images: [{ url: '/og-v2.png', width: 1200, height: 630, alt: 'Aurora — tools for Facebook, Instagram and TikTok' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Aurora — tools for Facebook, Instagram & TikTok', description: 'Human-paced automation studios and a free data extractor.', images: ['/og.png'] },
+  twitter: { card: 'summary_large_image', title: 'Aurora — tools for Facebook, Instagram & TikTok', description: 'Human-paced automation studios and a free data extractor.', images: ['/og-v2.png'] },
 };
 
 /** Applies a saved dark choice before first paint so the page never flashes light. */

@@ -14,6 +14,9 @@ if (($_GET['go'] ?? '') !== '1') {
     echo "Aurora access codes (admin / tester)\n====================================\n"
        . "Make a code for yourself (all studios, never expires):\n  ?go=1&note=owner\n"
        . "Make a tester code for 30 days, TikTok only:\n  ?go=1&note=friend&days=30&products=tiktok\n"
+       . "Make a code for the Chrome Web Store reviewer (Aurora Reply only, 60 days, 100 replies):\n  ?go=1&note=chrome-reviewer&days=60&products=reply&quota=100\n"
+       . "Make a code that can also open the cost page (\"Aurora Reply — what it costs\"):\n  ?go=1&note=owner&admin=1\n"
+       . "Turn an EXISTING code into a cost-page (admin) code:\n  ?go=1&makeadmin=AUR-XXXX-XXXX-XXXX\n"
        . "Revoke a code:\n  ?go=1&revoke=AUR-XXXX-XXXX-XXXX\n"
        . "List the codes (last 4 characters only):\n  ?go=1&list=1\n\n"
        . "Add one of these to the end of the address in your browser. This script deletes itself after it runs.\n";
@@ -28,6 +31,12 @@ if (isset($_GET['list'])) {
     foreach ($all as $k => $e) echo '…' . substr((string) $k, -4) . '  ' . str_pad((string) ($e['note'] ?? ''), 20) . ' until ' . ($e['until'] ?? 'never') . '  studios ' . (isset($e['products']) ? implode(',', $e['products']) : 'all') . "\n";
     done(); exit;
 }
+if (!empty($_GET['makeadmin'])) {
+    $k = strtoupper(trim((string) $_GET['makeadmin']));
+    if (!isset($all[$k])) { echo "That code is not in the list. Check it, or make a new one with &admin=1.\n"; done(); exit; }
+    $all[$k]['admin'] = true; save($file, $all); echo "Done: …" . substr($k, -4) . " can now open the cost page. Paste it there as before.\n";
+    done(); exit;
+}
 if (!empty($_GET['revoke'])) {
     $k = strtoupper(trim((string) $_GET['revoke']));
     if (isset($all[$k])) { unset($all[$k]); save($file, $all); echo "Revoked. Browsers that already have a token keep working for up to 72 hours.\n"; } else echo "That code is not in the list.\n";
@@ -39,11 +48,11 @@ $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 do { $parts = []; for ($g = 0; $g < 3; $g++) { $s = ''; for ($i = 0; $i < 4; $i++) $s .= $alphabet[random_int(0, strlen($alphabet) - 1)]; $parts[] = $s; } $code = 'AUR-' . implode('-', $parts); } while (isset($all[$code]));
 $days = max(0, (int) ($_GET['days'] ?? 0));
 $p = strtolower(trim((string) ($_GET['products'] ?? 'all')));
-$products = $p === 'all' || $p === '' ? null : array_values(array_intersect(['facebook', 'instagram', 'tiktok'], array_map('trim', explode(',', $p))));
-if ($products !== null && !$products) { echo "STOP: products must be all, or a mix of facebook,instagram,tiktok.\n"; exit; }
-$all[$code] = ['note' => substr(preg_replace('/[^\w .@-]/u', '', (string) ($_GET['note'] ?? '')), 0, 40), 'until' => $days ? gmdate('Y-m-d', time() + 86400 * $days) : null, 'products' => $products, 'created' => gmdate('Y-m-d')];
+$products = $p === 'all' || $p === '' ? null : array_values(array_intersect(['facebook', 'instagram', 'tiktok', 'reply'], array_map('trim', explode(',', $p))));
+if ($products !== null && !$products) { echo "STOP: products must be all, or a mix of facebook,instagram,tiktok,reply.\n"; exit; }
+$all[$code] = ['note' => substr(preg_replace('/[^\w .@-]/u', '', (string) ($_GET['note'] ?? '')), 0, 40), 'until' => $days ? gmdate('Y-m-d', time() + 86400 * $days) : null, 'products' => $products, 'created' => gmdate('Y-m-d')] + (isset($_GET['quota']) ? ['quota' => max(1, (int) $_GET['quota'])] : []) + (!empty($_GET['admin']) ? ['admin' => true] : []);
 save($file, $all);
 echo "Your new access code (copy it now, it is not shown again):\n\n    $code\n\n"
-   . 'Studios: ' . ($products ? implode(', ', $products) : 'all three') . '   Valid until: ' . ($days ? $all[$code]['until'] : 'never') . "   Browsers: unlimited\n"
+   . 'Products: ' . ($products ? implode(', ', $products) : 'all studios and Aurora Reply') . '   Valid until: ' . ($days ? $all[$code]['until'] : 'never') . "   Browsers: unlimited\n"
    . "Paste it into the License box of any Aurora extension.\n";
 done();

@@ -14,6 +14,7 @@ function route_webhook_stripe(): void
     try {
         $type = (string) ($event['type'] ?? ''); $obj = $event['data']['object'] ?? [];
         if ($type === 'checkout.session.completed' && !empty($obj['subscription'])) stripe_sync_subscription(stripe_call('GET', '/v1/subscriptions/' . rawurlencode($obj['subscription'])));
+        elseif (in_array($type, ['checkout.session.completed', 'checkout.session.async_payment_succeeded'], true) && ($obj['mode'] ?? '') === 'payment') stripe_grant_pack_session($obj);
         elseif (strpos($type, 'customer.subscription.') === 0) stripe_sync_subscription($obj);
         mark_event($event['id'], 'stripe');
         json_out(['ok' => true]);
@@ -29,6 +30,12 @@ function route_webhook_paypal(): void
     if (seen_event($event['id'])) json_out(['ok' => true, 'duplicate' => true]);
     try {
         $type = (string) ($event['event_type'] ?? '');
+        if ($type === 'PAYMENT.CAPTURE.COMPLETED') {
+            $res = $event['resource'] ?? []; $orderId = (string) ($res['supplementary_data']['related_ids']['order_id'] ?? '');
+            [$uid, $packId] = array_pad(explode('|', (string) ($res['custom_id'] ?? '')), 2, '');
+            $pack = reply_catalog()['packs'][$packId] ?? null;
+            if ($orderId !== '' && $uid !== '' && $pack && ($res['amount']['currency_code'] ?? '') === 'USD' && abs((float) ($res['amount']['value'] ?? 0) - (float) $pack['usd']) < 0.001) reply_grant_order('paypal:' . $orderId, $uid, 'paypal', $packId);
+        }
         $subId = strpos($type, 'BILLING.SUBSCRIPTION.') === 0 ? ($event['resource']['id'] ?? '') : ($event['resource']['billing_agreement_id'] ?? '');
         if ($subId) paypal_sync_subscription((string) $subId);
         mark_event($event['id'], 'paypal');

@@ -24,6 +24,7 @@ return [
 
     'stripe_secret' => '', 'stripe_webhook_secret' => '', 'stripe_portal_config' => '',
     'stripe_price_bundle_launch' => '', 'stripe_price_bundle' => '', 'stripe_price_facebook' => '', 'stripe_price_instagram' => '', 'stripe_price_tiktok' => '',
+    'stripe_price_reply' => '', 'stripe_price_reply_pro' => '',   // Aurora Reply subscriptions (created by stripe-setup-ONE-TIME.php; packs need no setup)
 
     // Aurora Reply (AI reply drafts). Get a key at console.anthropic.com, set a monthly spend limit there, and paste it here — never in the extension.
     'anthropic_api_key' => '',
@@ -36,9 +37,11 @@ return [
     'reply_plans' => false,
     'reply_trial_total' => 150, 'reply_trial_daily' => 50,   // trial: replies in total / per day (3 days)
     'reply_free_monthly' => 10,                              // after the trial: free replies every month
+    // 'reply_catalog' => ['free' => 10, 'packs' => ['pack150' => ['usd' => 5.00]], 'subs' => ['reply' => ['usd' => 12.00]]],  // optional: override any price or allowance (see reply_catalog() in api/lib/pricing.php)
     'reply_pro_quota' => 5000,                               // bigger subscription: replies per month ('reply_monthly_quota' is the standard one)
 
     'paypal_env' => 'sandbox',               // 'live' when ready
     'paypal_client_id' => '', 'paypal_client_secret' => '', 'paypal_webhook_id' => '',
     'paypal_plan_bundle_launch' => '', 'paypal_plan_bundle' => '', 'paypal_plan_facebook' => '', 'paypal_plan_instagram' => '', 'paypal_plan_tiktok' => '',
+    'paypal_plan_reply' => '', 'paypal_plan_reply_pro' => '',   // Aurora Reply subscriptions (created by paypal-setup-ONE-TIME.php)
 ];

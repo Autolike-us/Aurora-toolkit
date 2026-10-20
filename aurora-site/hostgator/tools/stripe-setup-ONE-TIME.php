@@ -7,6 +7,7 @@ declare(strict_types=1);
 header('Content-Type: text/plain; charset=utf-8');
 require __DIR__ . '/lib/bootstrap.php';
 require __DIR__ . '/lib/stripe.php';
+require __DIR__ . '/lib/pricing.php';
 
 $key = (string) cfg('stripe_secret', '');
 if ($key === '') { echo "STOP: stripe_secret is empty in aurora-config.php. Add your Stripe secret key (sk_test_... for testing) first.\n"; exit; }
@@ -22,7 +23,7 @@ function save_cfg(string $cfgPath, string $key, string $value): void
     $src = (string) file_get_contents($cfgPath);
     $count = 0;
     $src = preg_replace("/('" . preg_quote($key, '/') . "'\s*=>\s*)'[^']*'/", "\${1}'" . addslashes($value) . "'", $src, 1, $count);
-    if ($count === 0) $src = preg_replace('/\];\s*$/', "    '$key' => '" . addslashes($value) . "',\n];\n", $src, 1);
+    if ($count === 0) $src = preg_replace('/,?(\s*)\];\s*$/', ",\n    '$key' => '" . addslashes($value) . "',\n];\n", $src, 1);
     file_put_contents($cfgPath, $src);
 }
 
@@ -34,23 +35,29 @@ $prices = [
     'stripe_price_instagram'     => ['Aurora - Instagram Studio', 1000],
     'stripe_price_tiktok'        => ['Aurora - TikTok Studio', 1000],
 ];
+// Aurora Reply subscriptions: prices come from reply_catalog() in api/lib/pricing.php (reply packs need no setup: they are built at checkout)
+foreach (reply_catalog()['subs'] as $id => $x) $prices['stripe_price_' . $id] = [$x['name'], reply_cents((float) $x['usd'])];
 try {
     copy($cfgPath, $cfgPath . '.bak-' . date('Ymd-His'));
     $todo = array_filter(array_keys($prices), fn($k) => (string) cfg($k, '') === '');
     if ($todo) {
-        $product = stripe_call('POST', '/v1/products', ['name' => 'Aurora Studios', 'description' => 'Aurora engagement studios for Facebook, Instagram and TikTok']);
-        echo "Product created: {$product['id']}\n";
+        $products = [];
         foreach ($todo as $k) {
+            $isReply = strpos($k, 'stripe_price_reply') === 0; $g = $isReply ? 'reply' : 'studios';
+            if (!isset($products[$g])) {
+                $products[$g] = stripe_call('POST', '/v1/products', $isReply ? ['name' => 'Aurora Reply', 'description' => 'AI replies to your social media comments, in your own voice'] : ['name' => 'Aurora Studios', 'description' => 'Aurora engagement studios for Facebook, Instagram and TikTok']);
+                echo ucfirst($g) . " product created: {$products[$g]['id']}\n";
+            }
             [$name, $cents] = $prices[$k];
-            $p = stripe_call('POST', '/v1/prices', ['product' => $product['id'], 'currency' => 'usd', 'unit_amount' => $cents, 'recurring[interval]' => 'month', 'nickname' => $name]);
+            $p = stripe_call('POST', '/v1/prices', ['product' => $products[$g]['id'], 'currency' => 'usd', 'unit_amount' => $cents, 'recurring[interval]' => 'month', 'nickname' => $name]);
             save_cfg($cfgPath, $k, (string) $p['id']);
             echo "$k = {$p['id']}   ($name, \$" . number_format($cents / 100, 2) . "/month)\n";
         }
-    } else echo "All 5 prices are already in your config. Skipping prices.\n";
+    } else echo "All prices are already in your config. Skipping prices.\n";
 
     if ((string) cfg('stripe_webhook_secret', '') === '') {
         $w = stripe_call('POST', '/v1/webhook_endpoints', ['url' => site_url() . '/api/webhooks/stripe', 'description' => 'Aurora subscriptions',
-            'enabled_events' => ['checkout.session.completed', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted']]);
+            'enabled_events' => ['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted']]);
         save_cfg($cfgPath, 'stripe_webhook_secret', (string) ($w['secret'] ?? ''));
         echo "Webhook created ({$w['id']}) for " . site_url() . "/api/webhooks/stripe and its signing secret was saved into your config.\n";
     } else echo "A webhook secret is already in your config. Skipping the webhook.\n";

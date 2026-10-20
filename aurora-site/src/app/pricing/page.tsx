@@ -4,6 +4,7 @@ import { Faq, FAQ } from '@/components/Faq';
 import { PricingPlans } from '@/components/PricingPlans';
 import { PRODUCTS } from '@/lib/products';
 import { PlatformIcon } from '@/components/PlatformIcon';
+import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'Pricing', description: 'Aurora pricing: launch offer of $10/month for all 3 extensions, then $10 per extension or $20 for all three. 3-day free trial.' };
 
@@ -23,6 +24,10 @@ export default function Pricing() {
       </div>
       <PricingPlans />
       <p className="note center" style={{ marginTop: 26 }}>Looking for data instead of automation? <a href="/extract" style={{ textDecoration: 'underline' }}>Aurora Extract</a> — the free extractor for Facebook, Instagram and TikTok — costs nothing.</p>
+      <div className="replybanner" style={{ marginTop: 40 }}>
+        <div className="txt"><span className="eyebrow" style={{ marginBottom: 8, color: '#fbbf24' }}>Also from Aurora</span><h2 style={{ fontSize: 28 }}>Aurora Reply</h2><p>AI replies to your comments, in your own voice. 3-day free trial, then 10 free replies a month — or buy packs or subscribe if you need more.</p></div>
+        <div className="act"><Link className="btn primary lg" href="/reply/#plans">See Aurora Reply plans <span className="arrow">↗</span></Link></div>
+      </div>
       <h2 style={{ margin: '80px 0 6px', fontSize: 32 }}>What each studio can do</h2>
       <div className="tablescroll"><table className="compare">
         <thead><tr><th>Action</th>{PRODUCTS.map(p => <th key={p.id}><span className="inline-id"><PlatformIcon id={p.id} size="xs" />{p.short}</span></th>)}</tr></thead>

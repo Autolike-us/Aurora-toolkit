@@ -22,6 +22,7 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     check('the email link signs you in and shows the account page with the license key and trial', /AUR-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/.test(await page.textContent('.key')) && /FREE TRIAL/i.test(await page.textContent('.status')));
     check('the nav shows "My account" when signed in', /My account/.test(await page.textContent('header.nav')));
     const key = (await page.textContent('.key span')).trim();
+    check('the account page has an Aurora Reply card with the key, the trial that starts on first use, and install steps', (await page.locator('#reply').count()) === 1 && (await page.textContent('#reply .key span')).trim() === key && /starts the first time/i.test(await page.textContent('#reply')) && /Settings &\s*key/.test(await page.textContent('#reply')));
     fs.writeFileSync(dir + '/releases/aurora-instagram-latest.zip', 'PK-e2e');
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('.dl .item:nth-child(2) button')]);
     check('a trial user downloads the Instagram zip', fs.readFileSync(await dl.path(), 'utf8') === 'PK-e2e');
@@ -71,7 +72,10 @@ const mails = () => (fs.existsSync(dir + '/mail.log') ? fs.readFileSync(dir + '/
     await page.goto(site + '/support/');
     check('the support page offers the Telegram channel and the support email', (await page.getAttribute(`a[href="${TG}"]`, 'href')) === TG && /support@getaurorastudios.com/.test(await page.textContent('main')));
     await page.goto(site + '/reply/');
-    check('Aurora Reply has its own page with the steps, the features, the privacy promise and the Telegram link', /Aurora/.test(await page.textContent('h1')) && (await page.locator('.rstep').count()) === 3 && (await page.locator('.rfeat .rf').count()) === 8 && /never presses Send/.test(await page.textContent('.rcallout')) && (await page.locator(`a[href="${TG}"]`).count()) >= 1);
+    check('Aurora Reply has its own page with the steps, the features, the privacy promise and the Telegram link', /Aurora/.test(await page.textContent('h1')) && (await page.locator('.rstep').count()) === 3 && (await page.locator('.rfeat .rf').count()) === 8 && /never presses Send/.test(await page.textContent('.rcallout >> nth=0')) && (await page.locator(`a[href="${TG}"]`).count()) >= 1);
+    await page.waitForSelector('.rplans');
+    check('the Reply page shows the plans from the server: free trial, 10 free replies, packs and subscriptions', /3-day free trial/.test(await page.textContent('#plans')) && /10\s*replies a month/.test(await page.textContent('#plans')) && (await page.locator('#plans .rpack').count()) === 4 && /150/.test(await page.textContent('#plans')) && /\$5/.test(await page.textContent('#plans')) && /\$12/.test(await page.textContent('#plans')));
+    check('the Reply page leads with "Start my free trial" to the sign-up page', (await page.locator('a.btn.primary.lg[href*="/signup/"]').count()) >= 1);
     check('the nav and the footer link to Aurora Reply, and the home page advertises it', (await page.locator('header.nav a[href="/reply/"]').count()) === 1 && (await page.locator('footer.site a[href="/reply/"]').count()) === 1 && await (async () => { await page.goto(site + '/'); return (await page.locator('#reply .replybanner').count()) === 1; })());
     await page.goto(site + '/download/');
     check('the download page offers the free extension without needing an account', (await page.locator('.freebanner a[download]').count()) === 1);

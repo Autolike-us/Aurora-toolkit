@@ -11,7 +11,7 @@ const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tik
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
 const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-const CHANGELOG = [{ v: '0.3.2', title: 'Free trial, free plan and reply packs', items: ['Your plan and remaining replies are shown in the dashboard and in the panel', 'New accounts get a 3-day full trial, then 10 free replies every month', 'Need more? A “Get more replies” link appears when you run out']}, { v: '0.3.1', title: 'Choose 1, 2 or 3 replies, report bugs on Telegram', items: ['Choose how many replies to write per comment (1, 2 or 3) — each reply counts as one draft, so pick 1 to use fewer', 'Report a problem on Telegram (fastest) or by email', 'Discover the other Aurora tools from your dashboard']}, { v: '0.3.0', title: 'Reply to all unanswered comments, more languages, voice profiles', items: ['Reply to unanswered comments one by one — you approve each reply and press Send yourself', 'Finds comments in French, Spanish, German, Portuguese, Japanese and many more languages', 'Voice profiles for people who run several brands', 'Keyboard shortcuts (Alt+R, Alt+1/2/3, Alt+G, Alt+N)', 'A quick tour, and a “Report a problem” button when comments can’t be found']}];
+const CHANGELOG = [{ v: '1.1.0', title: 'New: comment on any post', items: ['Press “Draft a comment” in the panel to write a new comment under a post — not only replies', 'Choose a style: Friendly, Funny, Serious, Professional, Supportive or Curious', 'Aurora reads the post, comments in the post’s language, and you read, edit and press Send', 'Replies now follow the language of the comment, and translated comments are read in their original language', 'On a new install the Overview offers to restore your saved voices in one click'] }, { v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Your voices are backed up to your key, so a reinstall or a new computer gets them back','Report a problem on Telegram or by email, straight from the panel']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -53,13 +53,15 @@ function renderOverview() {
   $('#stEdit').textContent = inserted.length ? Math.round((inserted.filter((x) => x.edited).length / inserted.length) * 100) + '%' : '–';
   // setup
   const steps = [
-    [S.hasKey, 'Add your Aurora Reply key', 'Paste it once in Settings & key.', 'settings'],
+    [S.hasKey, 'Add your Aurora Reply key', 'Create a free account at getaurorastudios.com, copy your key from My account and paste it in Settings & key.', 'settings'],
     [!!((S.voice.samples || []).length || (S.voice.about || '').trim()), 'Teach it your voice', 'Add a few of your own replies and your business facts.', 'voice'],
     [h.length > 0 || !!(u && u.used > 0), 'Write your first reply', 'Open a post on Facebook, Instagram or TikTok and press ✦ Reply — or try it in My voice.', 'voice'],
   ];
+  const pk = S.peek;
+  if (!steps[1][0] && S.hasKey && pk && pk.found) { steps[1][2] = `We found your saved voices (${pk.voices} voice${pk.voices === 1 ? '' : 's'}${pk.quick ? `, ${pk.quick} quick repl${pk.quick === 1 ? 'y' : 'ies'}` : ''}${pk.at ? `, saved ${when(pk.at)}` : ''}). Bring them back in one click, or start fresh in My voice.`; steps[1][4] = true; }
   const done = steps.filter((s) => s[0]).length;
   $('#setupCard').hidden = done === 3; $('#setupCount').textContent = `· ${done} of 3`;
-  $('#setup').innerHTML = steps.map((s, i) => `<li class="${s[0] ? 'ok' : ''}"><span class="dot">${s[0] ? '✓' : i + 1}</span><div><b>${s[1]}</b><small>${s[2]}</small></div>${s[0] ? '' : `<button class="btn sm" data-go="${s[3]}">Open</button>`}</li>`).join('');
+  $('#setup').innerHTML = steps.map((s, i) => `<li class="${s[0] ? 'ok' : ''}"><span class="dot">${s[0] ? '✓' : i + 1}</span><div><b>${s[1]}</b><small>${s[2]}</small></div>${s[0] ? '' : s[4] ? `<button class="btn sm p" data-restore="1">Restore my voices</button> <button class="btn sm" data-go="${s[3]}">Start fresh</button>` : `<button class="btn sm" data-go="${s[3]}">Open</button>`}</li>`).join('');
   // activity
   const days = [], today = new Date(); today.setHours(0, 0, 0, 0);
   for (let i = 13; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); days.push(d); }
@@ -79,8 +81,8 @@ function renderOverview() {
   if (u && (u.plan === 'trial' || u.plan === 'free')) {
     pc.hidden = false;
     pc.innerHTML = u.plan === 'trial'
-      ? `<div style="font-size:26px">🎁</div><div class="grow"><b>Your free trial ends ${esc(new Date(u.trialEndsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }))}</b>Full features for 3 days (${u.dayLeft} replies left today). After that you keep ${10} free replies every month — or get more.</div><a class="btn p" href="https://getaurorastudios.com/reply/" target="_blank" rel="noopener" style="text-decoration:none">See plans ↗</a>`
-      : `<div style="font-size:26px">✦</div><div class="grow"><b>Free plan · ${Math.max(0, u.limit - u.used)} of ${u.limit} replies left this month${u.packs ? ` (+${u.packs} from your packs)` : ''}</b>Need more? Buy a reply pack, or subscribe for heavy use.</div><a class="btn p" href="https://getaurorastudios.com/reply/" target="_blank" rel="noopener" style="text-decoration:none">Get more replies ↗</a>`;
+      ? `<div style="font-size:26px">🎁</div><div class="grow"><b>Your free trial ends ${esc(new Date(u.trialEndsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }))}</b>Full features for 3 days (${u.dayLeft} replies left today). After that you keep ${u.freeAfter || 10} free replies every month — or get more.</div><a class="btn p" href="https://getaurorastudios.com/reply/#plans" target="_blank" rel="noopener" style="text-decoration:none">See plans ↗</a>`
+      : `<div style="font-size:26px">✦</div><div class="grow"><b>Free plan · ${Math.max(0, u.limit - u.used)} of ${u.limit} replies left this month${u.packs ? ` (+${u.packs} from your packs)` : ''}</b>Need more? Buy a reply pack, or subscribe for heavy use.</div><a class="btn p" href="https://getaurorastudios.com/reply/#plans" target="_blank" rel="noopener" style="text-decoration:none">Get more replies ↗</a>`;
   } else pc.hidden = true;
   $('#sideBar').style.width = pct + '%';
   $('#sideNote').textContent = u && u.resetsAt ? 'Renews ' + new Date(u.resetsAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : S.hasKey ? 'Press “Save & check” to refresh' : 'Add your key in Settings';
@@ -94,7 +96,7 @@ function entryHTML(x, compact) {
   const reply = x.chosen || (x.drafts && x.drafts[0]) || '';
   const others = (x.drafts || []).filter((d) => d !== x.chosen);
   return `<div class="h" data-id="${esc(x.id)}"><div class="hd"><span class="badge ${cls}">${esc(pl)}</span><b>${esc(x.author || 'Someone')}</b><span>${esc(when(x.ts))}</span><span class="st ${st[0]}">${st[1]}${x.edited ? ' · edited' : ''}</span>${x.tone ? `<span>· ${esc(x.tone)}</span>` : ''}${compact ? '' : `<button class="star ${x.fav ? 'on' : ''}" data-act="fav" title="Favourite">★</button>`}</div>
-  <div class="q">${esc(x.comment)}</div><div class="a ${x.chosen ? '' : 'none'}">${esc(reply)}</div>
+  <div class="q">${x.mode === 'post' ? '📝 New comment on this post: ' : ''}${esc(x.comment || (x.mode === 'post' ? '(the post had no text)' : ''))}</div><div class="a ${x.chosen ? '' : 'none'}">${esc(reply)}</div>
   ${compact ? '' : `${others.length && x.chosen ? `<details><summary>${others.length} other draft${others.length > 1 ? 's' : ''}</summary>${others.map((d) => `<p>${esc(d)}</p>`).join('')}</details>` : ''}${!x.chosen && (x.drafts || []).length > 1 ? `<details><summary>${x.drafts.length - 1} more draft${x.drafts.length > 2 ? 's' : ''}</summary>${x.drafts.slice(1).map((d) => `<p>${esc(d)}</p>`).join('')}</details>` : ''}
   <div class="acts"><button class="btn sm" data-act="copy">Copy reply</button><button class="btn sm" data-act="style" title="Teach it your voice">＋ My style</button><button class="btn sm" data-act="quick">⚡ Save as quick reply</button><button class="btn sm danger" data-act="del">Delete</button></div>`}</div>`;
 }
@@ -166,8 +168,20 @@ function applyPrefs() {
   const th = S.prefs.theme || 'light';
   if (th === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = th;
   $$('#theme button').forEach((b) => b.classList.toggle('on', b.dataset.th === th));
+  $$('#bkToggle button').forEach((b) => b.classList.toggle('on', (b.dataset.b === 'on') === (S.prefs.backup !== false)));
   $$('#histToggle button').forEach((b) => b.classList.toggle('on', (b.dataset.h === 'on') === (S.prefs.history !== false)));
 }
+async function showBackup() {
+  const st = await get('syncState', null); const el = $('#bkStatus'); if (!el) return;
+  el.textContent = S.prefs.backup === false ? 'Backup is off. Your voices stay only in this browser.' : !S.hasKey ? 'Add your key to turn backup on.' : !st ? 'Not backed up yet.' : st.ok ? 'Backed up ' + new Date(st.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ✓' : st.status === 'network' ? 'Could not reach Aurora. It will try again later.' : st.http === 404 || st.http === 405 ? 'Backup is not switched on at the server yet (the server needs the latest update). Your voices are still safe in this browser.' : 'Backup did not work (' + (st.status || 'error') + (st.http ? ', ' + st.http : '') + '). Try again in a moment.';
+}
+/** Is there a saved backup under this key that this browser doesn't have yet? Only asked when the voice step is still open. */
+async function checkBackup() {
+  S.peek = null;
+  if (S.hasKey && S.prefs.backup !== false && !((S.voice.samples || []).length || (S.voice.about || '').trim())) { try { const r = await ask('syncNow', { mode: 'peek' }); S.peek = r && r.ok ? r : null; } catch (_) {} }
+  renderOverview();
+}
+async function afterRestore() { S.voice = await get('voice', {}); S.quick = await get('quick', []); fillVoice(); await renderProfiles(); renderAll(); await showBackup(); }
 async function checkKey() {
   const key = $('#key').value.trim().toUpperCase();
   await set({ licenseKey: key }); S.hasKey = !!key;
@@ -177,12 +191,13 @@ async function checkKey() {
   if (r.ok) { status('ok', r.status === 'beta' ? 'Key accepted · beta access' : 'Key accepted ✓'); meter(r.usage); }
   else { status('bad', r.message || 'That key was not accepted.'); meter(r.usage || null); }
   renderOverview();
+  const b = await ask('syncNow'); if (b && b.restored) { await afterRestore(); toast('Welcome back — your saved voices are restored ✓'); } else { await showBackup(); checkBackup(); }
 }
 
 
 /* ---------- tour ---------- */
 const TOUR = [
-  { t: 'Welcome to Aurora Reply ✦', d: 'It writes replies to your comments in your own voice. You stay in charge: you read, edit and send every reply yourself.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">💬✨</div>' },
+  { t: 'Welcome to Aurora Reply ✦', d: 'It writes replies to your comments in your own voice. You stay in charge: you read, edit and send every reply yourself. Your free key comes from your Aurora account.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">💬✨</div>' },
   { t: 'Open a post, then look bottom-right', d: 'On any Facebook, Instagram or TikTok post with comments, a black <b>✦ Reply</b> button appears in the corner of the page. Click it — or press <kbd>Alt</kbd>+<kbd>R</kbd>.', art: '<div class="mockpage"><div class="cm"><b></b><div style="flex:1"><i style="width:40%"></i><i style="width:85%"></i></div></div><div class="cm"><b style="background:#fb923c"></b><div style="flex:1"><i style="width:32%"></i><i style="width:70%"></i></div></div><div class="mockpill"><u>✦</u>Reply <em>2</em></div></div>' },
   { t: 'Pick a comment, pick a draft', d: 'Press <b>Draft a reply</b> next to a comment and get three options in your voice. Edit the one you like, then <b>Use this reply</b> — it lands in that comment’s reply box.', art: '<div class="mockpanel"><div class="h">✦ Aurora Reply</div><div class="x"><div class="d">Do you deliver on Sundays?</div><div class="d s">Sundays are pick-up only 🥖</div><div class="u">Use this reply</div></div></div>' },
   { t: 'You press Send', d: 'Aurora never posts anything. Read it, change what you like, and press Send yourself. Got many comments? Try <b>Reply to unanswered comments</b> and approve them one by one.', art: '<div style="font-size:84px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))">✅</div>' },
@@ -217,7 +232,7 @@ async function load() {
 
 (async () => {
   const key = await load();
-  $('#key').value = key; fillVoice(); applyPrefs(); renderAll(); meter(S.usage);
+  $('#key').value = key; fillVoice(); applyPrefs(); renderAll(); meter(S.usage); showBackup(); checkBackup();
   if (key) status('warn', 'Saved — press “Save & check” to verify'); else status('warn', 'Add your key to start');
   await renderProfiles();
   go(location.hash.slice(1) || 'overview');
@@ -225,6 +240,9 @@ async function load() {
   setInterval(renderOverview, 60000); document.addEventListener('visibilitychange', () => { if (!document.hidden) renderOverview(); });
 
   document.addEventListener('click', async (e) => {
+    const rs = e.target.closest('[data-restore]'); if (rs) { rs.disabled = true; rs.textContent = 'Restoring…'; const r = await ask('syncNow'); await afterRestore(); await checkBackup();
+      const back = !!((S.voice.samples || []).length || (S.voice.about || '').trim() || (S.quick || []).length); // judge by what is really in this browser: the voices may already have come back on their own
+      toast(back ? 'Your saved voices are back ✓' : r && r.status === 'network' ? 'No connection — try again in a moment' : 'Could not restore — open Settings & key → Voice backup to try again'); return; }
     const n = e.target.closest('[data-view], [data-go]'); if (n) { go(n.dataset.view || n.dataset.go); return; }
     const tb = e.target.closest('[data-tour]');
     if (tb) { const a = tb.dataset.tour; if (a === 'next') showTour(tourI + 1); else if (a === 'back') showTour(tourI - 1); else endTour(); return; }
@@ -281,11 +299,14 @@ async function load() {
 
   // settings
   $('#theme').addEventListener('click', async (e) => { const b = e.target.closest('[data-th]'); if (!b) return; S.prefs.theme = b.dataset.th; await set({ prefs: S.prefs }); applyPrefs(); });
+  $('#bkToggle').addEventListener('click', async (e) => { const b = e.target.closest('[data-b]'); if (!b) return; S.prefs.backup = b.dataset.b === 'on'; await set({ prefs: S.prefs }); applyPrefs(); if (S.prefs.backup) { readForm(); await set({ voice: S.voice }); await ask('syncNow'); toast('Voice backup is on'); } else toast('Backup is off — nothing new will be saved'); await showBackup(); });
+  $('#bkNow').addEventListener('click', async () => { if (!S.hasKey) return toast('Add your key first'); readForm(); await set({ voice: S.voice }); const r = await ask('syncNow', { mode: 'push' }); toast(r.ok ? 'Backed up ✓' : r.status === 'off' ? 'Turn backup on first' : 'Could not back up right now'); await showBackup(); });
+  $('#bkRestore').addEventListener('click', async () => { if (!S.hasKey) return toast('Add your key first'); if (!confirm('Replace the voices in this browser with your saved backup?')) return; await set({ syncMeta: { at: 0, sig: '' }, voice: {}, profiles: { default: { label: 'Main', voice: {} } }, activeProfile: 'default', quick: [] }); const r = await ask('syncNow'); await afterRestore(); toast(r.restored || (S.voice.samples || []).length || (S.voice.about || '').trim() ? 'Your saved voices are back ✓' : r.status === 'off' ? 'Turn backup on first' : r.status === 'network' ? 'No connection — try again in a moment' : 'No saved backup was found'); });
   $('#histToggle').addEventListener('click', async (e) => { const b = e.target.closest('[data-h]'); if (!b) return; S.prefs.history = b.dataset.h === 'on'; await set({ prefs: S.prefs }); applyPrefs(); renderHistory(); toast(S.prefs.history ? 'History is on' : 'History is off — nothing new will be saved'); });
   $('#export').addEventListener('click', async () => { const all = { exportedAt: new Date().toISOString(), voice: S.voice, profiles: (await get('profiles', {})), quickReplies: S.quick, history: S.history }; download('aurora-reply-data.json', JSON.stringify(all, null, 2), 'application/json'); toast('Downloaded'); });
   $('#wipe').addEventListener('click', async () => {
     if (!confirm('Delete your voice, history and quick replies from this browser? Your key stays.')) return;
-    S.history = []; S.quick = []; S.voice = {}; await set({ history: [], quick: [] }); await AuroraProfiles.reset(); fillVoice(); await renderProfiles(); renderAll(); toast('Everything deleted');
+    S.history = []; S.quick = []; S.voice = {}; await set({ history: [], quick: [] }); await AuroraProfiles.reset(); await ask('syncNow', { mode: 'erase' }); fillVoice(); await renderProfiles(); renderAll(); showBackup(); toast('Everything deleted');
   });
 
   // live updates when drafts are written on a post in another tab

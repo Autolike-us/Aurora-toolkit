@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { COMMON_FEATURES, PRODUCTS, getProduct } from '@/lib/products';
@@ -36,6 +37,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {p.actions.map(a => <div className="feature" key={a}><h3>{a}</h3></div>)}
         </div>
         <ul style={{ marginTop: 30, display: 'grid', gap: 10, paddingLeft: 20 }}>{p.highlights.map(h => <li key={h}>{h}</li>)}</ul>
+      </div></section>
+
+      <section className="block"><div className="wrap">
+        <span className="eyebrow">Inside the studio</span><h2>A quick popup, and a full dashboard</h2>
+        <p className="sdash-lead">Click the toolbar icon for a small status card: what is running, Pause and Stop, today&rsquo;s count and your license. Open the dashboard for new tasks, saved setups, history and the debug log.</p>
+        <div className="sdash">
+          <figure><Image src={`/studios/${p.id}-dashboard.png`} alt={`The Aurora ${p.short} Studio dashboard after a preview: nothing was sent, with the task form and live session`} width={1280} height={800} /><figcaption>The dashboard: every preview ends with &ldquo;nothing was sent&rdquo;.</figcaption></figure>
+          <figure><Image src={`/studios/${p.id}-popup.png`} alt={`The Aurora ${p.short} Studio toolbar popup: a preview in progress with Pause and Stop`} width={360} height={480} /><figcaption>The popup: a glance, plus Pause and Stop.</figcaption></figure>
+        </div>
       </div></section>
 
       <section className="block"><div className="wrap">
