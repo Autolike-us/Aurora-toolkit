@@ -87,7 +87,7 @@ function View() {
           <div className="card" id="reply">
             <span className={'status ' + (reply && reply.plan === 'subscription' ? 'active' : 'trial')}>{!reply ? '…' : reply.plan === 'subscription' ? 'Aurora Reply · Subscribed' : reply.plan === 'free' ? 'Aurora Reply · Free plan' : 'Aurora Reply · Free trial'}</span>
             <h2 style={{ fontSize: 22, marginTop: 10 }}>Aurora Reply</h2>
-            {reply && !reply.enabled && <p className="muted" style={{ marginTop: 8 }}>Aurora Reply is in early access. Your key below will work when plans open.</p>}
+            {reply && !reply.enabled && <p className="muted" style={{ marginTop: 8 }}>Aurora Reply plans are being set up. Your key below will work as soon as they open.</p>}
             {reply && reply.enabled && reply.usage && <>
               <p style={{ marginTop: 10, fontWeight: 650 }}>{reply.plan === 'trial_waiting' ? `Your ${3}-day free trial starts the first time you use Aurora Reply.` : reply.plan === 'trial' ? `Free trial: ${reply.usage.dayLeft ?? 0} replies left today (ends ${reply.usage.trialEndsAt ? new Date(reply.usage.trialEndsAt).toLocaleDateString() : ''}).` : `${Math.max(0, reply.usage.limit - reply.usage.used)} of ${reply.usage.limit} replies left this month.`}{reply.usage.packs > 0 ? ` Plus ${reply.usage.packs} from your packs.` : ''}</p>
               {(reply.plan === 'free' || reply.plan === 'subscription') && <p className="note">Renews {new Date(reply.usage.resetsAt).toLocaleDateString()}.</p>}

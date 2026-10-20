@@ -79,7 +79,7 @@ export const EXTRACT = {
   },
 };
 
-/** Aurora Reply — AI comment replies in the owner's own voice (early access). */
+/** Aurora Reply — AI comment replies in the owner's own voice. */
 export const REPLY = {
   name: 'Aurora Reply',
   version: '1.1.0',
