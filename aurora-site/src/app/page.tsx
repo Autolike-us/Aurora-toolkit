@@ -7,7 +7,7 @@ import { PlatformRow } from '@/components/PlatformIcon';
 import { StudioMock } from '@/components/StudioMock';
 import { COMMON_FEATURES } from '@/lib/products';
 import { TRIAL_DAYS } from '@/lib/pricing';
-import { EXTRACT } from '@/lib/products';
+import { EXTRACT, REPLY } from '@/lib/products';
 import { ExtractIcon } from '@/components/ExtractIcon';
 import Image from 'next/image';
 import { SUPPORT } from '@/lib/support';
@@ -67,13 +67,13 @@ export default function Home() {
         <div className="replybanner">
           <Image src="/reply-icon.png" alt="" width={84} height={84} />
           <div className="txt">
-            <span className="eyebrow" style={{ marginBottom: 8, color: '#fbbf24' }}>New · Early access</span>
+            <span className="eyebrow" style={{ marginBottom: 8, color: '#fbbf24' }}>New · Live on the Chrome Web Store</span>
             <h2>Aurora Reply</h2>
             <p>Answer your Facebook, Instagram and TikTok comments in your own voice. Choose 1, 2 or 3 reply options, edit, and press Send yourself — it never posts for you.</p>
           </div>
           <div className="act">
-            <Link className="btn primary lg" href="/reply">See Aurora Reply <span className="arrow">↗</span></Link>
-            <a className="linkarrow" href={SUPPORT.telegram} target="_blank" rel="noopener noreferrer">Ask for early access ↗</a>
+            {REPLY.store ? <a className="btn primary lg" href={REPLY.store} target="_blank" rel="noopener noreferrer">Add to Chrome — free <span className="arrow">↗</span></a> : null}
+            <Link className="linkarrow" href="/reply">See Aurora Reply and plans ↗</Link>
           </div>
         </div>
       </div></section>

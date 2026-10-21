@@ -35,7 +35,8 @@ export default function ReplyPage() {
           <h1>Aurora <em>Reply</em></h1>
           <p className="lead">{REPLY.tagline}</p>
           <div className="cta">
-            <Link className="btn primary lg" href="/signup/?next=reply">Start my free trial <span className="arrow">↗</span></Link>
+            {REPLY.store ? <a className="btn primary lg" href={REPLY.store} target="_blank" rel="noopener noreferrer">Add to Chrome <span className="arrow">↗</span></a> : null}
+            <Link className={'btn lg' + (REPLY.store ? '' : ' primary')} href="/signup/?next=reply">Start my free trial <span className="arrow">↗</span></Link>
             <a className="btn lg" href="#plans">See plans</a>
             <a className="demo" href="#how"><span className="play">▶</span>How it works</a>
           </div>

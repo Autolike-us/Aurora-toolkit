@@ -18,7 +18,7 @@ export function ReplyPlans() {
   useEffect(() => { if (p) return; api<Plans>('/reply/plans').then(r => { if (r.ok) setP(r); else setFailed(true); }); }, [p]);
   if (failed) return <p className="muted">Plans could not be loaded just now. Please refresh in a moment.</p>;
   if (!p) return <p className="muted" aria-busy="true">Loading plans…</p>;
-  if (!p.enabled) return <div className="rcallout"><div><h2 style={{ color: '#fff' }}>Plans open soon</h2></div><p style={{ gridColumn: 'auto' }}>Aurora Reply is in early access. Ask for a key on Telegram or by email and we will let you know when plans open.</p></div>;
+  if (!p.enabled) return <div className="rcallout"><div><h2 style={{ color: '#fff' }}>Plans open soon</h2></div><p style={{ gridColumn: 'auto' }}>Aurora Reply plans are being set up. Add the extension from the Chrome Web Store now, and ask us on Telegram or by email if you need a key.</p></div>;
   return (
     <>
       <div className="rplans">

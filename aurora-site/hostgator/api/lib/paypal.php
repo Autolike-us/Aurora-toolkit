@@ -31,7 +31,7 @@ function paypal_checkout_url(array $user, string $plan): string
     $launch = $plan === 'bundle' && offer_active();
     $s = paypal_call('POST', '/v1/billing/subscriptions', [
         'plan_id' => paypal_plan_id($plan, $launch), 'custom_id' => $user['id'] . '|' . $plan . '|' . ($launch ? 'true' : 'false'),
-        'application_context' => ['brand_name' => 'Aurora', 'user_action' => 'SUBSCRIBE_NOW', 'return_url' => site_url() . '/account/?checkout=success', 'cancel_url' => site_url() . '/pricing/?checkout=cancelled'],
+        'application_context' => ['brand_name' => 'Aurora Studios', 'shipping_preference' => 'NO_SHIPPING', 'user_action' => 'SUBSCRIBE_NOW', 'return_url' => site_url() . '/account/?checkout=success', 'cancel_url' => site_url() . '/pricing/?checkout=cancelled'],
     ]);
     foreach ($s['links'] ?? [] as $l) if (($l['rel'] ?? '') === 'approve') return $l['href'];
     throw new RuntimeException('PayPal returned no approval link.');
@@ -69,7 +69,7 @@ function paypal_pack_checkout_url(array $user, string $packId): string
     $o = paypal_call('POST', '/v2/checkout/orders', [
         'intent' => 'CAPTURE',
         'purchase_units' => [['reference_id' => $packId, 'custom_id' => $user['id'] . '|' . $packId, 'description' => 'Aurora Reply - ' . $pack['name'], 'amount' => ['currency_code' => 'USD', 'value' => number_format((float) $pack['usd'], 2, '.', '')]]],
-        'payment_source' => ['paypal' => ['experience_context' => ['brand_name' => 'Aurora', 'user_action' => 'PAY_NOW', 'shipping_preference' => 'NO_SHIPPING',
+        'payment_source' => ['paypal' => ['experience_context' => ['brand_name' => 'Aurora Studios', 'user_action' => 'PAY_NOW', 'shipping_preference' => 'NO_SHIPPING',
             'return_url' => site_url() . '/account/?checkout=success&pack=1', 'cancel_url' => site_url() . '/reply/?checkout=cancelled#plans']]],
     ]);
     foreach ($o['links'] ?? [] as $l) if (in_array($l['rel'] ?? '', ['payer-action', 'approve'], true)) return $l['href'];
