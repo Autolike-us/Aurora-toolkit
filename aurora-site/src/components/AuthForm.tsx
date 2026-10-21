@@ -22,7 +22,7 @@ function Form({ mode }: { mode: 'login' | 'signup' }) {
     if (!res.ok) { setMsg({ kind: 'err', text: res.error || 'Something went wrong.' }); return; }
     if (mode === 'signup') { setMsg({ kind: 'ok', text: res.message || 'Check your email to confirm your address.' }); return; }
     setToken(res.token || null);
-    router.push(params.get('next') === 'audit-ai' ? '/audit-ai/' : params.get('next') === 'reply' ? '/account/#reply' : plan ? `/pricing/?plan=${plan}` : '/account/');
+    router.push(params.get('next') === 'admin' ? '/admin/' : params.get('next') === 'audit-ai' ? '/audit-ai/' : params.get('next') === 'reply' ? '/account/#reply' : plan ? `/pricing/?plan=${plan}` : '/account/');
   }
 
   async function reset() {

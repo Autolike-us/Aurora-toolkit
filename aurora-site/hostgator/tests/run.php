@@ -23,7 +23,7 @@ $pubPem = openssl_pkey_get_details($key)['key'];
 file_put_contents("$tmp/config.php", '<?php return ' . var_export([
     'site_url' => "http://127.0.0.1:$port", 'launch_date' => gmdate('Y-m-d', time() - 86400), 'db_dsn' => "sqlite:$tmp/db.sqlite",
     'mail_driver' => 'file', 'mail_log' => "$tmp/mail.log", 'license_private_key' => $privPem, 'releases_dir' => "$tmp/releases",
-    'stripe_webhook_secret' => 'whsec_test',
+    'stripe_webhook_secret' => 'whsec_test', 'admin_emails' => ['A@Example.com'],
     'anthropic_api_key' => 'sk-ant-test-key', 'anthropic_base_url' => "http://127.0.0.1:$mport", 'reply_monthly_quota' => 5, 'reply_plans' => true,
     'stripe_api_base' => "http://127.0.0.1:$pport", 'paypal_api_base' => "http://127.0.0.1:$pport", 'stripe_secret' => 'sk_test_x', 'paypal_client_id' => 'pid', 'paypal_client_secret' => 'psec', 'paypal_webhook_id' => 'WH-1', 'stripe_price_reply' => 'price_reply_1', 'stripe_price_reply_pro' => 'price_reply_pro_1', 'paypal_plan_reply' => 'P-REPLY-1',
 ], true) . ';');
@@ -367,20 +367,8 @@ $r = $sy(['action' => 'delete', 'key' => 'AUR-REPL-BBBB-2222']); check('Voice ba
 $r = $sy(['action' => 'put', 'data' => ['profiles' => ['default' => ['label' => 'x', 'voice' => ['about' => str_repeat('a', 95000)]]]]]); check('Voice backup: an oversized backup is refused', $r['status'] === 413);
 $r = $sy(['action' => 'get']); check('Voice backup: a refused save leaves the earlier backup untouched', ($r['json']['data']['profiles']['default']['label'] ?? '') === 'Main');
 
-// ---- Owner overview (business dashboard) ----
-$r = call('POST', '/owner/overview', ['key' => 'AUR-MSTR-AAAA-1111']); check('Owner overview: refused for a key that is not marked admin', $r['status'] === 403);
-$r = call('POST', '/owner/overview', ['key' => 'nonsense']); check('Owner overview: refused for something that is not a key', $r['status'] === 403);
-$pdo->exec("DELETE FROM subscriptions");
-$ins = $pdo->prepare('INSERT INTO subscriptions (id, user_id, provider, provider_sub_id, plan, status, current_period_end, launch_price, cancel_at_period_end, updated_at, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
-$t = gmdate('Y-m-d H:i:s');
-foreach ([['o1', 'bundle', 1], ['o2', 'bundle', 0], ['o3', 'reply', 0], ['o4', 'reply_pro', 0], ['o5', 'facebook', 0]] as [$id, $plan, $lp]) $ins->execute([$id, 'ownr', 'stripe', "sub_$id", $plan, 'active', $t, $lp, 0, $t, $t]);
-$ins->execute(['o6', 'ownr', 'paypal', 'I-OLD', 'tiktok', 'canceled', $t, 0, 0, $t, $t]);
-$r = call('POST', '/owner/overview', ['key' => 'AUR-MSTR-ADMN-0000']); $j = $r['json'] ?? [];
-check('Owner overview: counts people and shows 30 days of sign-ups', $r['status'] === 200 && ($j['users']['total'] ?? 0) >= 1 && count($j['users']['byDay'] ?? []) === 30 && ($j['users']['last30'] ?? 0) >= 1, $j['users'] ?? $r);
-check('Owner overview: monthly recurring revenue adds up each plan (launch bundle 10, bundle 20, Reply 12, Agency 29, one studio 10 = 81)', ($j['subs']['active'] ?? 0) === 5 && abs(($j['subs']['mrrUsd'] ?? 0) - 81.0) < 0.001 && ($j['subs']['canceled'] ?? 0) === 1 && ($j['subs']['byPlan']['bundle'] ?? 0) === 2, $j['subs'] ?? []);
-check('Owner overview: includes pack sales, Reply cost, trials, installs and recent lists', isset($j['reply']['packsByMonth']) && ($j['reply']['packRevenueThisMonthUsd'] ?? -1) >= 0 && ($j['reply']['costThisMonthUsd'] ?? -1) > 0 && isset($j['trials']['active']) && is_array($j['installs'] ?? null) && is_array($j['recentUsers'] ?? null) && is_array($j['recentOrders'] ?? null), $j['reply'] ?? []);
-
 // ---- Audit AI (paste an Aurora Audit, get bios, fixes and captions; costs 3 replies) ----
+$pdo->exec("DELETE FROM subscriptions");
 $AU = 'AURORA AUDIT · Instagram · Urban Step Shoes · score 69/100 (C) · followers 12,000 · posts 18 · 2 posts/week · BIO: Handmade sneakers. Ethical. Comfy. Yours. · LINK: none · TOP FIXES: public contact; clear next step';
 check('Audit AI needs a sign-in', call('POST', '/audit-ai', ['text' => $AU])['status'] === 401);
 check('Audit AI refuses a paste that is too short', call('POST', '/audit-ai', ['text' => 'hi'], $s3)['status'] === 400);
@@ -398,6 +386,33 @@ $r = call('POST', '/audit-ai', ['text' => $AU], $s3);
 check('Audit AI: with fewer than 3 replies left the request is refused with an upgrade link', $r['status'] === 402 && ($r['json']['status'] ?? '') === 'quota' && !empty($r['json']['upgrade']));
 $ac = call('POST', '/reply/admin', ['key' => 'AUR-MSTR-ADMN-0000', 'installId' => 'x'])['json']['months'][0] ?? [];
 check('Audit AI: its cost shows in the cost report under its own plan name', isset($ac['byPlan']['audit']) && $ac['byPlan']['audit'] === 3, $ac['byPlan'] ?? []);
+
+// ---- Admin dashboard (sign in with an account listed in admin_emails; no licence code) ----
+check('Admin: needs a sign-in', call('POST', '/admin/overview', [])['status'] === 401);
+$ptok = bin2hex(random_bytes(24));
+$pdo->exec("INSERT INTO users (id, email, password_hash, email_verified_at, created_at) VALUES ('plainuser1', 'plain@example.com', 'x', '" . gmdate('Y-m-d H:i:s') . "', '" . gmdate('Y-m-d H:i:s') . "')");
+$pdo->exec("INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ('" . hash('sha256', $ptok) . "', 'plainuser1', '" . gmdate('Y-m-d H:i:s') . "', '" . gmdate('Y-m-d H:i:s', time() + 3600) . "')");
+foreach (['overview', 'users', 'user', 'subscriptions', 'orders', 'cost'] as $ep) { $rr = call('POST', "/admin/$ep", ['id' => 'plainuser1'], $ptok); if ($rr['status'] !== 403) { check("Admin: /$ep refuses an ordinary signed-in account", false, $rr); break; } }
+check('Admin: every admin page refuses an ordinary signed-in account (403)', $rr['status'] === 403);
+$pdo->exec("DELETE FROM subscriptions");
+$ins = $pdo->prepare('INSERT INTO subscriptions (id, user_id, provider, provider_sub_id, plan, status, current_period_end, launch_price, cancel_at_period_end, updated_at, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+$t = gmdate('Y-m-d H:i:s');
+foreach ([['o1', 'bundle', 1], ['o2', 'bundle', 0], ['o3', 'reply', 0], ['o4', 'reply_pro', 0], ['o5', 'facebook', 0]] as [$id, $plan, $lp]) $ins->execute([$id, $uidA, 'stripe', "sub_$id", $plan, 'active', $t, $lp, 0, $t, $t]);
+$ins->execute(['o6', $uidA, 'paypal', 'I-OLD', 'tiktok', 'canceled', $t, 0, 0, $t, $t]);
+$r = call('POST', '/admin/overview', [], $s3); $j = $r['json'] ?? [];
+check('Admin: an account listed in admin_emails (any letter case) can open the overview', $r['status'] === 200 && ($j['users']['total'] ?? 0) >= 1 && count($j['users']['byDay'] ?? []) === 30, $r);
+check('Admin: monthly recurring revenue adds up each plan (launch bundle 10, bundle 20, Reply 12, Agency 29, one studio 10 = 81)', ($j['subs']['active'] ?? 0) === 5 && abs(($j['subs']['mrrUsd'] ?? 0) - 81.0) < 0.001 && ($j['subs']['canceled'] ?? 0) === 1 && ($j['subs']['byPlan']['bundle'] ?? 0) === 2, $j['subs'] ?? []);
+check('Admin: overview includes pack sales, Reply cost, trials, installs and recent lists', isset($j['reply']['packsByMonth']) && ($j['reply']['costThisMonthUsd'] ?? -1) > 0 && isset($j['trials']['active']) && is_array($j['installs'] ?? null) && count($j['recentUsers'] ?? []) >= 1 && is_array($j['recentOrders'] ?? null));
+$r = call('POST', '/admin/users', ['q' => 'a@exam'], $s3); $u0 = $r['json']['users'][0] ?? [];
+check('Admin: users can be searched by part of an email', ($r['json']['total'] ?? 0) === 1 && ($u0['email'] ?? '') === 'a@example.com' && count($u0['plans'] ?? []) === 5, $r['json'] ?? []);
+check('Admin: a search with % or _ is taken literally', (call('POST', '/admin/users', ['q' => '%'], $s3)['json']['total'] ?? -1) === 0);
+$r = call('POST', '/admin/user', ['id' => $uidA], $s3); $d = $r['json'] ?? [];
+check('Admin: one account shows its licence (masked), subscriptions, Reply balance, orders and installs', $r['status'] === 200 && ($d['user']['email'] ?? '') === 'a@example.com' && strpos($d['license']['key'] ?? '', '····') !== false && strpos((string) json_encode($d), $licenseKey) === false && count($d['subscriptions'] ?? []) === 6 && isset($d['reply']['usedThisMonth']) && is_array($d['orders'] ?? null) && count($d['installs'] ?? []) >= 1, $d);
+check('Admin: an unknown account is a 404', call('POST', '/admin/user', ['id' => 'nope'], $s3)['status'] === 404);
+$r = call('POST', '/admin/subscriptions', [], $s3); check('Admin: the subscriptions list shows each one with its email and price', $r['status'] === 200 && count($r['json']['subscriptions'] ?? []) === 6 && ($r['json']['subscriptions'][0]['email'] ?? '') === 'a@example.com');
+$r = call('POST', '/admin/orders', [], $s3); check('Admin: the pack orders list has totals', $r['status'] === 200 && ($r['json']['count'] ?? 0) >= 1 && ($r['json']['totalUsd'] ?? 0) > 0, $r['json'] ?? []);
+$r = call('POST', '/admin/cost', [], $s3); check('Admin: the cost page lists months with tokens, dollars and cost per reply', $r['status'] === 200 && ($r['json']['months'][0]['costUsd'] ?? 0) > 0 && ($r['json']['months'][0]['costPerReplyUsd'] ?? 0) > 0);
+check('Admin: the old key-based owner page is gone', call('POST', '/owner/overview', ['key' => 'AUR-MSTR-ADMN-0000'])['status'] === 404);
 
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);

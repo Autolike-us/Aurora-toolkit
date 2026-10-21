@@ -11,6 +11,9 @@ return [
     'smtp_user'  => 'no-reply@getaurorastudios.com',
     'smtp_pass'  => '',
 
+    // Who may open the admin dashboard (getaurorastudios.com/admin): the email you sign in with. It must be a confirmed account.
+    'admin_emails' => [],   // e.g. ['you@example.com']
+
     // MySQL: cPanel > MySQL Databases (names are prefixed with your cPanel user)
     'db_dsn'  => 'mysql:host=localhost;dbname=CPANELUSER_aurora;charset=utf8mb4',
     'db_user' => 'CPANELUSER_aurora',
