@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { api, getToken } from '@/lib/client';
 import type { PlanId } from '@/lib/pricing';
 import { useProviders } from '@/lib/providers';
+import { quote } from '@/lib/pricing';
+import { track, itemOf } from '@/lib/track';
 
 export function CheckoutButtons({ plan, primary = false }: { plan: PlanId; primary?: boolean }) {
   const router = useRouter();
@@ -16,6 +18,7 @@ export function CheckoutButtons({ plan, primary = false }: { plan: PlanId; prima
     if (process.env.NEXT_PUBLIC_PREVIEW === '1') { setError('Preview only — checkout is switched off in this demo. The live site opens Stripe or PayPal here.'); return; }
     if (!getToken()) { router.push(`/signup?plan=${plan}`); return; }
     setBusy(provider);
+    try { const amount = quote(plan).amount; track('begin_checkout', { currency: 'USD', value: amount, payment_type: provider, items: [itemOf(plan, amount)] }); } catch { /* ignore */ }
     const res = await api<{ url: string }>('/checkout', { plan, provider });
     if (res.ok && res.url) { window.location.href = res.url; return; }
     setError(res.error || 'Could not start checkout.'); setBusy(null);

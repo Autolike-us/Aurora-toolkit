@@ -289,6 +289,7 @@ $r = call('POST', '/billing/sync', ['sessionId' => $sessId], $s3); check('before
 touch("$tmp/paid-$sessId");
 $r = call('POST', '/billing/sync', ['sessionId' => $sessId], $s3); $acc = call('GET', '/reply/account', null, $s3)['json'];
 check('after paying, the 150-reply pack appears on the account and in the order list', ($r['json']['status'] ?? '') === 'PACK' && ($acc['usage']['packs'] ?? 0) === 150 && count($acc['orders'] ?? []) === 1 && ($acc['orders'][0]['replies'] ?? 0) === 150);
+$rp1 = $r['json']['purchase'] ?? []; check('a paid Stripe pack comes back with what was bought, so the website can record the purchase', ($rp1['item'] ?? '') === 'pack150' && (float) ($rp1['usd'] ?? 0) === 5.0 && ($rp1['id'] ?? '') === $sessId, $r['json'] ?? []);
 call('POST', '/billing/sync', ['sessionId' => $sessId], $s3); check('reloading the page does not add the pack twice', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 150);
 // Stripe webhook for a pack
 function stripe_pack_event(string $id, array $obj): array { $payload = json_encode(['id' => $id, 'type' => 'checkout.session.completed', 'data' => ['object' => $obj]]); $t = time(); return call('POST', '/webhooks/stripe', $payload, null, ['Stripe-Signature: t=' . $t . ',v1=' . hash_hmac('sha256', $t . '.' . $payload, 'whsec_test'), 'Content-Type: application/json'], true); }
@@ -306,6 +307,7 @@ call('POST', '/auth/signup', ['email' => 'pay-b@example.com', 'password' => 'cor
 touch("$tmp/approved-$orderId");
 $r = call('POST', '/billing/sync', ['orderId' => $orderId], $sb); check('PayPal: another account cannot claim someone else\'s order', $r['status'] >= 400 && (call('GET', '/reply/account', null, $sb)['json']['usage']['packs'] ?? -1) === 0);
 $r = call('POST', '/billing/sync', ['orderId' => $orderId], $s3); check('PayPal: after approval the payment is captured and the pack added', ($r['json']['status'] ?? '') === 'PACK' && (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 900);
+$rp2 = $r['json']['purchase'] ?? []; check('PayPal: a captured pack comes back with its id, item and price', ($rp2['item'] ?? '') !== '' && (float) ($rp2['usd'] ?? 0) > 0 && strpos($rp2['id'] ?? '', 'paypal:') === 0, $r['json'] ?? []);
 call('POST', '/billing/sync', ['orderId' => $orderId], $s3); check('PayPal: confirming twice does not add the pack twice', (call('GET', '/reply/account', null, $s3)['json']['usage']['packs'] ?? 0) === 900);
 check('a malformed PayPal order id is refused', call('POST', '/billing/sync', ['orderId' => 'x; DROP'], $s3)['status'] === 400);
 // PayPal capture webhook

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, getToken } from '@/lib/client';
+import { track } from '@/lib/track';
 
 interface Result { platform: string; bios: { text: string }[]; fixes: { title: string; detail: string; priority: 'high' | 'medium' | 'low' }[]; captions: { text: string }[]; note: string; cost: number }
 interface Usage { used: number; limit: number; packs: number; dayLeft?: number }
@@ -33,7 +34,7 @@ export function AuditAI() {
     const r: any = await api('/audit-ai', { text, tone });
     setBusy(false);
     if (r.usage) setUsage(r.usage);
-    if (r.ok) { setRes(r); setTimeout(() => document.getElementById('audit-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
+    if (r.ok) { track('audit_ai_used', { platform: r.platform || 'unknown', tone }); setRes(r); setTimeout(() => document.getElementById('audit-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
     else { setErr(r.message || r.error || 'Something went wrong. Please try again.'); setUpgrade(r.status === 'quota'); }
   }
   async function copy(id: string, t: string) { try { await navigator.clipboard.writeText(t); setCopied(id); setTimeout(() => setCopied(''), 1400); } catch { /* ignore */ } }

@@ -21,21 +21,28 @@ function route_billing_sync(): void
             if (!preg_match('/^cs_(test|live)_[A-Za-z0-9]{10,200}$/', $sess)) fail('That does not look like a checkout session.');
             $c = stripe_call('GET', '/v1/checkout/sessions/' . rawurlencode($sess));
             if (($c['client_reference_id'] ?? '') !== $user['id']) fail('That checkout belongs to another account.', 403);
-            if (($c['mode'] ?? '') === 'payment') json_out(['ok' => true, 'status' => stripe_grant_pack_session($c) ? 'PACK' : 'PENDING']);
+            if (($c['mode'] ?? '') === 'payment') {
+                $granted = stripe_grant_pack_session($c); $pk = reply_catalog()['packs'][(string) ($c['metadata']['pack'] ?? '')] ?? null;
+                json_out(['ok' => true, 'status' => $granted ? 'PACK' : 'PENDING'] + ($granted && $pk ? ['purchase' => ['id' => (string) $c['id'], 'item' => (string) $c['metadata']['pack'], 'usd' => (float) $pk['usd']]] : []));
+            }
             if (empty($c['subscription'])) json_out(['ok' => true, 'status' => 'PENDING']);
             $s = stripe_call('GET', '/v1/subscriptions/' . rawurlencode((string) $c['subscription']));
             stripe_sync_subscription($s);
-            json_out(['ok' => true, 'status' => ($s['status'] ?? '') === 'active' ? 'ACTIVE' : strtoupper((string) ($s['status'] ?? ''))]);
+            $pl = (string) ($s['metadata']['plan'] ?? '');
+            json_out(['ok' => true, 'status' => ($s['status'] ?? '') === 'active' ? 'ACTIVE' : strtoupper((string) ($s['status'] ?? ''))] + (($s['status'] ?? '') === 'active' && $pl !== '' ? ['purchase' => ['id' => (string) $s['id'], 'item' => $pl, 'usd' => admin_sub_price(['plan' => $pl, 'launch_price' => (($s['metadata']['launch'] ?? '') === 'true') ? 1 : 0])]] : []));
         }
         if ($order !== '') {
             if (!preg_match('/^[A-Z0-9]{8,40}$/', $order)) fail('That does not look like a PayPal order.');
-            json_out(['ok' => true, 'status' => paypal_confirm_pack_order($user, $order)]);
+            $st = paypal_confirm_pack_order($user, $order);
+            $row = $st === 'PACK' ? q_one('SELECT pack, usd FROM reply_orders WHERE ref = ?', ['paypal:' . $order]) : null;
+            json_out(['ok' => true, 'status' => $st] + ($row ? ['purchase' => ['id' => 'paypal:' . $order, 'item' => (string) $row['pack'], 'usd' => (float) $row['usd']]] : []));
         }
         if (!preg_match('/^I-[A-Za-z0-9]{6,40}$/', $id)) fail('Nothing to confirm.');
         $s = paypal_call('GET', '/v1/billing/subscriptions/' . rawurlencode($id));
         if (explode('|', (string) ($s['custom_id'] ?? ''))[0] !== $user['id']) fail('That subscription belongs to another account.', 403);
         paypal_sync_subscription($id);
-        json_out(['ok' => true, 'status' => (string) ($s['status'] ?? '')]);
+        $row = q_one('SELECT plan, launch_price, status FROM subscriptions WHERE provider = ? AND provider_sub_id = ?', ['paypal', $id]);
+        json_out(['ok' => true, 'status' => (string) ($s['status'] ?? '')] + ($row && $row['status'] === 'active' ? ['purchase' => ['id' => $id, 'item' => (string) $row['plan'], 'usd' => admin_sub_price($row)]] : []));
     } catch (Throwable $e) {
         error_log('aurora billing sync: ' . $e->getMessage());
         fail('Could not confirm the payment yet. It will appear shortly.', 502);

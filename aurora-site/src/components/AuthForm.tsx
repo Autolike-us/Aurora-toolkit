@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { api, setToken } from '@/lib/client';
+import { track } from '@/lib/track';
 
 const PREVIEW = process.env.NEXT_PUBLIC_PREVIEW === '1';
 
@@ -20,7 +21,7 @@ function Form({ mode }: { mode: 'login' | 'signup' }) {
     const res = await api<{ token?: string; message?: string }>(mode === 'signup' ? '/auth/signup' : '/auth/login', { email, password });
     setBusy(false);
     if (!res.ok) { setMsg({ kind: 'err', text: res.error || 'Something went wrong.' }); return; }
-    if (mode === 'signup') { setMsg({ kind: 'ok', text: res.message || 'Check your email to confirm your address.' }); return; }
+    if (mode === 'signup') { track('sign_up', { method: 'email', source: params.get('next') || (plan ? 'plan' : 'direct') }); setMsg({ kind: 'ok', text: res.message || 'Check your email to confirm your address.' }); return; }
     setToken(res.token || null);
     router.push(params.get('next') === 'admin' ? '/admin/' : params.get('next') === 'audit-ai' ? '/audit-ai/' : params.get('next') === 'reply' ? '/account/#reply' : plan ? `/pricing/?plan=${plan}` : '/account/');
   }
