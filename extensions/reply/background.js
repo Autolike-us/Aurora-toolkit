@@ -70,6 +70,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       });
       send({ ok: true });
     }
+    else if (msg.type === 'write') {
+      const voice = await get('voice', {});
+      send(await api('/reply/write', { mode: msg.mode === 'idea' ? 'idea' : 'caption', platform: msg.platform, topic: clip(msg.topic, 800), question: clip(msg.question, 300), tone: msg.tone, hint: clip(msg.hint, 200), voice }));
+    }
     else if (msg.type === 'syncNow') send(msg.mode === 'push' ? await AuroraSync.push() : msg.mode === 'erase' ? await AuroraSync.erase() : msg.mode === 'peek' ? await AuroraSync.peek() : await AuroraSync.pull());
     else if (msg.type === 'openOptions') { chrome.runtime.openOptionsPage(); send({ ok: true }); }
     else if (msg.type === 'profiles') send({ ok: true, ...(await AuroraProfiles.list()) });

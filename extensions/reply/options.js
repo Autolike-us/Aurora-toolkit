@@ -9,9 +9,9 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':
 const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['direct', 'Direct']];
 const PLAT = { facebook: ['Facebook', 'fb'], instagram: ['Instagram', 'ig'], tiktok: ['TikTok', 'tt'], test: ['Try it', 'test'] };
 const STARTERS = [['Thanks', 'Thank you so much! 💛 It really means a lot.'], ['Shipping', 'We ship worldwide — free over $50! You can order on our website.'], ['Opening hours', 'We are open Tuesday to Sunday, 7am–3pm. See you soon!'], ['Message us', 'Great question! Please send us a message and we will help you right away.'], ['Prices', 'Prices are on our website — and we are happy to give you a quote if you message us.']];
-const S = { voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
+const S = { write: { platform: 'instagram', tone: 'warm', days: 30 }, voice: {}, history: [], quick: [], prefs: { theme: 'light', history: true }, usage: null, hasKey: false, hshow: 50, hfav: false };
 const VERSION = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-const CHANGELOG = [{ v: '1.1.0', title: 'New: comment on any post', items: ['Press “Draft a comment” in the panel to write a new comment under a post — not only replies', 'Choose a style: Friendly, Funny, Serious, Professional, Supportive or Curious', 'Aurora reads the post, comments in the post’s language, and you read, edit and press Send', 'Replies now follow the language of the comment, and translated comments are read in their original language', 'On a new install the Overview offers to restore your saved voices in one click'] }, { v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Your voices are backed up to your key, so a reinstall or a new computer gets them back','Report a problem on Telegram or by email, straight from the panel']}];
+const CHANGELOG = [{ v: '1.2.0', title: 'New: Write — captions for your own posts', items: ['A new Write tab: describe a post and get 3 caption options, 3 hooks and hashtags in your voice', 'Ideas from your comments: see what your followers keep asking and turn a question into a post in one click', 'It uses the same credits as replies: 1 credit per set. You copy the text and post it yourself'] }, { v: '1.1.0', title: 'New: comment on any post', items: ['Press “Draft a comment” in the panel to write a new comment under a post — not only replies', 'Choose a style: Friendly, Funny, Serious, Professional, Supportive or Curious', 'Aurora reads the post, comments in the post’s language, and you read, edit and press Send', 'Replies now follow the language of the comment, and translated comments are read in their original language', 'On a new install the Overview offers to restore your saved voices in one click'] }, { v: '1.0.0', title: 'Welcome to Aurora Reply 1.0', items: ['Get your free key from your Aurora account — a 3-day trial, then 10 free replies every month', 'Need more? Reply packs and monthly plans are on getaurorastudios.com', 'Choose 1, 2 or 3 replies per comment, reply to unanswered comments, quick replies, history and voice profiles', 'Your voices are backed up to your key, so a reinstall or a new computer gets them back','Report a problem on Telegram or by email, straight from the panel']}];
 let saveTimer, toastTimer;
 
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200); }
@@ -224,7 +224,34 @@ async function renderProfiles() {
 }
 async function afterProfileChange() { S.voice = await get('voice', {}); fillVoice(); await renderProfiles(); renderOverview(); }
 
-function renderAll() { renderOverview(); renderHistory(); renderQuick(); renderWhatsNew(); }
+/* ---------- write ---------- */
+function renderWrite() {
+  $$('#wPlat [data-p]').forEach((b) => b.classList.toggle('on', b.dataset.p === S.write.platform));
+  $$('#iRange [data-d]').forEach((b) => b.classList.toggle('on', +b.dataset.d === S.write.days));
+  $('#wTones').innerHTML = TONES.map(([id, l]) => `<button type="button" class="chip ${S.write.tone === id ? 'on' : ''}" data-wt="${id}">${l}</button>`).join('');
+  const list = AuroraWrite.ideas(S.history, { days: S.write.days });
+  $('#ideas').innerHTML = list.length ? list.map((g, i) => `<div class="qrow"><div class="cnt">${g.count}</div><div class="q"><b>“${esc(g.text)}”</b><small>${g.count === 1 ? 'Asked once' : 'Asked ' + g.count + ' times'}${g.platforms.length ? ' · ' + g.platforms.map((p) => (PLAT[p] || [p])[0]).join(', ') : ''}</small></div><button class="btn sm ${i === 0 ? 'p' : ''}" data-idea="${i}">✦ Write a post · 1 credit</button></div><div data-iout="${i}"></div>`).join('')
+    : '<p class="note" style="margin:14px 0 0">No repeated questions yet. As you draft replies to comments, the questions people ask will show up here.</p>';
+  S.ideas = list;
+}
+function copyBtn(text) { return `<button class="btn sm" data-copy="${esc(text)}">Copy</button>`; }
+function writeResult(el, r, label) {
+  if (!r.ok) { el.innerHTML = '<div class="draft bad"></div>'; el.firstChild.textContent = r.message || 'Something went wrong.'; return; }
+  const tags = (r.hashtags || []).join(' ');
+  el.innerHTML = `<div class="${label ? '' : 'card'}" style="${label ? 'margin-top:12px' : ''}">${label ? '' : '<h2>Your post options</h2>'}${r.note ? `<p class="note">ℹ️ ${esc(r.note)}</p>` : ''}<div class="wres"><div><h3 style="font-size:15px;margin:6px 0 0">Captions</h3>${(r.captions || []).map((c, i) => `<div class="wopt">${esc(c.text)}<div class="acts">${copyBtn(c.text)}${tags ? `<button class="btn sm" data-copy="${esc(c.text + '\n\n' + tags)}">Copy with hashtags</button>` : ''}</div></div>`).join('')}</div>
+    <div><h3 style="font-size:15px;margin:6px 0 0">Hooks <small class="note">(an opening line)</small></h3>${(r.hooks || []).map((h) => `<div class="whook"><span>${esc(h.text)}</span>${copyBtn(h.text)}</div>`).join('')}${tags ? `<h3 style="font-size:15px;margin:14px 0 0">Hashtags</h3><div class="htags">${(r.hashtags || []).map((t) => `<span>${esc(t)}</span>`).join('')}</div><div style="margin-top:8px">${copyBtn(tags)}</div>` : ''}</div></div></div>`;
+}
+async function doWrite(extra, outEl, btn, label) {
+  if (!S.hasKey) { toast('Add your key in Settings & key first'); return; }
+  btn.disabled = true; const old = btn.textContent; btn.textContent = 'Writing…';
+  const r = await ask('write', { platform: S.write.platform, tone: S.write.tone, ...extra });
+  btn.disabled = false; btn.textContent = old;
+  writeResult(outEl, r, label);
+  if (r.usage) meter(r.usage);
+  if (r.ok) outEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderAll() { renderOverview(); renderHistory(); renderQuick(); renderWhatsNew(); renderWrite(); }
 async function load() {
   S.voice = await get('voice', {}); S.history = await get('history', []); S.quick = await get('quick', []); S.prefs = { theme: 'light', history: true, ...(await get('prefs', {})) };
   S.usage = await get('usage', null); const key = await get('licenseKey', ''); S.hasKey = !!key; return key;
@@ -295,6 +322,25 @@ async function load() {
     $('#tryNote').textContent = r.flag && r.flag !== 'none' ? `Flag: ${r.flag}. ${r.note || ''}` : '';
     $('#tryOut').replaceChildren(...r.drafts.map((d) => { const el = document.createElement('div'); el.className = 'draft'; el.textContent = d.text; return el; }));
     if (r.usage) meter(r.usage);
+  });
+
+  // write
+  $('#wPlat').addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (!b) return; S.write.platform = b.dataset.p; renderWrite(); });
+  $('#wTones').addEventListener('click', (e) => { const b = e.target.closest('[data-wt]'); if (!b) return; S.write.tone = b.dataset.wt; renderWrite(); });
+  $('#iRange').addEventListener('click', (e) => { const b = e.target.closest('[data-d]'); if (!b) return; S.write.days = +b.dataset.d; renderWrite(); });
+  $('#wGo').addEventListener('click', async () => {
+    const topic = $('#wTopic').value.trim(); if (!topic) { $('#wNote').textContent = 'Say what the post is about first.'; return; }
+    $('#wNote').textContent = ''; readForm();
+    await doWrite({ mode: 'caption', topic }, $('#wOut'), $('#wGo'), false);
+  });
+  $('#ideas').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-idea]'); if (!b) return; const g = (S.ideas || [])[+b.dataset.idea]; if (!g) return;
+    const out = $('#ideas').querySelector(`[data-iout="${b.dataset.idea}"]`); readForm();
+    await doWrite({ mode: 'idea', question: g.text }, out, b, true);
+  });
+  document.addEventListener('click', async (e) => {
+    const c = e.target.closest('[data-copy]'); if (!c) return;
+    try { await navigator.clipboard.writeText(c.dataset.copy); const t = c.textContent; c.textContent = 'Copied ✓'; setTimeout(() => { c.textContent = t; }, 1300); } catch (_) { toast('Could not copy'); }
   });
 
   // settings

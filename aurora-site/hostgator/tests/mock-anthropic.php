@@ -14,6 +14,11 @@ $ans = ['id' => 'msg_test', 'type' => 'message', 'role' => 'assistant', 'model' 
 if (strpos($user, 'MAKE-REFUSE-FIRST') !== false && strpos($user, 'sympathy or support') === false) { $ans['stop_reason'] = 'refusal'; $ans['content'] = []; echo json_encode($ans); return; }
 if (strpos($user, 'MAKE-REFUSAL') !== false) { $ans['stop_reason'] = 'refusal'; $ans['content'] = []; echo json_encode($ans); return; }
 if (strpos($user, 'MAKE-BADJSON') !== false) { $ans['content'] = [['type' => 'text', 'text' => 'Sure! Here are some replies']]; echo json_encode($ans); return; }
+if (strpos((string) ($req['system'] ?? ''), 'careful ghostwriter for social media posts') !== false) {
+    $out = ['captions' => [['text' => 'Fresh rye is back. $4 a loaf.'], ['text' => "Warm and crusty.\x07 Fridays only."], ['text' => 'Pick-up Sundays: order by Saturday.'], ['text' => 'a fourth caption over the limit']],
+        'hooks' => [['text' => 'Friday just got tastier.'], ['text' => 'Rye or sourdough?'], ['text' => ''], ['text' => 'Over the limit hook']], 'hashtags' => ['sourdough', '#fresh bread', '#sourdough', '#a', '#ryebread!', 'x y z'], 'note' => ''];
+    $ans['content'] = [['type' => 'text', 'text' => json_encode($out)]]; echo json_encode($ans); return;
+}
 if (strpos((string) ($req['system'] ?? ''), 'social media profile coach') !== false) {
     $out = ['platform' => 'instagram', 'bios' => [['text' => 'Handmade, ethical sneakers. Shop the new drop below.'], ['text' => "Comfy sneakers made by hand.\x07 Tap the link."], ['text' => 'Ethical. Comfy. Yours. DM "size".']],
         'fixes' => [['title' => 'Add a public contact', 'detail' => 'Show an email or contact button.', 'priority' => 'high'], ['title' => 'End the bio with a next step', 'detail' => 'Say "Shop below".', 'priority' => 'urgent'], ['title' => '', 'detail' => 'dropped because it has no title', 'priority' => 'low']],

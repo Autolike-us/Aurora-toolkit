@@ -1,9 +1,9 @@
 {
   "name": "aurora-reply",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
-    "test": "node tests/adapters.test.cjs && node tests/panel.test.cjs && node tests/options.test.cjs",
+    "test": "node tests/adapters.test.cjs && node tests/panel.test.cjs && node tests/options.test.cjs && node tests/write.test.cjs",
     "test:ext": "node tests/extension_smoke.cjs",
     "test:sync": "node tests/sync.test.cjs",
     "test:chain": "node tests/chain.test.cjs",

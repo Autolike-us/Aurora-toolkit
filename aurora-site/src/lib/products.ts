@@ -93,6 +93,7 @@ export const REPLY = {
     { n: '03', title: 'Use it, then send', text: 'The reply lands in that comment’s reply box. Edit it, and press Send yourself.' },
   ],
   features: [
+    { icon: '✍️', title: 'Write your posts too', text: 'New in 1.2: describe a post and get captions, hooks and hashtags in your voice. “Ideas from your comments” turns the questions your followers keep asking into posts. You copy it and post it yourself.' },
     { icon: '🎙️', title: 'Sounds like you', text: 'Teach it your voice once with a few of your own replies, your tone and your business facts. It never invents prices or promises.' },
     { icon: '1️⃣', title: 'Choose 1, 2 or 3 options', text: 'Need just one reply? Ask for one and use fewer drafts. Want choice? Get three.' },
     { icon: '▶️', title: 'Reply to unanswered comments', text: 'Work through the comments nobody has answered, one at a time. You approve every reply.' },

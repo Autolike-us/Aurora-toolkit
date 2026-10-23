@@ -32,7 +32,7 @@ export function ReplyPlans() {
         <div className="rplan wide hot"><span className="rtag">Best for regular use</span><h3>Monthly subscription</h3><p className="muted">A fresh allowance every month — much cheaper per reply. Cancel any time.</p>
           <div className="rpacks">{p.subs.map((k, i) => <div key={k.id} className="rpack"><b>{short(k.name)}</b><span>{k.replies.toLocaleString()} replies / month</span><em>{money(k.usd)}<small>/mo</small></em><small>{per(k)} each</small><ReplyBuy kind="sub" id={k.id} label={`Subscribe ${money(k.usd)}/mo`} primary={i === 0} value={k.usd} /></div>)}</div></div>
       </div>
-      <p className="note center" style={{ marginTop: 18 }}>Each reply written counts as one. Choose 1, 2 or 3 replies per comment, so you only use what you need. Payments by Stripe or PayPal. See the <Link href="/legal/refunds/" style={{ textDecoration: 'underline' }}>refund policy</Link>.</p>
+      <p className="note center" style={{ marginTop: 18 }}>Each reply written counts as one credit, and each caption set from Write counts as one. Choose 1, 2 or 3 replies per comment, so you only use what you need. Payments by Stripe or PayPal. See the <Link href="/legal/refunds/" style={{ textDecoration: 'underline' }}>refund policy</Link>.</p>
     </>
   );
 }

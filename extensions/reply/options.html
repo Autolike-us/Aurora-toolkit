@@ -6,6 +6,7 @@
     <button class="nav on" data-view="overview"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Overview</button>
     <button class="nav" data-view="history"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>History <span class="n" id="navHist">0</span></button>
     <button class="nav" data-view="quick"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Quick replies</button>
+    <button class="nav" data-view="write"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Write <span class="n new">NEW</span></button>
     <button class="nav" data-view="voice"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>My voice</button>
     <button class="nav" data-view="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6M12 17h.01"/></svg>Help &amp; support</button>
     <button class="nav" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings &amp; key</button>
@@ -65,6 +66,28 @@
     <div class="note" style="margin-top:14px">Quick start:</div><div class="chips" id="qstarters" style="margin-top:6px"></div>
   </div>
   <div id="qlist"></div>
+</section>
+
+<!-- ============ WRITE ============ -->
+<section class="view" id="view-write" hidden>
+  <header><h1>Write a post in your voice</h1><p class="lead">Captions, hooks and hashtags that sound like you, for a new post. You copy it and post it yourself. Uses the same credits as replies: <b>1 credit</b> per set.</p></header>
+  <div class="card">
+    <label class="f" style="margin-top:0" for="wTopic">What is the post about?</label>
+    <textarea id="wTopic" maxlength="800" style="min-height:96px" placeholder="e.g. Fresh sourdough out of the oven at 7am on Fridays. New rye loaf, $4. Pick-up only on Sundays."></textarea>
+    <div class="row" style="margin-top:14px;align-items:flex-start">
+      <div style="flex:0 0 auto"><label class="f" style="margin-top:0">Platform</label><div class="seg" id="wPlat"><button data-p="instagram">Instagram</button><button data-p="tiktok">TikTok</button><button data-p="facebook">Facebook</button></div></div>
+      <div style="flex:1 1 260px"><label class="f" style="margin-top:0">Tone</label><div class="chips" id="wTones"></div></div>
+    </div>
+    <div class="row" style="margin-top:16px"><button class="btn p" id="wGo" style="flex:0 0 auto">✦ Write it · 1 credit</button><span class="note" id="wNote" style="flex:1 1 200px"></span></div>
+    <p class="note" style="margin:12px 0 0">It uses your voice profile (facts, past replies, tone, emoji) from <b>My voice</b>. It only uses the facts you give it, and it never promises followers or sales.</p>
+  </div>
+  <div id="wOut"></div>
+  <div class="card" id="ideasCard">
+    <h2>Ideas from your comments</h2><p class="sub">What your followers keep asking, taken from the comments you drafted replies for. Turn a question into a post in one click.</p>
+    <div class="seg" id="iRange"><button data-d="7">Last 7 days</button><button data-d="30">Last 30 days</button><button data-d="0">All time</button></div>
+    <div id="ideas"></div>
+    <p class="note" style="margin:14px 0 0">🔒 Found on this computer from your history. Nothing is uploaded until you press “Write a post”, and then only the question text is sent.</p>
+  </div>
 </section>
 
 <!-- ============ VOICE ============ -->
@@ -136,10 +159,10 @@
     <h2>Your privacy</h2>
     <ul class="note">
       <li><b>You stay in control.</b> Aurora Reply only reads a comment when you ask for a draft, and it never presses Send.</li>
-      <li><b>What is sent:</b> the comment you chose, the post's caption, and your voice settings go to Aurora's server, which asks an AI service (Anthropic) to write the drafts. Nothing else on the page is read.</li>
+      <li><b>What is sent:</b> the comment you chose, the post's caption, and your voice settings go to Aurora's server, which asks an AI service (Anthropic) to write the drafts. In Write, the topic you type (or the question you pick) and your voice settings are sent the same way. Nothing else on the page is read.</li>
       <li><b>What is kept:</b> your history stays in this browser. If Voice backup is on (it is by default), your voice profiles and quick replies are also saved under your key so you can restore them. Our server otherwise keeps only a count of drafts for your key — not the comments or the replies.</li>
       <li><b>Please:</b> don't use it on private messages. It is built for public comments. Replies are suggestions — check them before you send, and follow each platform's rules.</li>
     </ul>
   </div>
 </section>
-</main></div><div class="toast" id="toast" hidden></div><div class="modal" id="tour" hidden></div><script src="profiles.js"></script><script src="options.js"></script></body></html>
+</main></div><div class="toast" id="toast" hidden></div><div class="modal" id="tour" hidden></div><script src="profiles.js"></script><script src="write.js"></script><script src="options.js"></script></body></html>
