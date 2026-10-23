@@ -6,7 +6,8 @@ import { PRODUCTS } from '@/lib/products';
 import { PlatformIcon } from '@/components/PlatformIcon';
 import Link from 'next/link';
 
-export const metadata: Metadata = { title: 'Pricing', description: 'Aurora pricing: launch offer of $10/month for all 3 extensions, then $10 per extension or $20 for all three. 3-day free trial.' };
+import { pageMeta } from '@/lib/seo';
+export const metadata: Metadata = pageMeta({ title: 'Pricing', description: 'Aurora pricing: 3-day free trial, then $10/month for all three studios during the launch offer. Regular price $10 per studio or $20 for all three.', path: '/pricing/', shareTitle: 'Aurora Pricing — 3-day free trial, then $10/month' });
 
 const ROWS: [string, boolean, boolean, boolean][] = [
   ['Like / react', true, true, true], ['Comment', true, true, true], ['Follow / unfollow', true, true, true],
@@ -22,18 +23,18 @@ export default function Pricing() {
         <h1 style={{ fontSize: 'clamp(36px,5vw,60px)' }}>Start free. Stay for <em>$10/month.</em></h1>
         <p className="lead" style={{ marginTop: 16 }}>3 days free with every studio, no card. Then one simple subscription.</p>
       </div>
-      <PricingPlans />
+      <PricingPlans label="Simple pricing" />
       <p className="note center" style={{ marginTop: 26 }}>Looking for data instead of automation? <a href="/extract" style={{ textDecoration: 'underline' }}>Aurora Extract</a> — the free extractor for Facebook, Instagram and TikTok — costs nothing.</p>
       <div className="replybanner" style={{ marginTop: 40 }}>
         <div className="txt"><span className="eyebrow" style={{ marginBottom: 8, color: '#fbbf24' }}>Also from Aurora</span><h2 style={{ fontSize: 28 }}>Aurora Reply</h2><p>AI replies to your comments, in your own voice. 3-day free trial, then 10 free replies a month — or buy packs or subscribe if you need more.</p></div>
-        <div className="act"><Link className="btn primary lg" href="/reply/#plans">See Aurora Reply plans <span className="arrow">↗</span></Link></div>
+        <div className="act"><Link className="btn primary lg" href="/reply/#plans">See Aurora Reply plans <span className="arrow">→</span></Link></div>
       </div>
       <h2 style={{ margin: '80px 0 6px', fontSize: 32 }}>What each studio can do</h2>
       <div className="tablescroll"><table className="compare">
         <thead><tr><th>Action</th>{PRODUCTS.map(p => <th key={p.id}><span className="inline-id"><PlatformIcon id={p.id} size="xs" />{p.short}</span></th>)}</tr></thead>
         <tbody>{ROWS.map(r => <tr key={r[0]}><td>{r[0]}</td>{r.slice(1).map((v, i) => <td key={i} className={v ? 'y' : 'n'}>{v ? '✓' : '—'}</td>)}</tr>)}</tbody>
       </table></div>
-      <div className="faqgrid" style={{ marginTop: 90 }}><div><span className="eyebrow">Good questions</span><h2>Pricing, answered.</h2></div><Faq items={FAQ.slice(0, 4)} /></div>
+      <div className="faqgrid" style={{ marginTop: 90 }}><div><span className="eyebrow">Good questions</span><h2>Pricing, answered.</h2></div><Faq items={[...FAQ.slice(0, 4), ...FAQ.filter(f => f.q.startsWith('Can I use it'))]} /></div>
     </div></section></main>
   );
 }

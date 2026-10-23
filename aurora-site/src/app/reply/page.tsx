@@ -25,18 +25,21 @@ const FAQ_R = [
   { q: 'Something does not work. What now?', a: 'Press “Report a problem” inside the panel: it opens our Telegram channel or an email and copies the technical details. Facebook, Instagram and TikTok change their pages often and these reports are how we keep up.' },
 ];
 
+const APP_LD = { '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'Aurora Reply', applicationCategory: 'BrowserApplication', operatingSystem: 'Chrome, Edge (desktop)', url: 'https://getaurorastudios.com/reply/', description: 'Drafts replies to Facebook, Instagram and TikTok comments in your own voice. You read, edit and press Send yourself.', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'Free trial, then 10 free replies a month. Paid reply packs and subscriptions are optional.' } };
+
 export default function ReplyPage() {
   return (
     <main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_LD) }} />
       <section className="rhero"><div className="wrap rgrid">
         <div>
-          <div className="rtitle"><Image src="/reply-icon.png" alt="" width={72} height={72} className="ricon" /><span className="rtag">New</span></div>
+          <div className="rtitle"><Image src="/reply-icon.png" alt="Aurora Reply icon" width={72} height={72} className="ricon" /><span className="rtag">New</span></div>
           <span className="eyebrow">AI comment replies · 3-day free trial</span>
           <h1>Aurora <em>Reply</em></h1>
           <p className="lead">{REPLY.tagline}</p>
           <div className="cta">
             {REPLY.store ? <a className="btn primary lg" href={REPLY.store} target="_blank" rel="noopener noreferrer">Add to Chrome <span className="arrow">↗</span></a> : null}
-            <Link className={'btn lg' + (REPLY.store ? '' : ' primary')} href="/signup/?next=reply">Start my free trial <span className="arrow">↗</span></Link>
+            <Link className={'btn lg' + (REPLY.store ? '' : ' primary')} href="/signup/?next=reply">Start my free trial <span className="arrow">→</span></Link>
             <a className="btn lg" href="#plans">See plans</a>
             <a className="demo" href="#how"><span className="play">▶</span>How it works</a>
           </div>
@@ -44,6 +47,12 @@ export default function ReplyPage() {
           <div className="platforms"><PlatformRow size="md" /></div>
         </div>
         <figure className="rshot"><Image src="/reply-panel.png" alt="The Aurora Reply panel on a post: the comment, and three editable reply options in the owner’s voice" width={1280} height={800} priority /></figure>
+      </div></section>
+
+      <section className="block" style={{ paddingBottom: 0 }}><div className="wrap">
+        <div className="section-head"><div><span className="eyebrow">See it in 15 seconds</span><h2>From comment to <em>a reply you’d write.</em></h2></div></div>
+        <div className="vidwrap"><video controls preload="none" playsInline poster="/video/aurora-reply-ad-poster.jpg" aria-label="A 15-second demo of Aurora Reply: open a comment, draft three replies in your voice, choose one and press Send yourself"><source src="/video/aurora-reply-ad.mp4" type="video/mp4" />Your browser cannot play this video.</video></div>
+        <p className="muted center" style={{ fontSize: 13, marginTop: 10 }}>Sample comments are fictional. Aurora Reply never sends a reply for you.</p>
       </div></section>
 
       <section className="block" id="how"><div className="wrap">

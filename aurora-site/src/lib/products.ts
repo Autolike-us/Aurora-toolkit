@@ -43,12 +43,12 @@ export const PRODUCT_IDS = PRODUCTS.map(p => p.id);
 export const getProduct = (id: string) => PRODUCTS.find(p => p.id === id);
 
 export const COMMON_FEATURES = [
-  { icon: '👁', title: 'Preview first, always', text: 'Every task starts in Preview. Aurora shows what it would do without sending a single like, comment or follow.' },
+  { icon: '👁', title: 'Preview first', text: 'Every task starts in Preview. Aurora shows what it would do without sending a single like, comment or follow, and you choose when to go live.' },
   { icon: '🧭', title: 'Human pacing', text: 'Configurable delays, random variation, typed-out comments and a daily action cap keep activity steady and calm.' },
-  { icon: '🛡', title: 'Safety stops', text: 'It pauses on captchas, warnings and anything unexpected, and never repeats an uncertain action on its own.' },
+  { icon: '🛡', title: 'Safety stops', text: 'It is built to pause on captchas, warnings and unexpected pages, and it does not repeat an action it is unsure about. No tool can remove platform risk, so keep your limits sensible.' },
   { icon: '📊', title: 'Live progress', text: 'Target 2 of 5, next in 24s, a live target list, and a one-click “skip this target”.' },
   { icon: '💾', title: 'Saved setups', text: 'Save any configuration, reload it in one click, or reset the whole form to factory defaults.' },
-  { icon: '🔒', title: 'Your data stays yours', text: 'Everything runs in your own browser and logged-in tab. Aurora never asks for your social passwords.' },
+  { icon: '🔒', title: 'Your data stays yours', text: 'Everything runs in your own browser and logged-in tab, and Aurora never asks for your social passwords. Only your licence check contacts our server.' },
 ];
 
 /** The free 3-in-1 data extractor. Not part of the paid license; downloaded directly (no account needed). */

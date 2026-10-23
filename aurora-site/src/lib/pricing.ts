@@ -23,6 +23,11 @@ export function offerActive(now: Date = new Date(), env?: Record<string, string 
   return now >= launchStart(env) && now < launchEnd(env);
 }
 
+/** The end of the launch offer as plain text, always in UTC so it reads the same for everyone (e.g. "January 15, 2027"). */
+export function launchEndLabel(env?: Record<string, string | undefined>): string {
+  return launchEnd(env).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
 export function daysLeftInOffer(now: Date = new Date(), env?: Record<string, string | undefined>): number {
   return Math.max(0, Math.ceil((launchEnd(env).getTime() - now.getTime()) / 86400000));
 }

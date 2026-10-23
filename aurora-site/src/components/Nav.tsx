@@ -15,8 +15,8 @@ export function Nav() {
       <div className="right">
         <ThemeToggle />
         {signedIn ? <Link className="btn sm primary" href="/account">My account</Link> : <>
-          <Link className="link" href="/login">Sign in ↗</Link>
-          <Link className="btn sm primary" href="/signup">Try Aurora <span className="arrow">↗</span></Link></>}
+          <Link className="link" href="/login">Sign in →</Link>
+          <Link className="btn sm primary" href="/signup">Try Aurora <span className="arrow">→</span></Link></>}
       </div>
     </div></header>
   );

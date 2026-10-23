@@ -5,7 +5,8 @@ import { PlatformIcon } from '@/components/PlatformIcon';
 import { EXTRACT, REPLY } from '@/lib/products';
 import { ExtractIcon } from '@/components/ExtractIcon';
 
-export const metadata: Metadata = { title: 'Download & install' };
+import { pageMeta } from '@/lib/seo';
+export const metadata: Metadata = pageMeta({ title: 'Download & install', description: 'Install Aurora Reply and Aurora Extract from the Chrome Web Store, and download the Aurora Studios for Facebook, Instagram and TikTok.', path: '/download/' });
 
 export default function Download() {
   return (
@@ -17,12 +18,12 @@ export default function Download() {
       <article className="freebanner" style={{ marginTop: 30 }}>
         <ExtractIcon size={72} />
         <div className="txt"><span className="eyebrow" style={{ marginBottom: 6 }}><span className="freetag">Free</span> No account needed</span><h3 style={{ fontSize: 26 }}>Aurora Extract</h3><p>The free 3-in-1 data extractor for Facebook, Instagram and TikTok — now with a built-in profile health check. Same install steps below.</p></div>
-        <div className="act"><a className="btn primary" href={EXTRACT.store} target="_blank" rel="noopener noreferrer">Add to Chrome — free ↗</a><a className="btn" href={EXTRACT.zip} download>Download zip · v{EXTRACT.version}</a><Link className="linkarrow" href="/extract">Details ↗</Link></div>
+        <div className="act"><a className="btn primary" href={EXTRACT.store} target="_blank" rel="noopener noreferrer">Add to Chrome — free ↗</a><a className="btn" href={EXTRACT.zip} download>Download zip · v{EXTRACT.version}</a><Link className="linkarrow" href="/extract">Details →</Link></div>
       </article>
 
       <article className="freebanner" style={{ marginTop: 18 }}>
         <div className="txt"><span className="eyebrow" style={{ marginBottom: 6 }}>Comment replies in your voice</span><h3 style={{ fontSize: 26 }}>Aurora Reply</h3><p>Drafts replies to comments, and new comments under posts, on Facebook, Instagram and TikTok. You read, edit and press Send yourself. Includes a free trial — activate it with your license key from your account.</p></div>
-        <div className="act">{REPLY.store ? <a className="btn primary" href={REPLY.store} target="_blank" rel="noopener noreferrer">Add to Chrome ↗</a> : null}<a className={'btn' + (REPLY.store ? '' : ' primary')} href={REPLY.zip} download>Download zip · v{REPLY.version}</a><Link className="linkarrow" href="/reply">Details ↗</Link></div>
+        <div className="act">{REPLY.store ? <a className="btn primary" href={REPLY.store} target="_blank" rel="noopener noreferrer">Add to Chrome ↗</a> : null}<a className={'btn' + (REPLY.store ? '' : ' primary')} href={REPLY.zip} download>Download zip · v{REPLY.version}</a><Link className="linkarrow" href="/reply">Details →</Link></div>
       </article>
 
       <div className="products" style={{ marginTop: 34 }}>

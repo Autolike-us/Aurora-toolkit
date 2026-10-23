@@ -2,28 +2,28 @@ import Link from 'next/link';
 import { CheckoutButtons, PaymentsBy } from './CheckoutButtons';
 import { PRODUCTS } from '@/lib/products';
 import { PlatformIcon, PlatformRow } from './PlatformIcon';
-import { PRICE_BUNDLE, PRICE_SINGLE, TRIAL_DAYS, daysLeftInOffer, launchEnd, offerActive, quote } from '@/lib/pricing';
+import { PRICE_BUNDLE, PRICE_SINGLE, TRIAL_DAYS, launchEnd, offerActive, quote } from '@/lib/pricing';
 
 const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
-export function PricingPlans({ showCta = true }: { showCta?: boolean }) {
+export function PricingPlans({ showCta = true, label = '03 / Your next chapter starts here' }: { showCta?: boolean; label?: string }) {
   const now = new Date(), launch = offerActive(now), bundle = quote('bundle', now);
   return (
     <>
       <div className="priceband">
         <div>
-          <span className="eyebrow">03 / Your next chapter starts here</span>
+          <span className="eyebrow">{label}</span>
           <h2>Small subscription.<br /><em>A brighter toolkit.</em></h2>
           <p className="lead">Get to know the complete Aurora series. {TRIAL_DAYS} days to explore with all three studios unlocked — no card needed.</p>
           <div className="timeline">
             <div><i>01</i><p><b>First {TRIAL_DAYS} days free</b><span>All three studios, no payment method.</span></p></div>
-            <div><i>02</i><p><b>{launch ? `Launch window: $${bundle.amount}/month for all three` : `Today: $${PRICE_BUNDLE}/month for all three`}</b><span>{launch ? `Locked while you stay subscribed. Offer ends ${fmt(launchEnd())} (${daysLeftInOffer(now)} days left).` : `Or $${PRICE_SINGLE}/month for a single studio.`}</span></p></div>
+            <div><i>02</i><p><b>{launch ? `Launch window: $${bundle.amount}/month for all three` : `Today: $${PRICE_BUNDLE}/month for all three`}</b><span>{launch ? `Locked while you stay subscribed. Offer ends ${fmt(launchEnd())}.` : `Or $${PRICE_SINGLE}/month for a single studio.`}</span></p></div>
             <div><i>03</i><p><b>After the launch window</b><span>New subscribers pay ${PRICE_SINGLE}/month per studio, or ${PRICE_BUNDLE}/month for all three.</span></p></div>
           </div>
         </div>
         <div className="pricecard">
           <div className="row"><span>The complete series</span><span className="pill">{launch ? 'Launch offer' : 'Best value'}</span></div>
-          <div className="price"><sup>$</sup><strong>{bundle.amount}</strong><span className="per">USD /<br />month</span>{launch && <s>${PRICE_BUNDLE}</s>}</div>
+          <div className="price"><sup>$</sup><strong>{bundle.amount}</strong><span className="per">USD /<br />month</span>{launch && <s><span className="sr-only">Regular price </span>${PRICE_BUNDLE}</s>}</div>
           <p className="muted inline-id" style={{ fontSize: 14 }}><PlatformRow size="sm" />Facebook + Instagram + TikTok studios.</p>
           <ul><li>All three studios, every feature</li><li>One subscription, one license</li><li>Up to 3 browsers</li><li>Preview, task controls &amp; local history</li><li>Cancel any time — access lasts through the paid period</li></ul>
           {showCta ? <CheckoutButtons plan="bundle" primary /> : null}

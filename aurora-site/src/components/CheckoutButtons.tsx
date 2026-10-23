@@ -1,10 +1,11 @@
 'use client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { api, getToken } from '@/lib/client';
 import type { PlanId } from '@/lib/pricing';
 import { useProviders } from '@/lib/providers';
-import { quote } from '@/lib/pricing';
+import { quote, TRIAL_DAYS } from '@/lib/pricing';
 import { track, itemOf } from '@/lib/track';
 
 export function CheckoutButtons({ plan, primary = false }: { plan: PlanId; primary?: boolean }) {
@@ -24,7 +25,8 @@ export function CheckoutButtons({ plan, primary = false }: { plan: PlanId; prima
     setError(res.error || 'Could not start checkout.'); setBusy(null);
   }
 
-  if (!providers) return <div style={{ display: 'grid', gap: 8 }} aria-busy="true"><button className="btn block" disabled>Loading…</button></div>;
+  // Shown in the page as served and while we ask which payment methods are on: a real link, never a dead "Loading…".
+  if (!providers) return <div style={{ display: 'grid', gap: 8 }}><Link className={'btn block' + (primary ? ' primary' : '')} href={`/signup/?plan=${plan}`}>Start your free {TRIAL_DAYS}-day trial</Link></div>;
   if (!providers.stripe && !providers.paypal) return <p className="muted" style={{ fontSize: 14 }}>Subscriptions open very soon. Your free trial works in the meantime, no card needed.</p>;
   return (
     <div style={{ display: 'grid', gap: 8 }}>
