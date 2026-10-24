@@ -30,7 +30,7 @@ export default function OpenShorts() {
     <ul style={{ lineHeight: 1.7, paddingLeft: 20 }}>
       <li><b>You sign in on TikTok, not here.</b> Access is granted through TikTok’s own authorization screen. We never see or store your TikTok password.</li>
       <li><b>What we ask for:</b> your basic TikTok profile information (display name and avatar), and permission to publish videos that you choose to post.</li>
-      <li><b>You are in control.</b> Nothing is published unless you choose to publish it, and only to the account you authorized.</li>
+      <li><b>You are in control.</b> Nothing is published unless you choose to publish it, now or at a time you set, and only to the account you authorized.</li>
       <li><b>You can stop at any time.</b> In TikTok, open <i>Settings and privacy → Security &amp; permissions → Apps and services</i> (the menu names can vary slightly by version), select the app and remove its access. Details are in our <Link href="/legal/privacy" style={{ textDecoration: 'underline' }}>Privacy policy</Link>.</li>
       <li><b>Your content, your responsibility.</b> Only upload videos you own or have the right to use, and follow TikTok’s Community Guidelines. See our <Link href="/legal/terms" style={{ textDecoration: 'underline' }}>Terms of service</Link>.</li>
     </ul>
