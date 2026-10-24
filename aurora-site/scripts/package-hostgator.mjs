@@ -12,6 +12,8 @@ execSync('npx next build', { stdio: 'inherit', env: { ...process.env, NEXT_PUBLI
 fs.cpSync('out', out, { recursive: true });
 fs.cpSync('hostgator/api', path.join(out, 'api'), { recursive: true });
 fs.copyFileSync('hostgator/public_html.htaccess', path.join(out, '.htaccess'));
+// Files that must live at the site root (for example a domain-verification file): everything in site-root/ except its README.
+if (fs.existsSync('site-root')) for (const f of fs.readdirSync('site-root')) if (!['README.md', '.gitkeep'].includes(f)) fs.copyFileSync(path.join('site-root', f), path.join(out, f));
 
 const files = [];
 (function walk(dir) { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const p = path.join(dir, e.name); e.isDirectory() ? walk(p) : files.push(p); } })(out);
