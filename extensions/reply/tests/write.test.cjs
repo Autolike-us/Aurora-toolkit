@@ -50,6 +50,7 @@ const H = (daysAgo, platform, comment, mode) => ({ ts: NOW - daysAgo * DAY, plat
   await pg.locator('#wOut .wopt').first().locator('text=Copy with hashtags').click(); await pg.waitForTimeout(80);
   check('Write: "Copy with hashtags" puts the caption and its hashtags on the clipboard', /^The smell of 7am/.test(await pg.evaluate(() => window.__clip)) && /#sourdough #freshbread #ryebread$/.test(await pg.evaluate(() => window.__clip)));
   await pg.screenshot({ path: path.join(OUT, 'write-1.png'), fullPage: true });
+  await pg.setViewportSize({ width: 1280, height: 800 }); await pg.evaluate(() => window.scrollTo(0, 0)); await pg.waitForTimeout(150); await pg.screenshot({ path: path.join(OUT, 'store-write-1280x800.png') }); await pg.setViewportSize({ width: 1100, height: 1500 });
   await pg.click('#ideas .qrow:first-child [data-idea]'); await pg.waitForSelector('#ideas [data-iout="0"] .wopt');
   const im = await pg.evaluate(() => window.__msgs.filter((m) => m.type === 'write' && m.mode === 'idea')[0]);
   check('Write: "Write a post" on an idea sends only that question and shows the result under it', im && /deliver/i.test(im.question) && !('topic' in im && im.topic) && (await pg.locator('#ideas [data-iout="0"] .wopt').count()) === 3);
