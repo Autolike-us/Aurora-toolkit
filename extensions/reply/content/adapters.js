@@ -261,8 +261,27 @@
     A._cancelWait = () => finish(null);
     document.addEventListener('focusin', on, true);
   });
-  /** Put text in the box the way a person typing would (frameworks listen for input events). Keeps an @mention the site added. */
-  A.setText = (el, text) => {
+  /** Put text in the box the way a person typing would (frameworks listen for input events). Keeps an @mention the site added.
+      ONE insertion only: rich editors (Facebook, Instagram) apply an edit a moment AFTER the event, so the box is given time to show the
+      text before anything else is tried. Trying a second way at once is what used to type the reply two or three times inside the editor,
+      leave it behind after Send, and look like "one text" on screen. */
+  const RICH = '[data-lexical-editor],[data-slate-editor],.DraftEditor-root,.ProseMirror,[data-contents]';
+  const waitFor = async (fn, ms) => { for (let t = 0; t < ms; t += 50) { if (fn()) return true; await sleep(50); } return fn(); };
+  const count = (hay, needle) => { let n = 0, i = 0; while ((i = hay.indexOf(needle, i)) >= 0) { n++; i += needle.length; } return n; };
+  /** Select the last `n` characters of the box's text, so they can be removed the way a person would (select + delete). */
+  function selectTail(el, n) {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const nodes = []; for (let t = w.nextNode(); t; t = w.nextNode()) nodes.push(t);
+    let left = n, endNode = null, endOff = 0, startNode = null, startOff = 0;
+    for (let i = nodes.length - 1; i >= 0 && left > 0; i--) {
+      const len = nodes[i].nodeValue.length; if (!endNode) { endNode = nodes[i]; endOff = len; }
+      if (len >= left) { startNode = nodes[i]; startOff = len - left; left = 0; } else { left -= len; startNode = nodes[i]; startOff = 0; }
+    }
+    if (!startNode || !endNode) return false;
+    const r = document.createRange(); r.setStart(startNode, startOff); r.setEnd(endNode, endOff);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); return true;
+  }
+  A._ins = null;
+  A.setText = async (el, text) => {
     el.focus();
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
       const m = String(el.value || '').match(/^((?:@[\w.]+\s)+)/);
@@ -270,17 +289,35 @@
       Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, (m ? m[1] : '') + text);
       el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
       el.setSelectionRange && el.setSelectionRange(el.value.length, el.value.length);
+      A._ins = { el, text };
       return el.value.indexOf(text) >= 0;
     }
-    const sel = getSelection(), range = document.createRange(); range.selectNodeContents(el); range.collapse(false); sel.removeAllRanges(); sel.addRange(range);
-    const had = (el.textContent || '').trim();
-    const ins = had && !/\s$/.test(el.textContent || '') ? ' ' + text : text;
-    let ok = false; try { ok = document.execCommand('insertText', false, ins); } catch (_) {}
-    if (!ok || (el.textContent || '').indexOf(text) < 0) {
-      try { el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: ins, bubbles: true, cancelable: true })); } catch (_) {}
-      if ((el.textContent || '').indexOf(text) < 0) { el.textContent = (had ? el.textContent : '') + ins; el.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: ins, bubbles: true })); }
+    const rich = !!(el.closest && el.closest(RICH)) || el.hasAttribute('data-lexical-editor');
+    const txt = () => el.textContent || '';
+    // choosing another draft replaces the one Aurora put there before, instead of piling both up
+    const prev = A._ins && A._ins.el === el ? A._ins.text : '';
+    if (prev && txt().trimEnd().endsWith(prev)) {
+      const tail = txt().length - txt().trimEnd().length + prev.length;
+      if (selectTail(el, tail)) { try { document.execCommand('delete'); } catch (_) {} await waitFor(() => !txt().includes(prev), 400); }
     }
-    return (el.textContent || '').indexOf(text) >= 0;
+    const sel = getSelection(), range = document.createRange(); range.selectNodeContents(el); range.collapse(false); sel.removeAllRanges(); sel.addRange(range);
+    const had = txt().trim();
+    const ins = had && !/\s$/.test(txt()) ? ' ' + text : text;
+    const base = count(txt(), text);
+    const landed = () => count(txt(), text) > base;
+    try { document.execCommand('insertText', false, ins); } catch (_) {}
+    // execCommand may say "no" when the site handled the edit itself, and the page needs a moment to draw it: look before doing anything else
+    let ok = await waitFor(landed, 600);
+    if (!ok) { // nothing appeared: ONE paste, the other way editors accept text
+      try { const dt = new DataTransfer(); dt.setData('text/plain', ins); el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); } catch (_) {}
+      ok = await waitFor(landed, 600);
+    }
+    if (!ok && !rich) { // plain editable boxes only: setting the text directly is safe there, never inside Facebook/Instagram's editors
+      el.textContent = (had ? txt() : '') + ins; el.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: ins, bubbles: true }));
+      ok = landed();
+    }
+    if (ok) A._ins = { el, text };
+    return ok;
   };
 
   root.AuroraReplyAdapters = A;

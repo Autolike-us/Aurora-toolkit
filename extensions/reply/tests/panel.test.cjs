@@ -8,7 +8,7 @@ const { FB, IG, TT } = require('./fixtures.cjs');
     window.chrome = { runtime: { sendMessage: (m, cb) => { window.__msgs.push(m); const c = window.__cfg; setTimeout(() => {
       if (m.type === 'getState') cb(c.state);
       else if (m.type === 'draft') cb(typeof c.draft === 'function' ? c.draft(m) : c.draft);
-      else if (m.type === 'setCount') cb({ ok: true });
+      else if (m.type === 'setCount' || m.type === 'setUi') cb({ ok: true });
       else if (m.type === 'setProfile') { c.state = { ...c.state, profiles: { ...c.state.profiles, active: m.id } }; cb({ ok: true }); }
       else if (m.type === 'addSample') cb({ ok: true, count: 4 });
       else cb({ ok: true });
@@ -135,7 +135,7 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   await pg.click('button.pill'); await pg.locator('[data-draft="0"]').click(); await pg.waitForSelector('textarea.dt');
   check('replies per comment: three by default, and the first request asks for three', (await msgs('draft'))[0].count === 3 && /uses 3 drafts/.test(await pg.textContent('.bd')));
   await pg.locator('[data-count="1"]').click(); await pg.waitForTimeout(80);
-  check('choosing 1 is remembered, says it uses 1 draft, and the next request asks for one', /uses 1 draft\b/.test(await pg.textContent('.bd')) && (await msgs('setCount'))[0].count === 1 && await (async () => { await pg.click('#again'); await pg.waitForSelector('textarea.dt'); return (await msgs('draft')).pop().count === 1; })());
+  check('choosing 1 is remembered, says it uses 1 draft, and the next request asks for one', /uses 1 draft\b/.test(await pg.textContent('.bd')) && (await msgs('setUi'))[0].count === 1 && await (async () => { await pg.click('#again'); await pg.waitForSelector('textarea.dt'); return (await msgs('draft')).pop().count === 1; })());
   await pg.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; });
   await pg.click('#report'); await pg.waitForTimeout(80);
   check('report a problem offers Telegram and email', !!(await pg.$('#repTg')) && !!(await pg.$('#repMail')));
@@ -149,5 +149,29 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('free plan: the panel header says "Free plan · 10 of 10 replies used" and the error offers "Get more replies"', /Free plan · 10 of 10 replies used/.test(await pg.textContent('.hd')) && !!(await pg.$('#upgrade')));
   await pg.click('#upgrade'); await pg.waitForTimeout(80);
   check('"Get more replies" opens the Aurora Reply page', (await pg.evaluate(() => window.__opened[0])) === 'https://getaurorastudios.com/reply/#plans');
+  // choices stay chosen: how many replies and which style, separately for replies and for comments on a post
+  await open('https://www.facebook.com/sunrisebakery/posts/1', FB, { state: { ...STATE, ui: { count: 1, tone: 'funny', postTone: 'serious' } }, draft: OK });
+  await pg.click('button.pill'); await pg.waitForTimeout(150); await pg.locator('[data-draft="0"]').click(); await pg.waitForSelector('textarea.dt');
+  const k1 = (await msgs('draft'))[0];
+  check('remembered choices: a new page starts with the saved number of replies and style (Funny, 1)', k1.count === 1 && k1.tone === 'funny' && /funny/i.test(await pg.locator('[data-tone].on').textContent()));
+  await pg.click('#back'); await pg.locator('[data-draft="1"]').click(); await pg.waitForSelector('textarea.dt');
+  const k2 = (await msgs('draft'))[1];
+  check('remembered choices: the next reply keeps Funny and 1 without choosing again', k2.count === 1 && k2.tone === 'funny');
+  await pg.click('#back'); await pg.click('#postc'); await pg.waitForSelector('textarea.dt');
+  const k3 = (await msgs('draft'))[2];
+  check('remembered choices: comments on a post keep their own style (Serious) and the same count', k3.mode === 'post' && k3.tone === 'serious' && k3.count === 1);
+  await pg.locator('[data-tone="friendly"]').click(); await pg.waitForSelector('textarea.dt');
+  check('remembered choices: changing the post style is saved (and does not touch the reply style)', (await msgs('setUi')).some((m) => m.postTone === 'friendly') && !(await msgs('setUi')).some((m) => m.tone === 'friendly'));
+  await pg.click('#back'); await pg.locator('[data-draft="2"]').click(); await pg.waitForSelector('textarea.dt');
+  check('remembered choices: back on a reply the style is still Funny', (await msgs('draft'))[4].tone === 'funny');
+
+  // a comment with no readable text (photo, sticker, emoji): the hint box is how the person says what to answer
+  await open('https://www.facebook.com/sunrisebakery/posts/1', FB, { state: STATE, draft: OK });
+  await pg.click('button.pill'); await pg.waitForTimeout(150);
+  await pg.evaluate(() => window.__auroraReplyTest.draft({ el: document.body, author: 'Zoe', text: '' })); await pg.waitForSelector('.err');
+  check('no comment text: nothing is sent to the server yet, the panel asks what the reply should say and offers Write', (await msgs('draft')).length === 0 && /no text/i.test(await pg.textContent('.err')) && /Write/.test(await pg.textContent('#again')));
+  await pg.fill('#hint', 'thank her for the photo'); await pg.click('#again'); await pg.waitForSelector('textarea.dt');
+  const em = (await msgs('draft'))[0];
+  check('no comment text: with a hint typed, drafts are written (the request carries the hint and a note that the comment has no text)', em.hint === 'thank her for the photo' && /no text/i.test(em.comment.text) && em.comment.author === 'Zoe');
   await b.close(); done();
 })();

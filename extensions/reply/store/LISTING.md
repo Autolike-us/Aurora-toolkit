@@ -124,3 +124,12 @@ Facebook, Instagram and TikTok only allow people to open accounts themselves, so
 - **Data usage:** unchanged categories. In Write, the topic the user types (or the chosen follower question) and the voice settings are sent to Aurora's server and an AI service to write the suggestions; not stored.
 - **Description:** add under "SOUNDS LIKE YOU": "• Write: captions, hooks and hashtags for your own posts in your voice, plus post ideas from the questions your followers keep asking (you copy and post them yourself)". Replace the opening line with: "Aurora Reply writes replies to comments — and captions for your own posts — on Facebook, Instagram and TikTok, in your own voice."
 - Upload `dist/aurora-reply-1.2.0.zip`. Add one screenshot of the Write tab (1280×800).
+
+
+## 8. Version 1.2.1 — what changed (for the "what's new" / update review)
+- Fix: a reply is put into the comment box once. Before, on some pages it could be inserted two or three times inside the page's editor and stay in the box after sending.
+- The number of replies and the style the user picks in the panel are remembered (separately for replies and for comments on a post).
+- A comment without readable text (photo, sticker) can now be answered by typing what the reply should say.
+- One automatic retry when the connection drops or the writing service is busy.
+- **No new permission, no new host, no data change.** Single purpose, description and data-usage answers are unchanged.
+- Upload `dist/aurora-reply-1.2.1.zip`.
