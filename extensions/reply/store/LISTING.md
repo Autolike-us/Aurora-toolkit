@@ -126,10 +126,11 @@ Facebook, Instagram and TikTok only allow people to open accounts themselves, so
 - Upload `dist/aurora-reply-1.2.0.zip`. Add one screenshot of the Write tab (1280×800).
 
 
-## 8. Version 1.2.1 — what changed (for the "what's new" / update review)
+## 8. Version 1.2.2 (includes 1.2.1) — what changed (for the "what's new" / update review)
 - Fix: a reply is put into the comment box once. Before, on some pages it could be inserted two or three times inside the page's editor and stay in the box after sending.
 - The number of replies and the style the user picks in the panel are remembered (separately for replies and for comments on a post).
 - A comment without readable text (photo, sticker) can now be answered by typing what the reply should say.
 - One automatic retry when the connection drops or the writing service is busy.
+- The ✦ Reply button on the page can be dragged to another corner and hidden with a small ×; it comes back from a checkbox in the toolbar popup or with Alt+R.
 - **No new permission, no new host, no data change.** Single purpose, description and data-usage answers are unchanged.
-- Upload `dist/aurora-reply-1.2.1.zip`.
+- Upload `dist/aurora-reply-1.2.2.zip`.

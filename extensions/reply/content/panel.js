@@ -21,6 +21,10 @@
   root.innerHTML = `<style>
     :host{all:initial}*{box-sizing:border-box}
     .w{font:14px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1a1612;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+    .pillw{display:flex;align-items:center;gap:6px}
+    .w.left{align-items:flex-start}.w.top{flex-direction:column-reverse}
+    .hx{width:24px;height:24px;border-radius:50%;border:1px solid rgba(40,25,10,.2);background:#fff;color:#7a7066;font:700 15px/1 system-ui,sans-serif;cursor:pointer;padding:0;box-shadow:0 4px 12px rgba(20,12,4,.3)}.hx:hover{color:#f97316;border-color:#f97316}
+    .pill{touch-action:none;cursor:grab}.pill.drag{cursor:grabbing}
     .pill{display:flex;align-items:center;gap:9px;border:1px solid rgba(251,191,36,.45);cursor:pointer;color:#fbbf24;font:700 14px system-ui,sans-serif;padding:11px 16px 11px 12px;border-radius:999px;background:#16120d;box-shadow:0 12px 30px rgba(20,12,4,.45)}
     .pill i{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#f97316,#fbbf24);color:#16120d;font-style:normal}
     .pill b{background:#f97316;color:#16120d;border-radius:99px;padding:1px 8px;font-size:12px}
@@ -51,6 +55,40 @@
   </style><div class="w" id="w"></div>`;
   const W = root.getElementById('w');
 
+  /* ---------- where the button sits, and hiding it ---------- */
+  let hidden = false, dragged = false;
+  const applyVis = () => { host.style.display = hidden && !S.open ? 'none' : ''; };
+  function place(p) {
+    const m = p && typeof p === 'object' ? p : { h: 'right', v: 'bottom', dx: 18, dy: 18 };
+    const dx = Math.min(Math.max(8, Number(m.dx) || 18), Math.max(8, innerWidth - 80)), dy = Math.min(Math.max(8, Number(m.dy) || 18), Math.max(8, innerHeight - 60));
+    const left = m.h === 'left', top = m.v === 'top';
+    host.style.left = left ? dx + 'px' : 'auto'; host.style.right = left ? 'auto' : dx + 'px'; host.style.top = top ? dy + 'px' : 'auto'; host.style.bottom = top ? 'auto' : dy + 'px';
+    W.classList.toggle('left', left); W.classList.toggle('top', top);
+  }
+  const savePos = (pos) => ask('setUi', { pos });
+  function startDrag(e) {
+    if (e.button !== 0) return;
+    const r = host.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY; let moved = false;
+    const pill = e.target.closest('#open');
+    const mv = (ev) => {
+      const dx = ev.clientX - x0, dy = ev.clientY - y0;
+      if (!moved) { if (Math.abs(dx) + Math.abs(dy) < 6) return; moved = true; if (pill) pill.classList.add('drag'); S.open = false; W.classList.remove('top'); }
+      host.style.right = 'auto'; host.style.bottom = 'auto';
+      host.style.left = Math.min(Math.max(0, r.left + dx), innerWidth - host.offsetWidth) + 'px'; host.style.top = Math.min(Math.max(0, r.top + dy), innerHeight - host.offsetHeight) + 'px';
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', mv, true); document.removeEventListener('pointerup', up, true); document.removeEventListener('pointercancel', up, true);
+      if (!moved) return;
+      dragged = true; setTimeout(() => { dragged = false; }, 0);
+      const b = host.getBoundingClientRect(), left = b.left + b.width / 2 < innerWidth / 2, top = b.top + b.height / 2 < innerHeight / 2;
+      const pos = { h: left ? 'left' : 'right', v: top ? 'top' : 'bottom', dx: Math.round(left ? b.left : innerWidth - b.right), dy: Math.round(top ? b.top : innerHeight - b.bottom) };
+      place(pos); render(); savePos(pos);
+    };
+    document.addEventListener('pointermove', mv, true); document.addEventListener('pointerup', up, true); document.addEventListener('pointercancel', up, true);
+  }
+  W.addEventListener('pointerdown', (e) => { if (e.target.closest('#open')) startDrag(e); });
+  addEventListener('resize', () => { if (S.ui) place(S.ui.pos); });
+
   /* ---------- rendering ---------- */
   function usageText() {
     const u = S.usage; if (!u) return 'Drafts in your voice';
@@ -61,8 +99,8 @@
   }
   function render() {
     const n = S.comments.length;
-    if (!S.open) { host.style.display = ''; W.innerHTML = `<button class="pill" id="open"><i>✦</i>Reply${n ? ` <b>${n}</b>` : ''}</button>`; return; }
-    host.style.display = '';
+    applyVis();
+    if (!S.open) { W.innerHTML = `<div class="pillw"><button class="pill" id="open" title="Drag to move"><i>✦</i>Reply${n ? ` <b>${n}</b>` : ''}</button><button class="hx" id="hide" title="Hide this button (bring it back from the Aurora Reply toolbar icon, or press Alt+R)" aria-label="Hide the Reply button">×</button></div>`; return; }
     let body = '';
     const st = S.state || {};
     if (st.ok && !st.hasKey) body += `<div class="warn"><b>One quick step:</b> add your Aurora Reply key. <a class="l" id="optKey">Open settings</a></div>`;
@@ -96,17 +134,19 @@
         if (S.drafts.length || S.error) body += `<div class="bar"><button class="b${S.error && S.error.status === 'empty' ? ' p' : ''}" id="again">${S.error && S.error.status === 'empty' ? '✦ Write' : '↻ Write new ones'}</button></div>`;
       }
     }
-    W.innerHTML = `<div class="panel"><div class="hd"><div class="lg">✦</div><h1>Aurora Reply<small>${esc(usageText())}</small></h1><button class="x" id="close" aria-label="Close">×</button></div><div class="bd">${body}</div><div class="ft"><span>You read, edit and send every reply yourself.</span><a class="l" id="report" title="Something not working?">Report a problem</a></div></div>`;
+    W.innerHTML = `<div class="panel"><div class="hd"><div class="lg">✦</div><h1>Aurora Reply<small>${esc(usageText())}</small></h1><button class="x" id="close" aria-label="Close">×</button></div><div class="bd">${body}</div><div class="ft"><span>You read, edit and send every reply yourself.${S.ui && S.ui.pos ? ' <a class="l" id="resetpos" title="Put the Reply button back in the bottom-right corner">Reset button place</a>' : ''}</span><a class="l" id="report" title="Something not working?">Report a problem</a></div></div>`;
     root.querySelectorAll('textarea.dt').forEach(grow);
   }
   const grow = (t) => { t.style.height = 'auto'; t.style.height = Math.min(220, t.scrollHeight) + 'px'; };
 
   /* ---------- actions ---------- */
   function scan() { S.comments = A.findComments(); if (S.sel && !document.contains(S.sel.el)) S.sel = null; }
+  function applyUi(ui) { S.ui = ui || {}; place(S.ui.pos); hidden = !!S.ui.hidden; applyVis(); }
   async function refreshState() {
     const q = await ask('quickList'); S.quick = (q && q.quick) || []; S.state = await ask('getState'); if (S.state && S.state.usage) S.usage = S.state.usage;
     // the style and number of replies chosen last time stay chosen (only filled in until the person changes them here)
     const ui = (S.state && S.state.ui) || {};
+    applyUi(ui);
     if (!S.count && [1, 2, 3].includes(+ui.count)) S.count = +ui.count;
     if (!S.tone && ui.tone) S.tone = ui.tone;
     if (!S.postTone && ui.postTone) S.postTone = ui.postTone;
@@ -201,7 +241,10 @@
 
   W.addEventListener('click', async (e) => {
     const t = e.target.closest('button, a'); if (!t) return;
-    if (t.id === 'open') { S.open = true; scan(); S.view = 'list'; render(); refreshState().then(render); }
+    if (t.id === 'resetpos') { place(null); S.ui = { ...(S.ui || {}), pos: null }; savePos(null); render(); }
+    else if (t.id === 'hide') { hidden = true; ask('setUi', { hidden: true }); render(); }
+    else if (t.id === 'open' && dragged) { /* the click that ends a drag */ }
+    else if (t.id === 'open') { S.open = true; scan(); S.view = 'list'; render(); refreshState().then(render); }
     else if (t.id === 'close') { S.open = false; render(); }
     else if (t.id === 'rescan') { scan(); render(); }
     else if (t.id === 'pick') pickOn();
@@ -249,5 +292,7 @@
   new MutationObserver(rescanSoon).observe(document.body, { childList: true, subtree: true });
   document.documentElement.appendChild(host);
   scan(); render();
+  ask('getState').then((st) => { if (st && st.ui) { applyUi(st.ui); render(); } });
+  try { chrome.storage.onChanged.addListener((c, a) => { if (a === 'local' && c.ui) { applyUi(c.ui.newValue); render(); } }); } catch (_) {}
   window.__auroraReplyTest = { S, unanswered, scan, render, draft, use, root };
 })();

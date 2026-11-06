@@ -87,6 +87,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       if ([1, 2, 3].includes(+msg.count)) ui.count = +msg.count;
       if (typeof msg.tone === 'string' && /^[a-z]{0,20}$/.test(msg.tone)) ui.tone = msg.tone;
       if (typeof msg.postTone === 'string' && /^[a-z]{0,20}$/.test(msg.postTone)) ui.postTone = msg.postTone;
+      if ('hidden' in msg) ui.hidden = !!msg.hidden;
+      if ('pos' in msg) { const q = msg.pos; if (q && (q.h === 'left' || q.h === 'right') && (q.v === 'top' || q.v === 'bottom') && isFinite(q.dx) && isFinite(q.dy)) ui.pos = { h: q.h, v: q.v, dx: Math.round(+q.dx), dy: Math.round(+q.dy) }; else delete ui.pos; }
       await set({ ui }); send({ ok: true, ui });
     }
     else if (msg.type === 'addSample') {
