@@ -14,6 +14,11 @@ $ans = ['id' => 'msg_test', 'type' => 'message', 'role' => 'assistant', 'model' 
 if (strpos($user, 'MAKE-REFUSE-FIRST') !== false && strpos($user, 'sympathy or support') === false) { $ans['stop_reason'] = 'refusal'; $ans['content'] = []; echo json_encode($ans); return; }
 if (strpos($user, 'MAKE-REFUSAL') !== false) { $ans['stop_reason'] = 'refusal'; $ans['content'] = []; echo json_encode($ans); return; }
 if (strpos($user, 'MAKE-BADJSON') !== false) { $ans['content'] = [['type' => 'text', 'text' => 'Sure! Here are some replies']]; echo json_encode($ans); return; }
+if (strpos((string) ($req['system'] ?? ''), 'post-rewriting assistant') !== false) {
+    $names = ['one' => 1, 'two' => 2, 'three' => 3, 'four' => 4, 'five' => 5, 'six' => 6]; preg_match('/Write (\w+) versions/', $user, $m); $n = $names[$m[1] ?? 'three'] ?? 3;
+    $d = []; for ($i = 1; $i <= $n + 1; $i++) $d[] = ['text' => "Version $i: fresh sourdough Saturday at Sunrise Bakery, pre-order by Friday 6pm.\x07"];
+    $ans['content'] = [['type' => 'text', 'text' => json_encode(['commentLanguage' => 'English', 'drafts' => $d, 'flag' => 'none', 'note' => ''])]]; echo json_encode($ans); return;
+}
 if (strpos((string) ($req['system'] ?? ''), 'careful ghostwriter for social media posts') !== false) {
     $out = ['captions' => [['text' => 'Fresh rye is back. $4 a loaf.'], ['text' => "Warm and crusty.\x07 Fridays only."], ['text' => 'Pick-up Sundays: order by Saturday.'], ['text' => 'a fourth caption over the limit']],
         'hooks' => [['text' => 'Friday just got tastier.'], ['text' => 'Rye or sourdough?'], ['text' => ''], ['text' => 'Over the limit hook']], 'hashtags' => ['sourdough', '#fresh bread', '#sourdough', '#a', '#ryebread!', 'x y z'], 'note' => ''];
