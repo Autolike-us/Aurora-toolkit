@@ -8,7 +8,7 @@
 
   const ask = (type, extra) => new Promise((res) => { try { chrome.runtime.sendMessage({ aurora: 'reply', type, ...extra }, (r) => res(r || { ok: false, message: 'The extension was updated — reload this page.' })); } catch (_) { res({ ok: false, message: 'The extension was updated — reload this page.' }); } });
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['direct', 'Direct']];
+  const TONES = [['friendly', 'Friendly'], ['warm', 'Warm'], ['professional', 'Professional'], ['playful', 'Playful'], ['funny', 'Funny'], ['direct', 'Direct']];
   const POST_TONES = [['friendly', 'Friendly'], ['funny', 'Funny'], ['serious', 'Serious'], ['professional', 'Professional'], ['supportive', 'Supportive'], ['curious', 'Curious']];
 
   const S = { open: false, view: 'list', comments: [], sel: null, drafts: [], flag: 'none', note: '', loading: false, error: null, tone: '', quality: false, hint: '', usage: null, state: null, pick: false, done: '', hid: '', quick: [], qmark: {}, queue: null, count: 0 };
@@ -21,6 +21,10 @@
   root.innerHTML = `<style>
     :host{all:initial}*{box-sizing:border-box}
     .w{font:14px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1a1612;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+    .pillw{display:flex;align-items:center;gap:6px}
+    .w.left{align-items:flex-start}.w.top{flex-direction:column-reverse}
+    .hx{width:24px;height:24px;border-radius:50%;border:1px solid rgba(40,25,10,.2);background:#fff;color:#7a7066;font:700 15px/1 system-ui,sans-serif;cursor:pointer;padding:0;box-shadow:0 4px 12px rgba(20,12,4,.3)}.hx:hover{color:#f97316;border-color:#f97316}
+    .pill{touch-action:none;cursor:grab}.pill.drag{cursor:grabbing}
     .pill{display:flex;align-items:center;gap:9px;border:1px solid rgba(251,191,36,.45);cursor:pointer;color:#fbbf24;font:700 14px system-ui,sans-serif;padding:11px 16px 11px 12px;border-radius:999px;background:#16120d;box-shadow:0 12px 30px rgba(20,12,4,.45)}
     .pill i{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#f97316,#fbbf24);color:#16120d;font-style:normal}
     .pill b{background:#f97316;color:#16120d;border-radius:99px;padding:1px 8px;font-size:12px}
@@ -51,6 +55,40 @@
   </style><div class="w" id="w"></div>`;
   const W = root.getElementById('w');
 
+  /* ---------- where the button sits, and hiding it ---------- */
+  let hidden = false, dragged = false;
+  const applyVis = () => { host.style.display = hidden && !S.open ? 'none' : ''; };
+  function place(p) {
+    const m = p && typeof p === 'object' ? p : { h: 'right', v: 'bottom', dx: 18, dy: 18 };
+    const dx = Math.min(Math.max(8, Number(m.dx) || 18), Math.max(8, innerWidth - 80)), dy = Math.min(Math.max(8, Number(m.dy) || 18), Math.max(8, innerHeight - 60));
+    const left = m.h === 'left', top = m.v === 'top';
+    host.style.left = left ? dx + 'px' : 'auto'; host.style.right = left ? 'auto' : dx + 'px'; host.style.top = top ? dy + 'px' : 'auto'; host.style.bottom = top ? 'auto' : dy + 'px';
+    W.classList.toggle('left', left); W.classList.toggle('top', top);
+  }
+  const savePos = (pos) => ask('setUi', { pos });
+  function startDrag(e) {
+    if (e.button !== 0) return;
+    const r = host.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY; let moved = false;
+    const pill = e.target.closest('#open');
+    const mv = (ev) => {
+      const dx = ev.clientX - x0, dy = ev.clientY - y0;
+      if (!moved) { if (Math.abs(dx) + Math.abs(dy) < 6) return; moved = true; if (pill) pill.classList.add('drag'); S.open = false; W.classList.remove('top'); }
+      host.style.right = 'auto'; host.style.bottom = 'auto';
+      host.style.left = Math.min(Math.max(0, r.left + dx), innerWidth - host.offsetWidth) + 'px'; host.style.top = Math.min(Math.max(0, r.top + dy), innerHeight - host.offsetHeight) + 'px';
+    };
+    const up = () => {
+      document.removeEventListener('pointermove', mv, true); document.removeEventListener('pointerup', up, true); document.removeEventListener('pointercancel', up, true);
+      if (!moved) return;
+      dragged = true; setTimeout(() => { dragged = false; }, 0);
+      const b = host.getBoundingClientRect(), left = b.left + b.width / 2 < innerWidth / 2, top = b.top + b.height / 2 < innerHeight / 2;
+      const pos = { h: left ? 'left' : 'right', v: top ? 'top' : 'bottom', dx: Math.round(left ? b.left : innerWidth - b.right), dy: Math.round(top ? b.top : innerHeight - b.bottom) };
+      place(pos); render(); savePos(pos);
+    };
+    document.addEventListener('pointermove', mv, true); document.addEventListener('pointerup', up, true); document.addEventListener('pointercancel', up, true);
+  }
+  W.addEventListener('pointerdown', (e) => { if (e.target.closest('#open')) startDrag(e); });
+  addEventListener('resize', () => { if (S.ui) place(S.ui.pos); });
+
   /* ---------- rendering ---------- */
   function usageText() {
     const u = S.usage; if (!u) return 'Drafts in your voice';
@@ -61,8 +99,8 @@
   }
   function render() {
     const n = S.comments.length;
-    if (!S.open) { host.style.display = ''; W.innerHTML = `<button class="pill" id="open"><i>✦</i>Reply${n ? ` <b>${n}</b>` : ''}</button>`; return; }
-    host.style.display = '';
+    applyVis();
+    if (!S.open) { W.innerHTML = `<div class="pillw"><button class="pill" id="open" title="Drag to move"><i>✦</i>Reply${n ? ` <b>${n}</b>` : ''}</button><button class="hx" id="hide" title="Hide this button (bring it back from the Aurora Reply toolbar icon, or press Alt+R)" aria-label="Hide the Reply button">×</button></div>`; return; }
     let body = '';
     const st = S.state || {};
     if (st.ok && !st.hasKey) body += `<div class="warn"><b>One quick step:</b> add your Aurora Reply key. <a class="l" id="optKey">Open settings</a></div>`;
@@ -93,17 +131,26 @@
         body += S.drafts.map((d, i) => `<div class="d"><textarea class="dt" data-t="${i}" rows="2">${esc(d)}</textarea><div class="bar"><button class="b p" data-use="${i}">${c.isPost ? 'Use this comment' : 'Use this reply'}</button><button class="b" data-copy="${i}">Copy</button><button class="b" data-save="${i}" title="Add to the examples of how you write">＋ My style</button></div></div>`).join('');
         if (S.quick.length) body += `<div class="note">⚡ Your quick replies</div><div class="chips">${S.quick.slice(0, 8).map((q, i) => `<button class="chip" data-quick="${i}" title="${esc(q.text)}">${esc(q.title)}</button>`).join('')}</div>`;
         if (S.queue && S.done && /Inserted/.test(S.done)) body = body.replace('<div class="ok">', '<div class="bar"><button class="b p" id="qnext">Next comment ›  (Alt+N)</button></div><div class="ok">');
-        if (S.drafts.length || S.error) body += `<div class="bar"><button class="b" id="again">↻ Write new ones</button></div>`;
+        if (S.drafts.length || S.error) body += `<div class="bar"><button class="b${S.error && S.error.status === 'empty' ? ' p' : ''}" id="again">${S.error && S.error.status === 'empty' ? '✦ Write' : '↻ Write new ones'}</button></div>`;
       }
     }
-    W.innerHTML = `<div class="panel"><div class="hd"><div class="lg">✦</div><h1>Aurora Reply<small>${esc(usageText())}</small></h1><button class="x" id="close" aria-label="Close">×</button></div><div class="bd">${body}</div><div class="ft"><span>You read, edit and send every reply yourself.</span><a class="l" id="report" title="Something not working?">Report a problem</a></div></div>`;
+    W.innerHTML = `<div class="panel"><div class="hd"><div class="lg">✦</div><h1>Aurora Reply<small>${esc(usageText())}</small></h1><button class="x" id="close" aria-label="Close">×</button></div><div class="bd">${body}</div><div class="ft"><span>You read, edit and send every reply yourself.${S.ui && S.ui.pos ? ' <a class="l" id="resetpos" title="Put the Reply button back in the bottom-right corner">Reset button place</a>' : ''}</span><a class="l" id="report" title="Something not working?">Report a problem</a></div></div>`;
     root.querySelectorAll('textarea.dt').forEach(grow);
   }
   const grow = (t) => { t.style.height = 'auto'; t.style.height = Math.min(220, t.scrollHeight) + 'px'; };
 
   /* ---------- actions ---------- */
   function scan() { S.comments = A.findComments(); if (S.sel && !document.contains(S.sel.el)) S.sel = null; }
-  async function refreshState() { const q = await ask('quickList'); S.quick = (q && q.quick) || []; S.state = await ask('getState'); if (S.state && S.state.usage) S.usage = S.state.usage; }
+  function applyUi(ui) { S.ui = ui || {}; place(S.ui.pos); hidden = !!S.ui.hidden; applyVis(); }
+  async function refreshState() {
+    const q = await ask('quickList'); S.quick = (q && q.quick) || []; S.state = await ask('getState'); if (S.state && S.state.usage) S.usage = S.state.usage;
+    // the style and number of replies chosen last time stay chosen (only filled in until the person changes them here)
+    const ui = (S.state && S.state.ui) || {};
+    applyUi(ui);
+    if (!S.count && [1, 2, 3].includes(+ui.count)) S.count = +ui.count;
+    if (!S.tone && ui.tone) S.tone = ui.tone;
+    if (!S.postTone && ui.postTone) S.postTone = ui.postTone;
+  }
   function highlight(el, on) { if (!el) return; el.style.outline = on ? '2px solid #f97316' : ''; el.style.outlineOffset = on ? '2px' : ''; }
 
   const nReplies = () => S.count || (S.state && S.state.voice && +S.state.voice.count) || 3;
@@ -128,21 +175,29 @@
     else { const a = document.createElement('a'); a.href = 'mailto:support@getaurorastudios.com?subject=' + encodeURIComponent('Aurora Reply problem on ' + info.platform) + '&body=' + encodeURIComponent(text); a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove(); S.done = 'Your email app should open. The technical details are also copied — paste them if it does not.'; }
     S.view = 'list'; render();
   }
-  const curTone = (c) => { const v = S.tone || (S.state && S.state.voice && S.state.voice.tone) || 'friendly'; return c && c.isPost && !POST_TONES.some(([id]) => id === v) ? 'friendly' : v; };
+  const curTone = (c) => {
+    const base = (S.state && S.state.voice && S.state.voice.tone) || 'friendly';
+    if (c && c.isPost) { const v = S.postTone || base; return POST_TONES.some(([id]) => id === v) ? v : 'friendly'; }
+    return S.tone || base;
+  };
   /** A new comment under the post (not a reply): read the post the comment box belongs to, then draft like any reply. */
   function draftPost() {
     const box = A.findPostBox();
     if (!box) { S.done = ''; S.error = { message: 'I could not find this post\'s comment box. Scroll to the post and its "Add a comment" box, then try again.' }; S.view = 'list'; render(); return; }
     const post = A.postContext(A.postScope(box));
-    S.tone = ''; S.hint = '';
+    S.hint = '';
     draft({ isPost: true, el: box, box, author: post.author, text: post.caption, post });
   }
   async function draft(c) {
     S.sel = c; S.view = 'draft'; S.loading = true; S.error = null; S.drafts = []; S.flag = 'none'; S.note = ''; S.done = ''; render();
     try { c.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
     if (c.orig) { try { await A.revealOriginal(c); } catch (_) {} render(); }
+    if (!c.isPost && !c.text && !S.hint.trim()) { // a photo / sticker / emoji-only comment: say what to answer, then write
+      S.loading = false; S.error = { message: 'This comment has no text I can read (it may be a photo, sticker or emoji). Type what the reply should say in the box below — for example “thank them for the photo” — then press Write.', status: 'empty' }; render();
+      const h = root.querySelector('#hint'); if (h) h.focus(); return;
+    }
     const post = c.isPost ? c.post : A.postContext();
-    const r = await ask('draft', { platform: A.platformId(), mode: c.isPost ? 'post' : 'reply', tone: c.isPost ? curTone(c) : (S.tone || undefined), quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: c.isPost ? { text: '', author: '' } : { text: c.text, author: c.author }, post, count: nReplies() });
+    const r = await ask('draft', { platform: A.platformId(), mode: c.isPost ? 'post' : 'reply', tone: c.isPost ? curTone(c) : (S.tone || undefined), quality: S.quality ? 'best' : 'standard', hint: S.hint, comment: c.isPost ? { text: '', author: '' } : { text: c.text || '(no text: a photo, sticker or emoji. Follow the owner hint.)', author: c.author }, post, count: nReplies() });
     S.loading = false;
     if (r.usage) S.usage = r.usage;
     if (r.ok) { S.hid = r.historyId || ''; S.qmark = {}; S.drafts = r.drafts.map((d) => d.text); S.flag = r.flag || 'none'; S.note = r.note || ''; } else S.error = { message: r.message || 'Something went wrong.', status: r.status, upgrade: r.upgrade || '' };
@@ -154,7 +209,7 @@
     const text = (root.querySelector(`[data-t="${i}"]`) || {}).value || S.drafts[i];
     const c = S.sel; if (!c) return;
     const box = c.isPost ? (document.contains(c.box) && c.box.isConnected ? c.box : A.findPostBox()) : await A.openReply(c);
-    if (box && A.setText(box, text)) {
+    if (box && await A.setText(box, text)) {
       logUse('inserted', text, i);
       S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render();
       toast(S.done); try { box.focus(); } catch (_) {}
@@ -164,7 +219,7 @@
       S.done = A.platformId() === 'tiktok' ? (copied ? 'Copied ✓ ' : '') + 'TikTok needs you to type in its box yourself: ' + (c.isPost ? 'click inside the comment box' : 'click Reply on the comment, click inside the box') + ' and press Ctrl+V (Cmd+V on a Mac).' : (copied ? 'Copied. ' : '') + (c.isPost ? 'I could not fill the comment box by myself. Click inside it and I will fill it in for you — or press Ctrl+V to paste.' : 'I could not open that comment\'s reply box by myself. Click Reply on the comment, click inside its box, and I will fill it in for you — or press Ctrl+V to paste.');
       S.waiting = true; render();
       const el = await A.waitForBox(45000); S.waiting = false;
-      if (el && A.setText(el, text)) { logUse('inserted', text, i); S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render(); toast(S.done); }
+      if (el && await A.setText(el, text)) { logUse('inserted', text, i); S.done = '✓ Inserted. Read it, change anything you like, then press Send yourself.'; if (!S.queue) { S.open = false; S.view = 'list'; } render(); toast(S.done); }
       else render();
     }
   }
@@ -186,11 +241,14 @@
 
   W.addEventListener('click', async (e) => {
     const t = e.target.closest('button, a'); if (!t) return;
-    if (t.id === 'open') { S.open = true; scan(); S.view = 'list'; render(); refreshState().then(render); }
+    if (t.id === 'resetpos') { place(null); S.ui = { ...(S.ui || {}), pos: null }; savePos(null); render(); }
+    else if (t.id === 'hide') { hidden = true; ask('setUi', { hidden: true }); render(); }
+    else if (t.id === 'open' && dragged) { /* the click that ends a drag */ }
+    else if (t.id === 'open') { S.open = true; scan(); S.view = 'list'; render(); refreshState().then(render); }
     else if (t.id === 'close') { S.open = false; render(); }
     else if (t.id === 'rescan') { scan(); render(); }
     else if (t.id === 'pick') pickOn();
-    else if (t.id === 'back') { if (S.sel && S.sel.isPost) { S.tone = ''; S.hint = ''; } S.view = 'list'; S.queue = null; S.error = null; render(); }
+    else if (t.id === 'back') { if (S.sel && S.sel.isPost) S.hint = ''; S.view = 'list'; S.queue = null; S.error = null; render(); }
     else if (t.id === 'again') draft(S.sel);
     else if (t.id === 'upgrade') window.open((S.error && S.error.upgrade) || 'https://getaurorastudios.com/reply/#plans', '_blank', 'noopener');
     else if (t.id === 'report') report();
@@ -203,8 +261,8 @@
     else if (t.id === 'qstop') { S.queue = null; S.view = 'list'; S.done = ''; render(); }
     else if (t.id === 'optKey' || t.id === 'optVoice') ask('openOptions');
     else if (t.dataset.draft != null) draft(S.comments[+t.dataset.draft]);
-    else if (t.dataset.count) { S.count = +t.dataset.count; ask('setCount', { count: S.count }); render(); }
-    else if (t.dataset.tone) { S.tone = t.dataset.tone; render(); if (S.drafts.length || S.error) draft(S.sel); }
+    else if (t.dataset.count) { S.count = +t.dataset.count; ask('setUi', { count: S.count }); render(); }
+    else if (t.dataset.tone) { if (S.sel && S.sel.isPost) { S.postTone = t.dataset.tone; ask('setUi', { postTone: S.postTone }); } else { S.tone = t.dataset.tone; ask('setUi', { tone: S.tone }); } render(); if (S.drafts.length || S.error) draft(S.sel); }
     else if (t.dataset.quick != null) { const q = S.quick[+t.dataset.quick]; if (q) { const m = {}; Object.keys(S.qmark).forEach((k) => { m[+k + 1] = S.qmark[k]; }); S.qmark = m; S.qmark[0] = true; S.drafts = [q.text, ...S.drafts]; render(); } }
     else if (t.dataset.use != null) use(+t.dataset.use);
     else if (t.dataset.copy != null) { try { await navigator.clipboard.writeText(root.querySelector(`[data-t="${t.dataset.copy}"]`).value); t.textContent = 'Copied ✓'; logUse('copied', root.querySelector(`[data-t="${t.dataset.copy}"]`).value, +t.dataset.copy); } catch (_) { t.textContent = 'Select & copy'; } }
@@ -234,5 +292,7 @@
   new MutationObserver(rescanSoon).observe(document.body, { childList: true, subtree: true });
   document.documentElement.appendChild(host);
   scan(); render();
+  ask('getState').then((st) => { if (st && st.ui) { applyUi(st.ui); render(); } });
+  try { chrome.storage.onChanged.addListener((c, a) => { if (a === 'local' && c.ui) { applyUi(c.ui.newValue); render(); } }); } catch (_) {}
   window.__auroraReplyTest = { S, unanswered, scan, render, draft, use, root };
 })();

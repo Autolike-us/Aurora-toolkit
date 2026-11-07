@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { api, setToken } from '@/lib/client';
+import { track } from '@/lib/track';
 
 /** Landing page for the links in our emails: confirms an email address, or sets a new password. */
 function Inner({ kind }: { kind: 'verify' | 'reset' }) {
@@ -14,7 +15,7 @@ function Inner({ kind }: { kind: 'verify' | 'reset' }) {
     if (kind !== 'verify') return;
     if (!token) { setState('error'); setMsg('This link is missing its token. Open the link from your email again.'); return; }
     api<{ token?: string }>('/auth/verify', { token }).then(r => {
-      if (r.ok && r.token) { setToken(r.token); router.replace('/account/'); } else { setState('error'); setMsg(r.error || 'This link is not valid.'); }
+      if (r.ok && r.token) { track('email_confirmed'); setToken(r.token); router.replace('/account/'); } else { setState('error'); setMsg(r.error || 'This link is not valid.'); }
     });
   }, [kind, token, router]);
 

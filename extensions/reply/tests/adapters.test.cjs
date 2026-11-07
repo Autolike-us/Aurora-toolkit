@@ -16,7 +16,7 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('Facebook: clicking a comment picks that comment, clicking the list picks nothing', pick.a === 'Tom B' && pick.none);
   const fbIns = await pg.evaluate(async () => {
     const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c);
-    const ok = box && AuroraReplyAdapters.setText(box, 'Hi Maya! Sundays are pick-up only.');
+    const ok = box && await AuroraReplyAdapters.setText(box, 'Hi Maya! Sundays are pick-up only.');
     return { id: box && box.id, ok, text: box && box.textContent.replace(/ /g, ' '), ev: window.__events };
   });
   check('Facebook: Reply opens the comment\'s own box, keeps the @mention and adds the text after it', fbIns.id === 'reply-box' && fbIns.ok && /^Maya K\s+Hi Maya! Sundays are pick-up only\.$/.test(fbIns.text), JSON.stringify(fbIns));
@@ -39,7 +39,7 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('Instagram: finds the comments, not the caption', cs.length === 2 && cs[0].author === 'maya.k' && cs[0].text === 'Do you deliver on Sundays?' && cs[1].author === 'tom_b', JSON.stringify(cs));
   pc = await pg.evaluate(() => AuroraReplyAdapters.postContext());
   check('Instagram: reads the caption and author', /Fresh sourdough today!/.test(pc.caption) && pc.author === 'sunrisebakery', JSON.stringify(pc));
-  const igIns = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[1]; const box = await AuroraReplyAdapters.openReply(c); const ok = AuroraReplyAdapters.setText(box, 'About £4 — thanks for asking!'); return { v: box.value, ok, ev: window.__events }; });
+  const igIns = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[1]; const box = await AuroraReplyAdapters.openReply(c); const ok = await AuroraReplyAdapters.setText(box, 'About £4 — thanks for asking!'); return { v: box.value, ok, ev: window.__events }; });
   check('Instagram: Reply fills the main box, keeping the @mention Instagram added', igIns.ok && igIns.v === '@tom_b About £4 — thanks for asking!', JSON.stringify(igIns));
   check('Instagram: nothing was sent', igIns.ev.length === 0);
 
@@ -52,7 +52,7 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('TikTok: finds the comments', cs.length === 2 && cs[0].author === 'maya.k' && cs[0].text === 'Recipe please!!' && cs[1].text === 'Which flour do you use?', JSON.stringify(cs));
   pc = await pg.evaluate(() => AuroraReplyAdapters.postContext());
   check('TikTok: reads the video caption and author', /Pasta in 60 seconds/.test(pc.caption) && pc.author === 'chef');
-  const ttIns = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c); const ok = AuroraReplyAdapters.setText(box, 'Recipe is in my bio!'); return { t: box.textContent, ok, ev: window.__events }; });
+  const ttIns = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c); const ok = await AuroraReplyAdapters.setText(box, 'Recipe is in my bio!'); return { t: box.textContent, ok, ev: window.__events }; });
   check('TikTok: Reply focuses the comment box and fills it', ttIns.ok && ttIns.t === 'Recipe is in my bio!' && ttIns.ev.length === 0, JSON.stringify(ttIns));
 
   await load('https://www.facebook.com/x', '<!doctype html><body><div>No comments here, just a <a href="/x">link</a> and a Reply to nothing</div></body>');
@@ -68,7 +68,7 @@ const { FB, IG, TT } = require('./fixtures.cjs');
    <script>document.addEventListener('click',e=>{ if(!${handlerWorks}) return; const b=e.target.closest('.rp'); if(!b||document.getElementById('rbox'))return; const d=document.createElement('div'); d.innerHTML='<div contenteditable="true" role="textbox" id="rbox" ${boxAttrs}></div>'; document.getElementById('th1').appendChild(d); ${focus ? "document.getElementById('rbox').focus();" : ''} });</script></body>`;
   for (const [name, attrs, focus] of [['a labelled box that is not focused', 'aria-label="Write a reply…"', false], ['a plain box that is not labelled or focused', '', false], ['a box that takes focus', '', true]]) {
     await load('https://www.facebook.com/hard', HARD(attrs, focus));
-    const r = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c); return { id: box && box.id, ok: !!box && AuroraReplyAdapters.setText(box, 'We do ship to Canada!'), main: document.getElementById('main-box').textContent }; });
+    const r = await pg.evaluate(async () => { const c = AuroraReplyAdapters.findComments()[0]; const box = await AuroraReplyAdapters.openReply(c); return { id: box && box.id, ok: !!box && await AuroraReplyAdapters.setText(box, 'We do ship to Canada!'), main: document.getElementById('main-box').textContent }; });
     check('Harder page, ' + name + ': the click reaches the real button and the comment\'s own box is found', r.id === 'rbox' && r.ok && r.main === '', JSON.stringify(r));
   }
   await load('https://www.facebook.com/hard', HARD('', false, false));
@@ -95,7 +95,7 @@ const { FB, IG, TT } = require('./fixtures.cjs');
   check('post box (Facebook): finds the main "Write a comment" box, never the reply box that a Reply click opens', pb.id === 'main-box' && !pb.all.includes('reply-box'), JSON.stringify(pb));
   check('post box (Facebook): the post is read from the box\'s own post', pb.scope && pb.cap.caption === 'Fresh sourdough today!' && pb.cap.author === 'Sunrise Bakery', JSON.stringify(pb));
   await load('https://www.instagram.com/p/abc/', IG);
-  pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return { id: b && b.id, set: AuroraReplyAdapters.setText(b, 'Great post!'), v: b.value, ev: window.__events }; });
+  pb = await pg.evaluate(async () => { const b = AuroraReplyAdapters.findPostBox(); return { id: b && b.id, set: await AuroraReplyAdapters.setText(b, 'Great post!'), v: b.value, ev: window.__events }; });
   check('post box (Instagram): finds "Add a comment…", fills it and does not submit', pb.id === 'box' && pb.set && pb.v === 'Great post!' && pb.ev.length === 0, JSON.stringify(pb));
   await load('https://www.tiktok.com/@chef/video/1', TT);
   pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return b && b.id; });
@@ -130,5 +130,37 @@ const { FB, IG, TT } = require('./fixtures.cjs');
    <div contenteditable="true" role="textbox" aria-label="Comment as Aly Pierre" id="cb"></div></div></div></body>`);
   pb = await pg.evaluate(() => { const b = AuroraReplyAdapters.findPostBox(); return { id: b && b.id, c: AuroraReplyAdapters.postContext(AuroraReplyAdapters.postScope(b)) }; });
   check('Facebook decoy text: hidden letters and random ids are not read; the visible post text is', pb.id === 'cb' && pb.c.caption === 'Kenyan cult leader Paul Mackenzie, who told parents to starve their children, has been found guilty of 191 counts of murder. Read more: https://bbc.in/4smJzzB', JSON.stringify(pb));
+  // Rich editors (Facebook, Instagram) apply an edit a moment AFTER the event. The reply must land ONCE, be replaced (not stacked) by the next draft,
+  // and never be forced into the page by writing to the DOM behind the editor's back (that left text in the box after Send).
+  await load('https://www.facebook.com/sunrisebakery/posts/2', `<!doctype html><title>t</title><body>
+   <div id="rich" data-lexical-editor="true" contenteditable="true" role="textbox" aria-label="Write a comment"></div>
+   <div id="rich2" data-lexical-editor="true" contenteditable="true" role="textbox" aria-label="Write a comment 2"></div>
+   <div id="plain" contenteditable="true" role="textbox" aria-label="Plain"></div>
+   <script>
+    window.model = {}; window.domWrites = 0;
+    for (const id of ['rich', 'rich2']) {
+      const el = document.getElementById(id); window.model[id] = '';
+      const draw = () => { el.textContent = window.model[id]; };
+      // the editor takes over the edit: it undoes what the browser just typed and shows its own version 90 ms later
+      el.addEventListener('input', (e) => {
+        const t = e.inputType, d = e.data, native = el.textContent; el.textContent = window.model[id];
+        if (t === 'insertText') setTimeout(() => { window.model[id] += d; draw(); }, 90);
+        else if (/^delete/.test(t)) setTimeout(() => { window.model[id] = native; draw(); }, 90);
+      });
+    }
+   </script></body>`);
+  const dup = await pg.evaluate(async () => {
+    const A = AuroraReplyAdapters, r = document.getElementById('rich');
+    const ok1 = await A.setText(r, 'Thanks so much!');
+    const after1 = { model: window.model.rich, dom: r.textContent };
+    const ok2 = await A.setText(r, 'See you Saturday 🥖');
+    const after2 = { model: window.model.rich, dom: r.textContent };
+    const r2 = document.getElementById('rich2'); const ok3 = await A.setText(r2, 'Hello there');
+    const p = document.getElementById('plain'); const ok4 = await A.setText(p, 'Plain box works'); const n = p.textContent;
+    return { ok1, after1, ok2, after2, ok3, m3: window.model.rich2, ok4, n };
+  });
+  check('rich editor that draws the edit late: the reply lands exactly once (not typed again by a second method)', dup.ok1 && dup.after1.model === 'Thanks so much!' && dup.after1.dom === 'Thanks so much!', JSON.stringify(dup));
+  check('rich editor: choosing another draft replaces the first instead of stacking them', dup.ok2 && dup.after2.model === 'See you Saturday 🥖', JSON.stringify(dup.after2));
+  check('a second rich box also gets the text once; a plain editable box still works', dup.ok3 && dup.m3 === 'Hello there' && dup.ok4 && dup.n === 'Plain box works', JSON.stringify(dup));
   await b.close(); done();
 })();

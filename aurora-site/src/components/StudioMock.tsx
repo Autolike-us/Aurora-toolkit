@@ -8,7 +8,7 @@ export function StudioMock() {
         <div className="chrome-bar"><i /><i /><i /><span>Aurora Studio</span></div>
         <div className="body">
           <div className="tabs"><b>✳</b><span /><span /><span /></div>
-          <h4>A little focus goes a long way.</h4>
+          <p className="mh">A little focus goes a long way.</p>
           <p className="sub">Set your intention. Preview your next move.</p>
           <div className="mbar"><span>👁 <b>PREVIEW MODE</b> — nothing is sent</span><button type="button" tabIndex={-1}>Switch to live</button></div>
           <div className="mlive">

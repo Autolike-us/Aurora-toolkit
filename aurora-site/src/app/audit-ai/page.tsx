@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuditAI } from './AuditAI';
+import { pageMeta } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Audit AI — improve your profile',
-  description: 'Paste your free Aurora Audit and get new bio options, a plain-English fix plan and caption ideas. Suggestions only; you decide what to use.',
-};
+export const metadata: Metadata = pageMeta({ title: 'Audit AI — improve your profile', description: 'Paste your free Aurora Audit and get new bio options, a plain-English fix plan and caption ideas. Suggestions only; you decide what to use.', path: '/audit-ai/' });
 
 export default function Page() {
   return (<main><section className="block"><div className="wrap" style={{ maxWidth: 980 }}>

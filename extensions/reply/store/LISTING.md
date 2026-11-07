@@ -114,3 +114,23 @@ Facebook, Instagram and TikTok only allow people to open accounts themselves, so
 - New: "Draft a comment" writes a new comment under a post in a chosen style (Friendly, Funny, Serious, Professional, Supportive, Curious). Same permissions as 1.0.0 — no new permission, no new site. The person still reads, edits and presses Send; nothing is posted automatically and there is no bulk mode.
 - Replies and comments follow the language of the comment/post; translated comments are read in their original language.
 - Update the **Single purpose** and **Description** in the console with the text above.
+
+
+## 7. Version 1.2.0 — what changed (for the "what's new" / update review)
+- New **Write** tab in the dashboard: the user describes a post and gets 3 caption options, 3 hooks and hashtags in their own voice, and copies them. Nothing is posted by Aurora and nothing is inserted into a page; the user copies the text.
+- New **Ideas from your comments**: the questions followers keep asking, found on the user's computer from their own reply history; the user can turn one into a post. Only the chosen question text is sent when they press "Write a post".
+- Same credits as replies (1 credit per set). **No new permission, no new host, no new site.**
+- **Single purpose** (update the console text): "Draft replies to comments, comments under posts, and captions for the user's own posts on Facebook, Instagram and TikTok, in the user's own voice, for the user to review, copy or insert and send themselves."
+- **Data usage:** unchanged categories. In Write, the topic the user types (or the chosen follower question) and the voice settings are sent to Aurora's server and an AI service to write the suggestions; not stored.
+- **Description:** add under "SOUNDS LIKE YOU": "• Write: captions, hooks and hashtags for your own posts in your voice, plus post ideas from the questions your followers keep asking (you copy and post them yourself)". Replace the opening line with: "Aurora Reply writes replies to comments — and captions for your own posts — on Facebook, Instagram and TikTok, in your own voice."
+- Upload `dist/aurora-reply-1.2.0.zip`. Add one screenshot of the Write tab (1280×800).
+
+
+## 8. Version 1.2.2 (includes 1.2.1) — what changed (for the "what's new" / update review)
+- Fix: a reply is put into the comment box once. Before, on some pages it could be inserted two or three times inside the page's editor and stay in the box after sending.
+- The number of replies and the style the user picks in the panel are remembered (separately for replies and for comments on a post).
+- A comment without readable text (photo, sticker) can now be answered by typing what the reply should say.
+- One automatic retry when the connection drops or the writing service is busy.
+- The ✦ Reply button on the page can be dragged to another corner and hidden with a small ×; it comes back from a checkbox in the toolbar popup or with Alt+R.
+- **No new permission, no new host, no data change.** Single purpose, description and data-usage answers are unchanged.
+- Upload `dist/aurora-reply-1.2.2.zip`.

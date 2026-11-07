@@ -13,7 +13,7 @@ export function ProductCards() {
           <h3>{p.short}<br />Studio</h3>
           <p className="tag">{p.tagline}</p>
           <ul>{p.highlights.map(h => <li key={h}>{h}</li>)}</ul>
-          <Link className="more" href={`/products/${p.slug}`}><span>Explore {p.short} Studio</span><span>↗</span></Link>
+          <Link className="more" href={`/products/${p.slug}`}><span>Explore {p.short} Studio</span><span>→</span></Link>
         </article>
       ))}
     </div>

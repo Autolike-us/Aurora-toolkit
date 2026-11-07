@@ -6,17 +6,17 @@ import { Nav } from '@/components/Nav';
 import { Analytics } from '@/components/Analytics';
 
 export const metadata: Metadata = {
-  title: { default: 'Aurora — thoughtful growth tools for Facebook, Instagram & TikTok', template: '%s · Aurora' },
-  description: 'Aurora is a family of browser extensions that like, comment, follow and more on Facebook, Instagram and TikTok at a human pace. Preview first. 3-day free trial.',
+  title: { default: 'Aurora: Facebook, Instagram & TikTok Engagement Tools', template: '%s · Aurora Studios' },
+  description: 'Browser extensions that help you like, comment and follow on Facebook, Instagram and TikTok at a steady pace. Preview first. 3-day free trial.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://getaurorastudios.com'),
   alternates: { canonical: './' },
   openGraph: {
-    type: 'website', siteName: 'Aurora', locale: 'en_US',
-    title: 'Aurora — thoughtful growth tools for Facebook, Instagram & TikTok',
-    description: 'Browser extensions that like, comment and follow at a human pace — plus Aurora Extract, a free data extractor. Preview first. 3-day free trial.',
+    type: 'website', siteName: 'Aurora Studios', locale: 'en_US',
+    title: 'Aurora: Facebook, Instagram & TikTok Engagement Tools',
+    description: 'Browser extensions for Facebook, Instagram and TikTok, plus Aurora Reply and the free Aurora Extract. Preview first. 3-day free trial.',
     images: [{ url: '/og-v2.png', width: 1200, height: 630, alt: 'Aurora — tools for Facebook, Instagram and TikTok' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Aurora — tools for Facebook, Instagram & TikTok', description: 'Human-paced automation studios and a free data extractor.', images: ['/og-v2.png'] },
+  twitter: { card: 'summary_large_image', title: 'Aurora: Facebook, Instagram & TikTok Engagement Tools', description: 'Extensions for steady, previewed engagement, plus Aurora Reply and a free data extractor.', images: ['/og-v2.png'] },
 };
 
 /** Applies a saved dark choice before first paint so the page never flashes light. */

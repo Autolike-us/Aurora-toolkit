@@ -53,6 +53,34 @@ function route_reply_draft(): void
     json_out(['ok' => true, 'drafts' => $res['drafts'], 'flag' => $res['flag'], 'note' => $res['note'], 'model' => $model, 'plan' => $e['plan'] ?? 'access', 'usage' => reply_usage_block($key, $e['quota'], $e)]);
 }
 
+/** N different wordings of one post, one credit per version written. Up to VARIANTS_MAX per call. */
+function route_reply_variants(): void
+{
+    header('Access-Control-Allow-Origin: *');
+    [$key, $e, $b] = reply_auth();
+    $raw = is_string($b['text'] ?? null) ? trim((string) $b['text']) : '';
+    $text = reply_clean($raw, 700);
+    if ($text === '') json_out(['ok' => false, 'status' => 'empty', 'message' => 'Write the post first.'], 400);
+    if ((function_exists('mb_strlen') ? mb_strlen($raw) : strlen($raw)) > 700) json_out(['ok' => false, 'status' => 'too_long', 'message' => 'Different wording works for posts up to 700 characters. Shorten the post, or write the versions yourself.'], 400);
+    $n = max(1, min(VARIANTS_MAX, (int) ($b['count'] ?? 3)));
+    $platform = in_array($b['platform'] ?? '', ['facebook', 'instagram', 'tiktok'], true) ? $b['platform'] : 'Facebook';
+    $avail = reply_allow_left($key, $e) + reply_packs_left($e['userId'] ?? null);
+    if ($avail <= 0) {
+        $plan = $e['plan'] ?? 'access'; $renew = gmdate('F j', strtotime(reply_resets_at()));
+        $msg = $plan === 'trial' ? 'You have used today\'s trial credits. Come back tomorrow, or get more at getaurorastudios.com/reply.'
+            : ($plan === 'free' ? 'You have used your ' . $e['quota'] . ' free credits for this month. They renew on ' . $renew . ' — or get more at getaurorastudios.com/reply.' : 'You have used all ' . $e['quota'] . ' credits for this month. They renew on ' . $renew . '.');
+        json_out(['ok' => false, 'status' => 'quota', 'message' => $msg, 'upgrade' => in_array($plan, ['trial', 'free'], true) ? 'https://getaurorastudios.com/reply/#plans' : null, 'usage' => reply_usage_block($key, $e['quota'], $e)], 402);
+    }
+    $n = min($n, $avail); // never write more versions than there are credits left
+    $model = (string) cfg('reply_model', 'claude-haiku-5-5');
+    [$system, $user] = variants_prompt($platform, $text, $n);
+    [$ok, $res, $http] = reply_call_claude($system, $user, $model, $n);
+    if (!$ok) json_out(['ok' => false, 'status' => 'upstream', 'message' => $res], $http);
+    $out = array_map(fn($d) => $d['text'], $res['drafts']);
+    $cnt = count($out); reply_charge($key, $e, $cnt); reply_log_cost($e['plan'] ?? 'access', $model, $res['tokens'] ?? [], $cnt);
+    json_out(['ok' => true, 'variants' => $out, 'cost' => $cnt, 'usage' => reply_usage_block($key, $e['quota'], $e)]);
+}
+
 /** Owner-only cost report. Needs a key from aurora-master-keys.json with "admin": true. */
 function route_reply_admin(): void
 {

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { PRODUCTS, type ProductId } from '@/lib/products';
 import { api, downloadRelease, getToken, setToken } from '@/lib/client';
+import { track, trackOnce, itemOf } from '@/lib/track';
 import { CheckoutButtons } from './CheckoutButtons';
 import { ReplyBuy } from './ReplyBuy';
 import { PlatformIcon } from './PlatformIcon';
@@ -30,7 +31,8 @@ function View() {
     const res = await api<Me>('/me');
     if (res.ok) {
       setMe(res);
-      api<ReplyAcct>('/reply/account').then(r => { if (r.ok) setReply(r); });
+      if (res.access && res.access.status === 'trial') trackOnce('trial_studios_' + res.licenseKey, 'trial_start', { product: 'studios' });
+      api<ReplyAcct>('/reply/account').then(r => { if (r.ok) { setReply(r); if (r.plan === 'trial') trackOnce('trial_reply_' + res.licenseKey, 'trial_start', { product: 'reply' }); } });
       api<any>('/reply/plans').then(r => { if (r.ok) setRplans(r); });
     } else if (!getToken()) router.replace('/login/'); else setError(res.error || 'Could not load your account.');
   }, [router]);
@@ -42,8 +44,9 @@ function View() {
     let tries = 0, stop = false, timer: ReturnType<typeof setTimeout> | undefined;
     const run = async () => {
       tries++;
-      const r = await api<{ status: string }>('/billing/sync', orderId ? { orderId } : sessId ? { sessionId: sessId } : { subscriptionId: subId });
+      const r = await api<{ status: string; purchase?: { id: string; item: string; usd: number } }>('/billing/sync', orderId ? { orderId } : sessId ? { sessionId: sessId } : { subscriptionId: subId });
       await load();
+      if (r.ok && r.purchase) trackOnce('purchase_' + r.purchase.id, 'purchase', { transaction_id: r.purchase.id, currency: 'USD', value: r.purchase.usd, items: [itemOf(r.purchase.item, r.purchase.usd)] });
       if (r.ok && r.status === 'PACK') { setNote('Your replies were added — thank you!'); return; }
       if (r.ok && r.status === 'ACTIVE') { setNote('You are subscribed — thank you!'); return; }
       if (!stop && tries < 5) timer = setTimeout(run, 4000);
@@ -56,7 +59,7 @@ function View() {
   async function download(product: ProductId) {
     if (process.env.NEXT_PUBLIC_PREVIEW === '1') { setNote('Preview only — downloads are switched off in this demo.'); return; }
     const err = await downloadRelease(product);
-    if (err) setNote(err);
+    if (err) setNote(err); else track('download_studio', { product });
   }
   async function portal() { const r = await api<{ url: string }>('/billing/portal', {}); if (r.ok && r.url) window.location.href = r.url; else setNote(r.error || 'Could not open billing.'); }
   async function cancelPayPal() { if (!confirm('Cancel your PayPal subscription? You keep access until the end of the paid period.')) return; const r = await api('/billing/cancel', {}); setNote(r.ok ? 'Cancelled. Access continues until the period ends.' : r.error || 'Could not cancel.'); load(); }

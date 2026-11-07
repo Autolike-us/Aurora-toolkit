@@ -22,6 +22,20 @@ function require_user(): array
     return $row;
 }
 
+/** The signed-in user, who must also be listed in 'admin_emails' in aurora-config.php (and have a confirmed email). Everyone else gets a plain 403. */
+function require_admin(): array
+{
+    $u = require_user();
+    rate_limit('admin-ip:' . client_ip(), 600, 3600);
+    $list = array_map(static fn($e) => strtolower(trim((string) $e)), (array) cfg('admin_emails', []));
+    $row = q_one('SELECT email_verified_at FROM users WHERE id = ?', [$u['id']]);
+    if (!$row || empty($row['email_verified_at']) || !in_array(strtolower((string) $u['email']), $list, true)) {
+        rate_limit('admin-denied:' . $u['id'], 10, 3600);
+        fail('This account is not an administrator.', 403);
+    }
+    return $u;
+}
+
 /** One-time email token (verify email / reset password). Only its hash is stored. */
 function make_email_token(string $userId, string $purpose, int $ttl): string
 {

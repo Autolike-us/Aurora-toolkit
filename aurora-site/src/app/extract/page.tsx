@@ -24,9 +24,12 @@ const FAQ_X = [
   { q: 'Something did not extract correctly. What now?', a: 'Press “Copy debug report” inside the extension and post it in our Telegram channel (or email it). Facebook, Instagram and TikTok change their pages often and these reports are how we keep up.' },
 ];
 
+const APP_LD = { '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'Aurora Extract', applicationCategory: 'BrowserApplication', operatingSystem: 'Chrome, Edge (desktop)', url: 'https://getaurorastudios.com/extract/', description: 'Free extension that collects public data from Facebook, Instagram and TikTok pages you can already see and exports it to CSV, Excel or JSON.', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } };
+
 export default function ExtractPage() {
   return (
     <main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APP_LD) }} />
       <section className="xhero"><div className="wrap">
         <div className="xtitle"><ExtractIcon size={72} /><span className="freetag big">Free</span></div>
         <span className="eyebrow">New · Free for everyone</span>
@@ -102,7 +105,7 @@ export default function ExtractPage() {
       <section className="block" style={{ paddingTop: 10 }}><div className="wrap">
         <div className="closing" style={{ flexWrap: 'wrap', gap: 20 }}>
           <p><span className="star">✳</span><span>Found the right people? <b>Aurora Studios</b> can like, follow and comment for you — at a human pace, with a 3-day free trial.</span></p>
-          <Link className="btn primary" href="/pricing">See the studios <span className="arrow">↗</span></Link>
+          <Link className="btn primary" href="/pricing">See the studios <span className="arrow">→</span></Link>
         </div>
       </div></section>
 

@@ -10,13 +10,13 @@ chrome.runtime.onInstalled.addListener(async (info) => {
   if (info.reason === 'install') chrome.runtime.openOptionsPage();
 });
 
-async function api(path, body) {
+async function api(path, body, ms = 45000) {
   const base = (await get('apiBase', DEFAULT_API)).replace(/\/+$/, '');
   const key = (await get('licenseKey', '')).trim().toUpperCase();
   let installId = await get('installId');
   if (!installId) { installId = crypto.randomUUID(); await set({ installId }); }
   if (!key) return { ok: false, status: 'no_key', message: 'Add your Aurora Reply key in the settings first.' };
-  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 45000);
+  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), ms);
   try {
     const r = await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, key, installId }), signal: ctl.signal });
     let j = {}; try { j = await r.json(); } catch (_) {}
@@ -24,7 +24,7 @@ async function api(path, body) {
     if (r.ok && j.ok) return j;
     return { ok: false, status: j.status || 'error', message: j.message || j.error || 'Something went wrong. Please try again.', usage: j.usage, upgrade: j.upgrade || null };
   } catch (e) {
-    return { ok: false, status: 'network', message: e && e.name === 'AbortError' ? 'That took too long. Please try again.' : 'Could not reach Aurora. Check your internet connection and try again.' };
+    return { ok: false, status: 'network', timeout: !!(e && e.name === 'AbortError'), message: e && e.name === 'AbortError' ? 'That took too long. Please try again.' : 'Could not reach Aurora. Check your internet connection and try again.' };
   } finally { clearTimeout(timer); }
 }
 
@@ -50,13 +50,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
     if (msg.type === 'draft') {
       const voice = await get('voice', {});
       const comment = { text: clip(msg.comment && msg.comment.text, 1000), author: clip(msg.comment && msg.comment.author, 80) };
-      const r = await api('/reply/draft', {
+      const body = {
         platform: msg.platform, mode: msg.mode === 'post' ? 'post' : 'reply', count: Math.max(1, Math.min(3, +msg.count || 3)), tone: msg.tone, quality: msg.quality, hint: clip(msg.hint, 200),
         comment, post: { caption: clip(msg.post && msg.post.caption, 800), author: clip(msg.post && msg.post.author, 80) }, voice,
-      });
+      };
+      let r = await api('/reply/draft', body, 30000);
+      // a quick hiccup (connection dropped, assistant busy) gets one more try by itself; a slow one is not repeated, that would only double the wait
+      if (!r.ok && !r.timeout && (r.status === 'network' || r.status === 'upstream')) { await new Promise((res) => setTimeout(res, 1200)); r = await api('/reply/draft', body, 30000); }
       if (r && r.ok && (r.drafts || []).length && await historyOn()) {
         const id = 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-        await withHistory((h) => { const isPost = msg.mode === 'post'; h.unshift({ id, ts: Date.now(), platform: clip(msg.platform, 20), mode: isPost ? 'post' : 'reply', author: isPost ? clip(msg.post && msg.post.author, 80) : comment.author, comment: isPost ? clip(msg.post && msg.post.caption, 300) : comment.text, drafts: r.drafts.map((d) => clip(d.text, 700)), chosen: '', action: 'drafted', tone: msg.tone || voice.tone || '', flag: r.flag || 'none' }); });
+        withHistory((h) => { const isPost = msg.mode === 'post'; h.unshift({ id, ts: Date.now(), platform: clip(msg.platform, 20), mode: isPost ? 'post' : 'reply', author: isPost ? clip(msg.post && msg.post.author, 80) : comment.author, comment: isPost ? clip(msg.post && msg.post.caption, 300) : comment.text, drafts: r.drafts.map((d) => clip(d.text, 700)), chosen: '', action: 'drafted', tone: msg.tone || voice.tone || '', flag: r.flag || 'none' }); });
         r.historyId = id;
       }
       send(r);
@@ -70,11 +73,24 @@ chrome.runtime.onMessage.addListener((msg, _sender, send) => {
       });
       send({ ok: true });
     }
+    else if (msg.type === 'write') {
+      const voice = await get('voice', {});
+      send(await api('/reply/write', { mode: msg.mode === 'idea' ? 'idea' : 'caption', platform: msg.platform, topic: clip(msg.topic, 800), question: clip(msg.question, 300), tone: msg.tone, hint: clip(msg.hint, 200), voice }));
+    }
     else if (msg.type === 'syncNow') send(msg.mode === 'push' ? await AuroraSync.push() : msg.mode === 'erase' ? await AuroraSync.erase() : msg.mode === 'peek' ? await AuroraSync.peek() : await AuroraSync.pull());
     else if (msg.type === 'openOptions') { chrome.runtime.openOptionsPage(); send({ ok: true }); }
     else if (msg.type === 'profiles') send({ ok: true, ...(await AuroraProfiles.list()) });
     else if (msg.type === 'setProfile') { await AuroraProfiles.switchTo(msg.id); send({ ok: true, ...(await AuroraProfiles.list()) }); }
-    else if (msg.type === 'getState') send({ ok: true, profiles: await AuroraProfiles.list(), hasKey: !!(await get('licenseKey', '')).trim(), voiceReady: !!(((await get('voice', {})).samples || []).length || ((await get('voice', {})).about || '').trim()), usage: await get('usage', null), voice: await get('voice', {}) });
+    else if (msg.type === 'getState') send({ ok: true, profiles: await AuroraProfiles.list(), hasKey: !!(await get('licenseKey', '')).trim(), voiceReady: !!(((await get('voice', {})).samples || []).length || ((await get('voice', {})).about || '').trim()), usage: await get('usage', null), voice: await get('voice', {}), ui: await get('ui', {}) });
+    else if (msg.type === 'setUi') { // the choices made in the panel (how many replies, which style) stay until the person changes them
+      const ui = await get('ui', {});
+      if ([1, 2, 3].includes(+msg.count)) ui.count = +msg.count;
+      if (typeof msg.tone === 'string' && /^[a-z]{0,20}$/.test(msg.tone)) ui.tone = msg.tone;
+      if (typeof msg.postTone === 'string' && /^[a-z]{0,20}$/.test(msg.postTone)) ui.postTone = msg.postTone;
+      if ('hidden' in msg) ui.hidden = !!msg.hidden;
+      if ('pos' in msg) { const q = msg.pos; if (q && (q.h === 'left' || q.h === 'right') && (q.v === 'top' || q.v === 'bottom') && isFinite(q.dx) && isFinite(q.dy)) ui.pos = { h: q.h, v: q.v, dx: Math.round(+q.dx), dy: Math.round(+q.dy) }; else delete ui.pos; }
+      await set({ ui }); send({ ok: true, ui });
+    }
     else if (msg.type === 'addSample') {
       const v = await get('voice', {}); const s = clip(msg.text, 300).trim();
       if (s) { v.samples = [...(v.samples || []).filter((x) => x !== s), s].slice(-20); await set({ voice: v }); }

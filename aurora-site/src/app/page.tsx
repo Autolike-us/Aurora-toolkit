@@ -17,14 +17,14 @@ export default function Home() {
     <main>
       <section className="hero"><div className="wrap grid">
         <div>
-          <span className="eyebrow"><span className="star">✳</span>Your social workflow, in a better light</span>
-          <h1>Less busywork.<br />More <em>possibility.</em></h1>
+          <span className="eyebrow"><span className="star">✳</span>Less busywork. More possibility.</span>
+          <h1 style={{ fontSize: "clamp(38px,4.6vw,66px)", lineHeight: 1.05 }}>Browser extensions for <em>Facebook, Instagram &amp; TikTok</em> engagement</h1>
           <p className="lead">A little more intention. A lot less repetition. Meet your new browser companions for Facebook, Instagram and TikTok — they like, comment, follow and more, at a human pace.</p>
           <div className="cta">
-            <Link className="btn primary lg" href="/signup">Start my {TRIAL_DAYS}-day free trial <span className="arrow">↗</span></Link>
-            <a className="demo" href="#how"><span className="play">▶</span>Take a closer look</a>
+            <Link className="btn primary lg" href="/signup">Start my {TRIAL_DAYS}-day free trial <span className="arrow">→</span></Link>
+            <a className="demo" href="#how"><span className="play">↓</span>See how it works</a>
           </div>
-          <p className="fine">All three studios included. No card required for the trial.<br />Then $10/month — launch offer inside. Cancel any time.</p>
+          <p className="fine">All three studios included. No card required for the trial.<br />Then $10/month — launch offer inside. Cancel any time.<br />Platforms restrict automated activity, so use sensible limits — read the <Link href="/legal/disclaimer" style={{ textDecoration: 'underline' }}>platform disclaimer</Link>.</p>
           <div className="platforms">
             <span className="cap">Three platforms<br />One familiar feel</span>
             <PlatformRow size="md" />
@@ -58,14 +58,14 @@ export default function Home() {
           </div>
           <div className="act">
             <a className="btn primary lg" href={EXTRACT.store} target="_blank" rel="noopener noreferrer">Add to Chrome — free <span className="arrow">↗</span></a>
-            <Link className="linkarrow" href="/extract">See what it collects ↗</Link>
+            <Link className="linkarrow" href="/extract">See what it collects →</Link>
           </div>
         </div>
       </div></section>
 
       <section className="block" id="reply" style={{ paddingTop: 0 }}><div className="wrap">
         <div className="replybanner">
-          <Image src="/reply-icon.png" alt="" width={84} height={84} />
+          <Image src="/reply-icon.png" alt="Aurora Reply icon" width={84} height={84} />
           <div className="txt">
             <span className="eyebrow" style={{ marginBottom: 8, color: '#fbbf24' }}>New · Live on the Chrome Web Store</span>
             <h2>Aurora Reply</h2>
@@ -73,7 +73,7 @@ export default function Home() {
           </div>
           <div className="act">
             {REPLY.store ? <a className="btn primary lg" href={REPLY.store} target="_blank" rel="noopener noreferrer">Add to Chrome — free <span className="arrow">↗</span></a> : null}
-            <Link className="linkarrow" href="/reply">See Aurora Reply and plans ↗</Link>
+            <Link className="linkarrow" href="/reply">See Aurora Reply and plans →</Link>
           </div>
         </div>
       </div></section>
@@ -83,7 +83,7 @@ export default function Home() {
           <span className="eyebrow">02 / A little less friction</span>
           <h2>From hello<br />to <em>in your flow.</em></h2>
           <p className="lead">No new social password to share. Your studios work in the tabs you already use.</p>
-          <Link className="linkarrow" href="/download">Find your starting point ↗</Link>
+          <Link className="linkarrow" href="/download">Find your starting point →</Link>
         </div>
         <div className="steps">
           <div className="step"><span className="n">01</span><div><h3>Meet your new companions</h3><p>Create your Aurora account — your {TRIAL_DAYS}-day trial starts right away, no card needed.</p></div></div>
@@ -107,7 +107,7 @@ export default function Home() {
 
       <section><div className="wrap"><div className="closing">
         <p><span className="star">✳</span>A little more space for what comes next.</p>
-        <Link className="btn primary" href="/signup">Find your Aurora <span className="arrow">↗</span></Link>
+        <Link className="btn primary" href="/signup">Find your Aurora <span className="arrow">→</span></Link>
       </div></div></section>
     </main>
   );
