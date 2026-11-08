@@ -164,3 +164,9 @@ footer .small{max-width:760px;line-height:1.7}
 .tt{background:#fff;border-bottom:1px solid var(--line)}
 .ttshots{display:grid;gap:14px;margin-top:26px}
 .tt .shot{width:100%}
+
+/* instagram proof */
+.ig{background:var(--bg)}
+.igshots{display:grid;grid-template-columns:1.1fr 1fr .7fr;gap:22px;margin-top:44px;align-items:start}
+@media(max-width:900px){.igshots{grid-template-columns:1fr;max-width:520px;margin-left:auto;margin-right:auto}}
+.cap2{font-size:13px;color:var(--muted);margin-top:10px}
