@@ -15,6 +15,9 @@ window.PLAYBOOK = {
   // Used by the thank-you page to confirm payment and show the download link.
   apiBase: "https://getaurorastudios.com/api",
 
+  // Google Analytics measurement ID (the same property as getaurorastudios.com). Set to "" to switch analytics off.
+  gaId: "G-G6LESST662",
+
   supportEmail: "support@getaurorastudios.com",
   instagramUrl: "https://www.instagram.com/uncletoussaint/"
 };

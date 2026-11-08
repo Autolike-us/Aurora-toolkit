@@ -34,6 +34,35 @@
   render();
   setInterval(render, 1000);
 
+  // ---- Analytics: what people look at and click (see track.js). ----
+  function item() { var on = specialActive(); return [{ item_id: "playbook", item_name: "The AI Character Playbook", price: on ? C.specialPrice : C.regularPrice, quantity: 1 }]; }
+  function money() { return specialActive() ? C.specialPrice : C.regularPrice; }
+  if (window.track) {
+    window.track("view_item", { currency: "USD", value: money(), items: item(), special_active: specialActive() });
+    // Which buy button: nav, hero, offer box or final banner.
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest && e.target.closest("[data-buy]");
+      if (!a) return;
+      var loc = a.closest(".nav") ? "nav" : a.closest(".hero") ? "hero" : a.closest(".ticket") ? "offer" : a.closest(".final") ? "final" : "other";
+      window.track("begin_checkout", { currency: "USD", value: money(), items: item(), button_location: loc, special_active: specialActive() });
+    });
+    // How far down the page people get: each main section, once.
+    if ("IntersectionObserver" in window) {
+      var seen = {};
+      var so = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          var name = e.target.id || e.target.getAttribute("data-section");
+          if (e.isIntersecting && name && !seen[name]) { seen[name] = 1; window.track("view_section", { section: name }); so.unobserve(e.target); }
+        });
+      }, { threshold: 0.35 });
+      $$("#proof, #inside, #tools, #buy, #faq").forEach(function (el) { so.observe(el); });
+      $$(".final").forEach(function (el) { el.setAttribute("data-section", "final_cta"); so.observe(el); });
+    }
+    $$(".faq details").forEach(function (d) {
+      d.addEventListener("toggle", function () { if (d.open) window.track("faq_open", { question: (d.querySelector("summary") || {}).textContent }); });
+    });
+  }
+
   // Reveal on scroll
   if ("IntersectionObserver" in window) {
     var io = new IntersectionObserver(function (es) {

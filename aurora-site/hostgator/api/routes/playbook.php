@@ -32,7 +32,7 @@ function route_playbook_order(): void
     if (($c['metadata']['product'] ?? '') !== PLAYBOOK_PRODUCT) fail('That is not a playbook order.', 404);
     $o = playbook_fulfil($c);
     if (!$o) json_out(['ok' => true, 'status' => 'PENDING']);
-    json_out(['ok' => true, 'status' => 'PAID', 'email' => $o['email'], 'downloadUrl' => $o['url']]);
+    json_out(['ok' => true, 'status' => 'PAID', 'email' => $o['email'], 'downloadUrl' => $o['url'], 'orderId' => (string) $c['id'], 'amountUsd' => $o['amount'], 'kind' => $o['kind']]);
 }
 
 /** Streams the PDF for a valid private link. The file lives outside public_html. */

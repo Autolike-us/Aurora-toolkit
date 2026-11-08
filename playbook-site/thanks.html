@@ -59,6 +59,7 @@
   </div>
 </main>
 <script src="config.js"></script>
+<script src="track.js"></script>
 <script>
 (function () {
   var C = window.PLAYBOOK || {};
@@ -77,6 +78,8 @@
           $("email").textContent = j.email || "your email";
           $("download").href = j.downloadUrl;
           show("paid");
+          // Count the sale once per order (a reload won't count it twice). No email or session id is sent.
+          if (window.trackOnce && j.orderId) window.trackOnce("purchase_" + j.orderId, "purchase", { transaction_id: String(j.orderId).slice(-12), currency: "USD", value: j.amountUsd, items: [{ item_id: "playbook", item_name: "The AI Character Playbook", price: j.amountUsd, quantity: 1 }], price_kind: j.kind });
         } else if (j && j.status === "PENDING" && tries < 30) { show("pending"); setTimeout(check, 2500); }
         else if (j && j.ok === false && tries < 3) { setTimeout(check, 2500); }
         else { show("error"); }

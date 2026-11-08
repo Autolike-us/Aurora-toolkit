@@ -76,5 +76,5 @@ function playbook_fulfil(array $c): ?array
         $ok = send_mail($email, 'Your AI Character Playbook', "Thank you for your order!\n\nDownload your playbook here (private link, please don't share it):\n" . playbook_download_url($ref) . "\n\nThe link works for 90 days. If you have any trouble, email " . (string) cfg('playbook_support', 'support@getaurorastudios.com') . ".\n\n- Uncle Toussaint Playbook");
         if ($ok) q('UPDATE playbook_orders SET emailed_at = ? WHERE ref = ?', [now(), $ref]);
     }
-    return ['ref' => $ref, 'email' => $email, 'new' => $new, 'url' => playbook_download_url($ref)];
+    return ['ref' => $ref, 'email' => $email, 'new' => $new, 'url' => playbook_download_url($ref), 'amount' => max(0, $amount) / 100, 'kind' => $kind];
 }

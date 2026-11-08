@@ -31,6 +31,26 @@ Suggested address: `toussaint.getaurorastudios.com`.
 **C. Test it**
 7. Open the subdomain, click Buy, pay (use a promo code from Stripe, or pay $9 and refund yourself in Stripe). You should land on the download page, get the email, and the PDF should download.
 
+## Seeing visits, clicks and sales (Google Analytics)
+
+The site reports to the same Google Analytics property as getaurorastudios.com (`gaId` in `config.js`). It tracks:
+
+| What you want to know | Event in Analytics |
+|---|---|
+| People visited the page | `page_view` / `view_item` |
+| How far they scrolled | `view_section` (proof, inside, tools, buy, faq, final_cta) |
+| They clicked a Buy button, and which one | `begin_checkout` with `button_location` = nav / hero / offer / final |
+| They opened a FAQ question | `faq_open` |
+| They actually bought (and for how much, $9 or $29) | `purchase` |
+
+One-time setup in Google Analytics (analytics.google.com):
+1. **Admin → Data streams → your web stream → Configure tag settings → List unwanted referrals** → add `stripe.com` and `checkout.stripe.com`. (Otherwise every buyer returning from Stripe looks like a new visit.)
+2. **Admin → Events** → mark `begin_checkout` and `purchase` as **key events** (`purchase` may already be).
+3. In reports, filter by **Hostname = toussaint.getaurorastudios.com** to see only this site.
+4. Check it works: open **Reports → Realtime** and visit the page yourself.
+
+Notes: visitors with Do Not Track on, or an ad blocker, aren't counted, so Analytics will show a bit fewer visits than real. **Stripe's Payments page is the true count of sales and money**; Analytics shows the visits and clicks leading up to them. No emails, names or payment details are ever sent to Google.
+
 ## The 2-week special
 
 The date lives in two places that must match: `specialEndsAt` in `config.js` (what the page shows, including the countdown) and `playbook_special_ends` in `aurora-config.php` (what is actually charged). After that moment the page shows $29 and the server charges $29 automatically. To extend the special, change both.

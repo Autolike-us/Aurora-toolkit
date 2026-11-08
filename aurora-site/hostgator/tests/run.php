@@ -464,6 +464,7 @@ check('Playbook: a made-up session id is refused', call('GET', '/playbook/order?
 file_put_contents("$tmp/paid-$pbSess", 'Buyer@Example.com');
 $r = call('GET', '/playbook/order?cs=' . $pbSess); $dl = (string) ($r['json']['downloadUrl'] ?? '');
 check('Playbook: after payment the thank-you page gets the private download link', ($r['json']['status'] ?? '') === 'PAID' && ($r['json']['email'] ?? '') === 'buyer@example.com' && preg_match('#/api/playbook/download\?t=[a-f0-9]{48}$#', $dl) === 1, $r['json'] ?? []);
+check('Playbook: the thank-you page also gets the order id and the real amount paid, so the sale can be counted in analytics', ($r['json']['orderId'] ?? '') === $pbSess && (float) ($r['json']['amountUsd'] ?? 0) === 9.0 && ($r['json']['kind'] ?? '') === 'special', $r['json'] ?? []);
 $m = last_mail('buyer@example.com'); check('Playbook: the buyer is emailed the same link, once', $m && strpos($m['text'], $dl) !== false && (int) $pdo->query("SELECT COUNT(*) FROM playbook_orders")->fetchColumn() === 1);
 call('GET', '/playbook/order?cs=' . $pbSess); $mails = array_filter(file("$tmp/mail.log"), fn($l) => (json_decode($l, true)['to'] ?? '') === 'buyer@example.com');
 check('Playbook: reloading the thank-you page does not email or record a second order', count($mails) === 1 && (int) $pdo->query("SELECT COUNT(*) FROM playbook_orders")->fetchColumn() === 1);
