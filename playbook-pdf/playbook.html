@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The AI Character Playbook — Uncle Toussaint, 2nd edition</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+@page{size:7in 9.5in;margin:0}
+:root{
+  --cream:#fff8ef;--paper:#fffdf9;--ink:#2a1d16;--muted:#7a6a5f;--line:#f0e2d3;
+  --orange:#ee6a1f;--orange-d:#c4500f;--peach:#ffe1c7;--butter:#fff0b8;--mint:#d6f2e2;--sky:#d9ecff;--rose:#ffdde4;--lilac:#e8e0ff;
+  --dark:#2a1d16;
+  --head:'Fredoka','Nunito',sans-serif;--body:'Nunito','Inter',sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:var(--body);color:var(--ink);font-size:13.2px;line-height:1.5;background:#888}
+.page{width:7in;height:9.5in;position:relative;overflow:hidden;background:var(--cream);page-break-after:always;break-after:page;counter-increment:pg}
+.page::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(255,200,150,.35),transparent 38%),radial-gradient(circle at 0 100%,rgba(214,242,226,.55),transparent 34%);pointer-events:none}
+.in{position:absolute;left:46px;right:46px;top:40px;bottom:58px}
+.foot{position:absolute;left:46px;right:46px;bottom:22px;display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--muted);font-weight:700;border-top:2px dotted var(--line);padding-top:8px}
+.foot .pg::after{content:counter(pg)}
+.foot b{color:var(--orange)}
+
+/* type */
+h1,h2,h3,h4{font-family:var(--head);font-weight:700;line-height:1.1;letter-spacing:-.01em}
+h2{font-size:31px;margin:6px 0 10px}
+h3{font-size:16.5px;margin:14px 0 6px;color:var(--orange-d)}
+p{margin-bottom:8px}
+b,strong{font-weight:800}
+.lead{font-size:14.6px;color:#4d3d33}
+.chap{display:inline-flex;align-items:center;gap:8px;font-family:var(--head);font-weight:600;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-d)}
+.chap i{font-style:normal;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--orange);color:#fff;font-size:15px;box-shadow:0 3px 0 var(--orange-d)}
+.squig{height:8px;width:90px;margin:2px 0 12px;background:radial-gradient(circle at 5px 4px,var(--orange) 3px,transparent 3.5px) 0 0/12px 8px repeat-x}
+
+/* cards & bits */
+.card{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:12px 14px;box-shadow:0 4px 0 var(--line)}
+.card.peach{background:var(--peach);border-color:#ffc9a0;box-shadow:0 4px 0 #ffc9a0}
+.card.butter{background:var(--butter);border-color:#f6dc80;box-shadow:0 4px 0 #f6dc80}
+.card.mint{background:var(--mint);border-color:#a9e0c1;box-shadow:0 4px 0 #a9e0c1}
+.card.sky{background:var(--sky);border-color:#aed3f5;box-shadow:0 4px 0 #aed3f5}
+.card.rose{background:var(--rose);border-color:#f7b9c6;box-shadow:0 4px 0 #f7b9c6}
+.card.lilac{background:var(--lilac);border-color:#c9bbf5;box-shadow:0 4px 0 #c9bbf5}
+.card.dark{background:var(--dark);border-color:var(--dark);color:#fff;box-shadow:0 4px 0 #000}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mt{margin-top:12px}.mt2{margin-top:20px}.mb{margin-bottom:10px}
+.small{font-size:11.5px;color:var(--muted)}
+.tag{display:inline-block;font-family:var(--head);font-weight:600;font-size:11px;padding:2px 10px;border-radius:99px;background:var(--orange);color:#fff;letter-spacing:.03em}
+.tag.mint{background:#2fa36b}.tag.sky{background:#3b8fe0}.tag.rose{background:#e0517a}.tag.lilac{background:#7b5ce0}.tag.dark{background:var(--dark)}
+
+/* Toussaint speech bubble */
+.say{display:flex;gap:12px;align-items:center;margin:12px 0}
+.say .av{flex:0 0 58px;width:58px;height:58px;border-radius:50%;background:url(avatar.jpg) center/cover;border:3px solid var(--orange);box-shadow:0 3px 0 var(--orange-d)}
+.say .bub{position:relative;background:#fff;border:2px solid var(--ink);border-radius:16px;padding:8px 14px;font-weight:700;font-size:13px;line-height:1.35}
+.say .bub::before{content:"";position:absolute;left:-9px;top:50%;margin-top:-8px;border:8px solid transparent;border-right-color:var(--ink);border-left:0}
+.say .bub::after{content:"";position:absolute;left:-5px;top:50%;margin-top:-6px;border:6px solid transparent;border-right-color:#fff;border-left:0}
+.say .bub small{display:block;font-size:10px;font-weight:800;color:var(--orange-d);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1px}
+
+/* big stat tiles */
+.stat{border-radius:18px;padding:12px 8px;text-align:center;border:2px solid transparent}
+.stat .n{font-family:var(--head);font-weight:700;font-size:29px;line-height:1}
+.stat .l{font-size:11.2px;line-height:1.25;margin-top:5px;font-weight:700}
+.stat.a{background:var(--orange);color:#fff}.stat.b{background:var(--butter)}.stat.c{background:var(--mint)}.stat.d{background:var(--sky)}.stat.e{background:var(--rose)}.stat.f{background:var(--lilac)}
+
+/* photos */
+.photo{background:#fff;padding:7px 7px 6px;border-radius:6px;box-shadow:0 5px 14px rgba(70,40,10,.22);position:relative;display:block}
+.photo img{display:block;width:100%;border-radius:3px}
+.photo::before{content:"";position:absolute;top:-9px;left:50%;width:62px;height:18px;margin-left:-31px;background:rgba(255,214,120,.8);transform:rotate(-3deg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.photo figcaption{font-size:10px;color:var(--muted);font-weight:700;padding:5px 2px 0;line-height:1.3;text-align:center}
+.rot-l{transform:rotate(-1.6deg)}.rot-r{transform:rotate(1.6deg)}
+
+/* code / lock */
+.lock{background:var(--dark);color:#ffe7d2;font-family:var(--mono);font-size:10.8px;line-height:1.6;padding:12px 14px;border-radius:14px;position:relative;margin:8px 0}
+.lock .lbl{position:absolute;top:-10px;right:12px;background:var(--orange);color:#fff;font-family:var(--head);font-size:10.5px;font-weight:600;padding:1px 10px;border-radius:99px;letter-spacing:.04em}
+.lock em{font-style:normal;color:#ffb27a}
+
+/* lists */
+ul.dots{list-style:none}ul.dots li{position:relative;padding-left:22px;margin-bottom:6px}
+ul.dots li::before{content:"";position:absolute;left:2px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 3px var(--peach)}
+ol.nums{list-style:none;counter-reset:n}ol.nums li{counter-increment:n;position:relative;padding-left:32px;margin-bottom:7px}
+ol.nums li::before{content:counter(n);position:absolute;left:0;top:0;width:23px;height:23px;border-radius:50%;background:var(--orange);color:#fff;font-family:var(--head);font-weight:700;font-size:13px;display:grid;place-items:center;box-shadow:0 2px 0 var(--orange-d)}
+ul.cb{list-style:none}ul.cb li{position:relative;padding-left:28px;margin-bottom:6px}
+ul.cb li::before{content:"";position:absolute;left:0;top:1px;width:17px;height:17px;border:2.5px solid var(--orange);border-radius:6px;background:#fff}
+
+/* tables */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;border:2px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+th{background:var(--dark);color:#fff;font-family:var(--head);font-weight:600;text-align:left;padding:7px 10px;font-size:12px}
+td{padding:6px 10px;border-top:1px solid var(--line);vertical-align:top}
+td:first-child{font-weight:800}
+
+/* stamp */
+.stamp{display:inline-block;border:3px solid var(--orange);color:var(--orange);font-family:var(--head);font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:4px 14px;border-radius:10px;transform:rotate(-7deg);font-size:15px;background:rgba(255,255,255,.5);box-shadow:inset 0 0 0 2px rgba(238,106,31,.25)}
+
+/* cover */
+.cover{background:var(--dark);color:#fff}
+.cover::before{background:radial-gradient(circle at 85% 12%,rgba(238,106,31,.55),transparent 42%),radial-gradient(circle at 5% 95%,rgba(255,200,120,.25),transparent 40%)}
+.cover .in{top:0;bottom:0;left:0;right:0}
+.cover .spark{position:absolute;color:#ffb27a;font-size:22px}
+.cover h1{font-size:58px;line-height:.98;color:#fff}
+.cover h1 em{font-style:normal;color:#ffb27a}
+.cover .arch{position:absolute;left:96px;right:96px;bottom:150px;height:420px;border-radius:200px 200px 22px 22px;overflow:hidden;border:6px solid #ffb27a;background:#c9c9c9;box-shadow:0 12px 0 rgba(0,0,0,.35)}
+.cover .arch img{width:100%;height:100%;object-fit:cover;object-position:50% 12%}
+.cover .stamp,.stamp.dk{background:transparent;box-shadow:none}
+.sticker{position:absolute;border-radius:50%;display:grid;place-items:center;text-align:center;font-family:var(--head);font-weight:700;line-height:1;box-shadow:0 5px 0 rgba(0,0,0,.28)}
+</style>
+</head>
+<body>
+
+<!-- ============ 1. COVER ============ -->
+<section class="page cover">
+  <div class="in">
+    <span class="spark" style="left:46px;top:46px">✦</span><span class="spark" style="right:60px;top:300px;font-size:16px">✦</span><span class="spark" style="left:62px;top:380px;font-size:14px">✧</span>
+    <div style="position:absolute;left:46px;right:46px;top:44px">
+      <span class="tag" style="background:#ffb27a;color:var(--dark)">2ND EDITION · NOV 2026</span>
+      <h1 style="margin-top:18px">The AI<br>Character<br><em>Playbook</em></h1>
+      <p style="margin-top:14px;font-size:16px;color:#f3dcc8;max-width:430px;font-weight:600">How Uncle Toussaint went from 8 followers to millions of views, and the exact system to build your own.</p>
+    </div>
+    <div class="arch"><img src="../playbook-site/img/toussaint-portrait.jpg" alt=""></div>
+    <div class="sticker" style="right:40px;top:300px;width:112px;height:112px;background:#ffd35c;color:var(--dark);font-size:30px;transform:rotate(9deg)">1.7M<br><span style="font-size:12px;font-weight:600">views on<br>TikTok</span></div>
+    <div class="sticker" style="left:34px;top:470px;width:104px;height:104px;background:#ff8fa8;color:#fff;font-size:28px;transform:rotate(-9deg)">1.3M<br><span style="font-size:11.5px;font-weight:600">views on<br>Instagram</span></div>
+    <div style="position:absolute;left:46px;right:46px;bottom:34px;display:flex;justify-content:space-between;align-items:flex-end">
+      <div style="font-weight:700;color:#f3dcc8;font-size:13px">By the creator of<br><b style="color:#fff;font-size:16px;font-family:var(--head)">@uncletoussaint</b></div>
+      <div class="stamp" style="color:#ffb27a;border-color:#ffb27a">Inspected ✓</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. START HERE ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>★</i> Start here</span>
+    <h2>Hi! Welcome to the playbook.</h2>
+    <div class="squig"></div>
+    <div class="say"><div class="av"></div><div class="bub"><small>Uncle Toussaint says</small>Welcome. Please remain seated. Inspection begins now.</div></div>
+    <p class="lead">This is the full system behind Uncle Toussaint: how he was designed, kept looking like <i>himself</i>, turned into videos, posted, tracked and monetized. Every number inside is a real number from the real account, with its date. Work through it in order the first time.</p>
+    <div class="g2 mt">
+      <div class="card peach"><span class="tag">Part 1 · Build</span><p style="margin:8px 0 0"><b>Chapters 1–4</b><br>The proof, the design, the identity lock and the reference pack.</p></div>
+      <div class="card mint"><span class="tag mint">Part 2 · Make</span><p style="margin:8px 0 0"><b>Chapters 5–8</b><br>Prompts, formats, production and captions.</p></div>
+      <div class="card sky"><span class="tag sky">Part 3 · Grow</span><p style="margin:8px 0 0"><b>Chapters 9–12</b><br>Posting, reading your data, earning, and selling your own playbook.</p></div>
+      <div class="card lilac"><span class="tag lilac">Part 4 · Go!</span><p style="margin:8px 0 0"><b>Chapters 13–15</b><br>A 14-day plan, copy-ready templates, and honest limits.</p></div>
+    </div>
+    <div class="card dark mt2" style="text-align:center;padding:18px 22px">
+      <div style="font-family:var(--head);color:#ffb27a;font-size:12px;letter-spacing:.16em;text-transform:uppercase">The one rule behind everything</div>
+      <div style="font-family:var(--head);font-size:22px;line-height:1.2;margin:8px 0 6px">Consistency beats novelty.</div>
+      <p style="color:#f3dcc8;margin:0">The same face, the same outfit, the same tone, in a new situation every day. People don't fall in love with your best video. They fall in love with recognizing your character in the first half-second of the next one.</p>
+    </div>
+    <p class="small mt2" style="text-align:center">Everything here is a method and a record of what worked once, in full view. Nothing promises you views, followers or income.</p>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 3. TOOLKIT ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>🧰</i> Your toolkit</span>
+    <h2>Start free. Spend only when it works.</h2>
+    <div class="squig"></div>
+    <p class="lead">You don't need a studio or a budget to create the character. Three tools do the whole job.</p>
+    <div class="g3 mt">
+      <div class="card mint"><span class="tag mint">FREE TO START</span><h3 style="color:var(--ink);margin-top:8px">Gemini</h3><p class="small" style="color:#3d5a49">Generate your character and build the reference sheet: the angles and close-ups that keep the face the same.</p></div>
+      <div class="card sky"><span class="tag sky">FREE TO START</span><h3 style="color:var(--ink);margin-top:8px">ChatGPT</h3><p class="small" style="color:#33506b">Develop the concept, write and refine your identity lock, and draft prompts and captions in your character's voice.</p></div>
+      <div class="card peach"><span class="tag">VIDEO</span><h3 style="color:var(--ink);margin-top:8px">Higgsfield</h3><p class="small" style="color:#7a4a28">Turns your character sheet into short video beats you stitch together and post. Pay for credits only once the character works.</p></div>
+    </div>
+    <h3 class="mt2">The whole workflow on one line</h3>
+    <div style="display:flex;align-items:center;gap:6px;margin:8px 0 4px">
+      <div class="card butter" style="flex:1;text-align:center;padding:9px 4px"><b>1</b><br>Design<br><span class="small">ChatGPT</span></div><span>➜</span>
+      <div class="card butter" style="flex:1;text-align:center;padding:9px 4px"><b>2</b><br>Lock it<br><span class="small">text</span></div><span>➜</span>
+      <div class="card butter" style="flex:1;text-align:center;padding:9px 4px"><b>3</b><br>Sheet<br><span class="small">Gemini</span></div><span>➜</span>
+      <div class="card butter" style="flex:1;text-align:center;padding:9px 4px"><b>4</b><br>Video<br><span class="small">Higgsfield</span></div><span>➜</span>
+      <div class="card butter" style="flex:1;text-align:center;padding:9px 4px"><b>5</b><br>Post<br><span class="small">every app</span></div>
+    </div>
+    <h3 class="mt2">What it costs (real figures from this account)</h3>
+    <table>
+      <tr><th>Step</th><th>Cost</th></tr>
+      <tr><td>Designing the character and the reference sheet</td><td>$0 with free Gemini and ChatGPT</td></tr>
+      <tr><td>One 16-second swap-style video</td><td>32 credits, about <b>$1.69</b> on the $211 credit pack</td></tr>
+      <tr><td>Stitching beats into a finished post</td><td>A free editor such as CapCut</td></tr>
+      <tr><td>Reading your results</td><td>$0, built into Instagram and TikTok</td></tr>
+    </table>
+    <p class="small mt">Prices and credit packs change. The habit that matters: know your cost per finished video before you scale posting. Plans and limits of the free tools can change too, so check each one before you start.</p>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 4. CH1 ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>1</i> The case study</span>
+    <h2>Strangers shared it. That's the whole game.</h2>
+    <div class="squig"></div>
+    <p class="lead">Uncle Toussaint launched on <b>26 October 2026</b> with 8 followers. The engine was one post: the masquerade reel. By 8 November the numbers below were real, with the Instagram figures pulled from Instagram's own insights.</p>
+    <div class="g3 mt">
+      <div class="stat a"><div class="n">1.3M</div><div class="l">views on the masquerade reel (Instagram)</div></div>
+      <div class="stat b"><div class="n">16.1K</div><div class="l">shares of that one reel</div></div>
+      <div class="stat c"><div class="n">2.48M</div><div class="l">Instagram views in 30 days</div></div>
+      <div class="stat d"><div class="n">98%</div><div class="l">of those views came from non-followers</div></div>
+      <div class="stat e"><div class="n">5,343</div><div class="l">Instagram followers (from 8)</div></div>
+      <div class="stat f"><div class="n">1.7M</div><div class="l">views on the "physics" reel (TikTok)</div></div>
+    </div>
+    <h3 class="mt2">Read those numbers the right way</h3>
+    <p><b>Likes did not build this account. Shares did.</b> A share is a viewer doing your distribution for you, putting your character in front of people who have never heard of you. Only 43,427 of the 2,479,007 Instagram views came from followers, about 1.8%. Everyone else was a stranger.</p>
+    <p>So the whole method points at one target: <b>make a character so recognizable, in a format so familiar, that a stranger shares it in the first three seconds.</b> Everything after this chapter is how.</p>
+    <h3>First look vs. latest look</h3>
+    <table>
+      <tr><th></th><th>First edition (day 12)</th><th>Latest (8 Nov)</th></tr>
+      <tr><td>Masquerade reel views</td><td>506,177</td><td>1.3M</td></tr>
+      <tr><td>Shares of that reel</td><td>3,382</td><td>16.1K</td></tr>
+      <tr><td>Instagram followers</td><td>5,323</td><td>5,343</td></tr>
+    </table>
+    <p class="small mt">The reel kept travelling after the first edition was written. Numbers move: always date yours.</p>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 5. CH1 RECEIPTS ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>1</i> The case study · receipts</span>
+    <h2>Don't take my word. Here are the screenshots.</h2>
+    <div class="squig"></div>
+    <div class="g2" style="align-items:start">
+      <figure class="photo rot-l"><img src="../playbook-site/img/ig-dashboard.jpg" alt=""><figcaption>Instagram dashboard, last 30 days: 2,479,007 views and 1,067,890 viewers.</figcaption></figure>
+      <figure class="photo rot-r"><img src="../playbook-site/img/ig-post-bar.jpg" alt=""><figcaption>The masquerade reel: 1.3M views, 690 comments, 497 reposts, 16.1K shares.</figcaption>
+        <img src="../playbook-site/img/tiktok-views.jpg" alt="" style="margin-top:8px"><figcaption>TikTok: the physics reel at 1.7M views, flagged as the account's all-time highest.</figcaption></figure>
+    </div>
+    <div class="g2 mt" style="align-items:start;margin-top:22px">
+      <figure class="photo rot-r" style="margin-top:4px"><img src="../playbook-site/img/country-chart.png" alt=""><figcaption>Where the early followers were (1 Nov pull, 1,212 followers reported by country). Follower data is a partial map: chapter 10 shows you how to read viewer data instead.</figcaption></figure>
+      <figure class="photo rot-l"><img src="../playbook-site/img/ig-grid.jpg" alt="" style="max-height:330px;object-fit:cover;object-position:top"><figcaption>The grid: same face, same outfit, new situation every time. Views range from 12.9K to 1.3M.</figcaption></figure>
+    </div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 6. CH2 DESIGN ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>2</i> Design</span>
+    <h2>One or two odd features beat a realistic face every time.</h2>
+    <div class="squig"></div>
+    <div style="display:grid;grid-template-columns:1fr 190px;gap:16px;align-items:start">
+      <div>
+        <p>A realistic, handsome, generic AI person is invisible: the feed is full of them. A character people stop for has a <b>silhouette a viewer can name from a thumbnail, in half a second, with no caption.</b></p>
+        <h3>The Toussaint formula</h3>
+        <ul class="dots">
+          <li><b>One exaggerated feature:</b> a comically long, slender neck.</li>
+          <li><b>One rigid feature:</b> a tall flat-top fade that never changes shape.</li>
+          <li><b>One costume anchor:</b> a massive bodybuilder physique in a tight orange 1970s knit cardigan, thick glasses on a chain.</li>
+          <li><b>One expression:</b> a deadpan, unblinking stare. He never smiles at the joke.</li>
+          <li><b>One job:</b> a street-level inspector of posture, form and structural integrity. Most things fail.</li>
+        </ul>
+      </div>
+      <figure class="photo rot-r"><img src="../playbook-site/img/toussaint-profile.jpg" alt="" style="max-height:290px;object-fit:cover;object-position:top"><figcaption>The side profile proves the exaggerated feature. If the silhouette doesn't read instantly, the design isn't done.</figcaption></figure>
+    </div>
+    <h3>Design your own the same way</h3>
+    <ol class="nums">
+      <li>Pick <b>one physical exaggeration</b> a child could draw: a neck, a chin, ears, hair, height, posture.</li>
+      <li>Pick <b>one outfit</b> worn almost every time. One colour a viewer can spot in a grid.</li>
+      <li>Pick <b>one expression</b> and hold it. The comedy is the gap between the character's seriousness and the situation.</li>
+      <li>Give the character <b>one repeatable job or obsession.</b> A job generates infinite episodes; a look alone runs out in a week.</li>
+      <li>Write it all in <b>one paragraph.</b> That paragraph becomes your identity lock.</li>
+    </ol>
+    <div class="card butter" style="margin-top:12px"><b>The one-second test:</b> show someone a still for one second, then hide it. If they can't describe the character back to you, the design is not finished.</div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 7. CH3 LOCK ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>3</i> The identity lock</span>
+    <h2>Write the lock once. Paste it into every prompt.</h2>
+    <div class="squig"></div>
+    <p class="lead">AI video tools <b>drift</b>: faces soften, hair shrinks, and your character's key feature quietly disappears by the third generation. The fix is boring and it works: a fixed block of text, the <b>identity lock</b>, pasted into every prompt, word for word.</p>
+    <h3>Toussaint's real lock</h3>
+    <div class="lock"><span class="lbl">COPY ME</span>Uncle Toussaint, 49, dignified old-school Haitian uncle: comically long slender neck, massive bodybuilder physique straining inside a tight orange 1970s knit cardigan, tall rigid flat-top fade haircut, thick glasses on a chain, dark weathered skin with visible pores, deadpan unblinking stare. His hands are empty. He takes himself 100% seriously.</div>
+    <h3>What makes a lock work</h3>
+    <div class="g2">
+      <div class="card peach"><b>1 · Name the odd features explicitly.</b><br><span class="small" style="color:#6a4025">"His very long neck" and "his tall rigid flat-top fade". The tool protects what you name.</span></div>
+      <div class="card mint"><b>2 · Include behaviour, not just looks.</b><br><span class="small" style="color:#33543f">"He takes himself 100% seriously" is an acting direction, and it is the joke.</span></div>
+      <div class="card sky"><b>3 · Include one restriction.</b><br><span class="small" style="color:#33506b">Toussaint's is "hands empty": no props unless the bit itself is the prop.</span></div>
+      <div class="card rose"><b>4 · Freeze it.</b><br><span class="small" style="color:#7b3347">Improve the wording? Change it everywhere at once and note the date. Two locks means two characters.</span></div>
+    </div>
+    <h3 style="margin-top:10px">Build your own: the template</h3>
+    <div class="lock" style="font-size:10.2px;padding:10px 12px"><span class="lbl">TEMPLATE</span>[Name], [age], [one-line persona]: [exaggerated feature], [second rigid feature], [signature outfit], [hair / head feature], [skin / surface detail], [default expression]. [One restriction, e.g. hands empty.] [One behaviour line: how seriously they take themselves.]</div>
+    <div class="say" style="margin:8px 0 0"><div class="av" style="flex-basis:48px;width:48px;height:48px"></div><div class="bub"><small>When the face drifts</small>Add more reference angles and shorten the source clip. Drift compounds.</div></div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 8. CH4 REFERENCE ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>4</i> The reference pack</span>
+    <h2>Five angles at one scale hold a face better than fifty random stills.</h2>
+    <div class="squig"></div>
+    <div style="display:grid;grid-template-columns:190px 1fr;gap:16px;align-items:start">
+      <figure class="photo rot-l"><img src="../playbook-site/img/toussaint-sheet.jpg" alt=""><figcaption>Toussaint's real character sheet: five full-body views above three chest-up close-ups.</figcaption></figure>
+      <div>
+        <p>Text alone will not hold a character. Video tools that accept reference images hold the face when the references <b>agree with each other.</b> Build the pack once, before your first real video.</p>
+        <h3 style="margin-top:6px">Build yours in this order</h3>
+        <ol class="nums">
+          <li><b>The sheet first:</b> five full-body views, same scale, same outfit, same light.</li>
+          <li><b>Three close-ups:</b> front, three-quarter and side profile, chest-up, in the default expression.</li>
+          <li><b>Two backup singles:</b> a front chest-up and a pure side profile. The profile is what proves the exaggerated feature.</li>
+          <li><b>One alternate outfit only</b> if the character truly needs it, kept in a separate folder so it never leaks into the default look.</li>
+        </ol>
+      </div>
+    </div>
+    <h3 class="mt">Do it free with Gemini and ChatGPT</h3>
+    <div class="g2">
+      <div class="card sky"><span class="tag sky">STEP A · ChatGPT</span><p style="margin:7px 0 0" class="small"><b style="font-size:12.5px;color:var(--ink)">Turn your idea into a lock.</b><br>Tell it your one exaggeration, outfit, expression and job, and ask it to write a single tight paragraph with a behaviour line and one restriction. Save the result as your lock.</p></div>
+      <div class="card mint"><span class="tag mint">STEP B · Gemini</span><p style="margin:7px 0 0" class="small"><b style="font-size:12.5px;color:var(--ink)">Turn the lock into the sheet.</b><br>Paste the lock and ask for a character sheet: five full-body angles at one scale, plain grey background, same light, then close-ups. Regenerate until the odd feature is identical in every view.</p></div>
+    </div>
+    <div class="lock mt"><span class="lbl">SAMPLE PROMPT</span>Character reference sheet. [PASTE YOUR IDENTITY LOCK]. Five full-body views at the same scale (front, three-quarter front, side, three-quarter back, back). Plain light-grey studio background, soft even light, same outfit in every view. Below: three chest-up close-ups (front, three-quarter, side profile).</div>
+    <p class="small">When a video tool lets you add more references, add <b>angles</b>, not new outfits.</p>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 9. CH5 PROMPTS ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>5</i> Prompts</span>
+    <h2>Camera, Tone, Lighting, Texture. In that order, every time.</h2>
+    <div class="squig"></div>
+    <p class="lead">A prompt written as a pile of adjectives gives you a pile of results. The structure that repeats is <b>four parts</b>, one or two sentences each, always in the same order, with the identity lock inside the Tone part.</p>
+    <table class="mt">
+      <tr><th style="width:110px">Part</th><th>What it decides</th></tr>
+      <tr><td>1 · Camera</td><td>Lens and framing: "35mm lens, slightly low side view, full-body framing, slight motion blur." This is what makes it feel <i>shot</i>, not rendered.</td></tr>
+      <tr><td>2 · Tone</td><td>Mood first, then who is in it, doing what, where. <b>The identity lock lives here.</b></td></tr>
+      <tr><td>3 · Lighting</td><td>Direction and quality: "Harsh midday sun, hard shadows on the pavement." One light source, named.</td></tr>
+      <tr><td>4 · Texture</td><td>Materials and surface detail: knit, skin pores, cracked concrete, film grain. Texture is where realism actually comes from.</td></tr>
+    </table>
+    <h3 class="mt2">A complete, real example: the sidewalk inspection</h3>
+    <div class="lock"><span class="lbl">REAL PROMPT</span><em>Camera:</em> Candid 35mm film photograph, slightly low side view, full-body framing, crooked composition, slight motion blur.<br><em>Tone:</em> Deadpan, serious and absurd, like a formal inspection caught by a passerby. [IDENTITY LOCK] He stands rigidly inspecting a cracked sidewalk, deadpan and unblinking, hands empty.<br><em>Lighting:</em> Harsh midday sun, hard shadows on the pavement, bright foreground and darker street behind.<br><em>Texture:</em> Tight knit cardigan texture, dark weathered skin with visible pores, rough cracked concrete, dust and film grain.</div>
+    <div class="g2 mt">
+      <div class="card butter"><b>For video</b><br><span class="small">Keep the same four parts and add <b>one action</b> with a clear start and end. One beat per clip (chapter 7).</span></div>
+      <div class="card rose"><b>Pro tip</b><br><span class="small">Ask ChatGPT to fill the four parts for a new situation, then <b>paste your lock in yourself</b> so it never gets reworded.</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 10. CH6 FORMATS ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>6</i> Formats</span>
+    <h2>Steal the format, not the video.</h2>
+    <div class="squig"></div>
+    <p class="lead">New accounts don't have time to invent formats and test them. The platforms already tell you what's working: it's the video with two million views in your niche <i>this week</i>. Take that format (the structure, the timing, the beat) and put <b>your character</b> in it.</p>
+    <h3>The rules</h3>
+    <ul class="dots">
+      <li><b>Remake the structure, never repost the video.</b> Their clip is research, not content.</li>
+      <li><b>One clear person, clean light, similar build</b> in the source clip makes the cleanest swap.</li>
+      <li><b>Your character must change the joke.</b> If the video would work identically with anyone in it, your character is decoration, not the star.</li>
+      <li><b>Keep a shortlist.</b> Save candidate formats as you scroll, review them weekly, and shoot the top two or three, not all of them.</li>
+    </ul>
+    <h3>Formats that fit an inspector character</h3>
+    <div class="g2">
+      <div class="card peach"><b>🎯 The deadpan test that fails</b><br><span class="small">Archery at a disc, a hurdle, a deadlift: attempt, fail, verdict.</span></div>
+      <div class="card mint"><b>🤫 The silent professional</b><br><span class="small">He does an ordinary job (chef, barista) without a word, then walks off.</span></div>
+      <div class="card sky"><b>👯 The twin test</b><br><span class="small">He inspects an identical copy of himself, and fails him.</span></div>
+      <div class="card rose"><b>🏗️ The public inspection</b><br><span class="small">A mundane place or object, graded like a building site.</span></div>
+    </div>
+    <div class="card butter mt"><b>⏱ Spacing rule:</b> do not run the same beat twice in a row. Two fall endings back to back turn a surprise into a routine. Alternate: a fall, then a silent one, then an inspection.</div>
+    <div class="say"><div class="av"></div><div class="bub"><small>Format inspected</small>Source video: researched. Copying: not allowed. Character: starring.</div></div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 11. CH7 PRODUCE ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>7</i> Production</span>
+    <h2>Short beats, stitched, at a cost you know before you start.</h2>
+    <div class="squig"></div>
+    <p class="lead">AI video is sold in seconds, so produce in seconds. Plan each generation as <b>one beat of about 8 to 16 seconds</b> with a clear start and end, then stitch beats together in an editor such as CapCut. A 30-second video is three good beats, not one long drifting generation.</p>
+    <h3>The workflow</h3>
+    <ol class="nums">
+      <li><b>Hook in the first second.</b> Open on the verdict moment (the crack, the lean, the fail), not on a walk-in.</li>
+      <li><b>Generate the beat in Higgsfield</b> with your character sheet as the reference and your identity lock in the prompt.</li>
+      <li><b>Check the lock before anything else:</b> face, key feature, outfit, expression. Drifted? Regenerate that beat only.</li>
+      <li><b>Keep audio ambient</b> in the generation (street noise, room tone). Add the trending sound later, on the platform, so it stays current.</li>
+      <li><b>Stitch, caption, post.</b> The caption is written <i>before</i> you generate, not after (chapter 8).</li>
+    </ol>
+    <h3 class="mt">What a video actually cost in this case study</h3>
+    <table>
+      <tr><th>Item</th><th>Real figure from the account</th></tr>
+      <tr><td>Swap-style generation</td><td>32 credits for a 16-second video</td></tr>
+      <tr><td>Cost per video on the $211 credit pack</td><td>About $1.69 per video</td></tr>
+      <tr><td>Text-to-video beats</td><td>About 8 seconds per beat, stitched for longer pieces</td></tr>
+    </table>
+    <div class="g2 mt">
+      <div class="card mint"><b>Beat checklist</b><ul class="cb small" style="margin-top:6px"><li>Starts on the verdict moment</li><li>One action, clear start and end</li><li>Same face, neck and flat-top</li><li>Hands empty (unless the prop is the bit)</li></ul></div>
+      <div class="card butter"><b>Know your number</b><br><span class="small">Prices change. Know your cost per finished video before you scale posting, and price any client work from that number, not from a guess.</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 12. CH8 CAPTIONS ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>8</i> Captions</span>
+    <h2>A caption is a verdict: under 15 words, zero hashtags.</h2>
+    <div class="squig"></div>
+    <p class="lead">The video is the evidence. The caption is the ruling. Toussaint's captions follow a formal-report formula: <b>what was inspected, what failed, what it means</b>. Short sentences, completely deadpan, never winking at the joke.</p>
+    <h3>Real captions from the account</h3>
+    <div class="g2" style="gap:10px">
+      <div class="card butter" style="transform:rotate(-1.2deg)"><span class="small"><b>Archery test</b></span><br><b>Target inspected. Aim: failed. Disc: survived.</b></div>
+      <div class="card mint" style="transform:rotate(1deg)"><span class="small"><b>Hurdle</b></span><br><b>Hurdle inspected. Clearance: failed. Landing: worse.</b></div>
+      <div class="card rose" style="transform:rotate(.8deg)"><span class="small"><b>Food-truck chef</b></span><br><b>Drink inspected. Ingredients: unknown. Verdict: served anyway.</b></div>
+      <div class="card sky" style="transform:rotate(-1deg)"><span class="small"><b>Physics bulb test</b> (1.7M views on TikTok)</span><br><b>Bulb tested. Lamp: lit. Verdict: unclear.</b></div>
+      <div class="card peach" style="transform:rotate(-.8deg)"><span class="small"><b>Fancy cafe</b></span><br><b>First time here. Posture: perfect. Etiquette: failed.</b></div>
+      <div class="card lilac" style="transform:rotate(1.2deg)"><span class="small"><b>Twin inspection</b></span><br><b>I inspected myself. I failed.</b></div>
+    </div>
+    <h3 class="mt2">The formula, for any character</h3>
+    <ul class="dots">
+      <li>One short verdict, <b>under 15 words</b>.</li>
+      <li><b>Zero hashtags.</b> The character is the discovery mechanism, not the tags.</li>
+      <li>Emojis almost never. For Toussaint, only the flag or the ruler, occasionally.</li>
+      <li><b>Never explain in the caption that the character is AI.</b> Labelling AI content is a platform setting (next chapter), not copy.</li>
+      <li>Write the caption in the <b>character's voice</b>, not yours. If the character wouldn't say it in a formal report, rewrite it.</li>
+    </ul>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 13. CH9 POSTING ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>9</i> Posting</span>
+    <h2>Every platform, same character, labelled as AI.</h2>
+    <div class="squig"></div>
+    <div style="display:grid;grid-template-columns:1fr 225px;gap:16px;align-items:start">
+      <div>
+        <p>A character compounds when the same person appears everywhere a viewer might land. Post the same video to <b>Instagram, TikTok and YouTube Shorts</b> and let each platform find its own audience for it.</p>
+        <ul class="dots">
+          <li><b>Post everywhere, at the same time.</b> Don't hold a platform back to "test". The test <i>is</i> the posting.</li>
+          <li><b>Turn on the AI label</b> on every post, in the platform's own setting. It protects the account and it's increasingly the honest norm. The joke survives it, because the character never pretended to be a documentary.</li>
+          <li><b>Link in bio from day one.</b> Even before you have a product, it's where future money lands: a tip jar, a storefront, or a sales page.</li>
+          <li><b>Consistency over perfection.</b> A good-enough video today beats a perfect one next week. The lock makes "good enough" still look like the same person.</li>
+          <li><b>Collaborations count double.</b> Post collabs as a true platform collaboration (both profiles), not a tag in the caption.</li>
+        </ul>
+      </div>
+      <div>
+        <figure class="photo rot-r"><img src="../playbook-site/img/ig-profile.jpg" alt=""><figcaption>The real profile: bio in character, AI-generated label on, 5,343 followers.</figcaption></figure>
+      </div>
+    </div>
+    <div class="g2 mt2">
+      <figure class="photo rot-l"><img src="../playbook-site/img/tiktok-profile.jpg" alt="" style="max-height:170px;object-fit:cover;object-position:top"><figcaption>Same character, same bio, on TikTok.</figcaption></figure>
+      <div class="card butter" style="align-self:center"><b>The silhouette test</b><br><span class="small">If the side profile doesn't read instantly in the thumbnail, the post isn't ready. Check it before you publish.</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 14. CH10 DATA ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>10</i> Your data</span>
+    <h2>Viewers are not followers, and their map lives in the reel, not the profile.</h2>
+    <div class="squig"></div>
+    <p class="lead">The most common data mistake with a viral AI character: opening follower demographics and calling it your audience. When about 98% of views come from people who don't follow you, follower data describes almost nobody who watched. <b>Viewer data is per-video.</b></p>
+    <h3>Check your viewers yourself (Instagram)</h3>
+    <ol class="nums">
+      <li>Open the reel and tap <b>View insights</b> under the video.</li>
+      <li>Read <b>accounts reached / views, watch time, shares, and follows from this reel.</b> Shares and follows-per-view are the numbers that predict the next hit.</li>
+      <li>For <b>where viewers are</b>, use the audience section of that reel's insights where your account and region offer it, and the Professional Dashboard's audience view for the account overall. Treat follower geography only as a partial map, clearly labelled as followers, not viewers.</li>
+      <li>In the app, <b>Settings and activity → Insights</b> gives account-level reach and the content that drove it over the last 30 to 90 days. (TikTok has the same idea: open a video and tap <b>More insights</b>.)</li>
+    </ol>
+    <h3 class="mt">What to record weekly</h3>
+    <table>
+      <tr><th style="width:150px">Number</th><th>Why it matters</th></tr>
+      <tr><td>Shares per post</td><td>Distribution you didn't pay for. The masquerade reel's 16.1K shares built the account.</td></tr>
+      <tr><td>Follows per post</td><td>Tells you which format converts strangers into followers.</td></tr>
+      <tr><td>% non-follower viewers</td><td>High means the format travels. Low means you're only feeding existing fans.</td></tr>
+      <tr><td>Viewer geography (per reel)</td><td>Tells you what language, references and posting times the next video should use.</td></tr>
+    </table>
+    <div class="card rose mt"><b>Honest limit:</b> some viewer breakdowns only exist inside the app, per reel, and third-party tools can't pull them for you. Anyone selling you a complete viewer map from outside the app is guessing. Check it in the app, screenshot it, and file it with the post.</div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 15. CH11 MONEY ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>11</i> Monetization</span>
+    <h2>Earn in the order it unlocks. Don't wait for the platform to pay you.</h2>
+    <div class="squig"></div>
+    <p class="lead">At a few thousand followers, Instagram is <b>proof, not a payer</b>. The money that's actually available early comes from people and brands paying for what the character can do. Here is the ladder, in the order it realistically opens.</p>
+    <div style="display:grid;gap:7px;margin-top:6px">
+      <div class="card mint" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag mint" style="flex:0 0 66px;text-align:center">NOW</span><div><b>Personalized verdicts.</b> <span class="small">Fans pay for the character to inspect their photo, product, gym form or party, delivered as a short video or image verdict.</span></div></div>
+      <div class="card mint" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag mint" style="flex:0 0 66px;text-align:center">NOW</span><div><b>Product-inspection UGC.</b> <span class="small">A brand pays the character to "inspect" its product on camera. The deadpan format <i>is</i> the ad.</span></div></div>
+      <div class="card mint" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag mint" style="flex:0 0 66px;text-align:center">NOW</span><div><b>Collaborations.</b> <span class="small">Joint posts with other creators trade audiences. Paid collabs follow once your reach is proven.</span></div></div>
+      <div class="card mint" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag mint" style="flex:0 0 66px;text-align:center">NOW</span><div><b>Affiliate links.</b> <span class="small">Link the tools you actually use to make the character, in the bio.</span></div></div>
+      <div class="card mint" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag mint" style="flex:0 0 66px;text-align:center">NOW</span><div><b>Your own playbook or course.</b> <span class="small">Your documented process, sold as a PDF (chapter 12). This document is the example.</span></div></div>
+      <div class="card butter" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag" style="flex:0 0 66px;text-align:center;background:#d99a00">~1,000</span><div><b>Creator Marketplace.</b> <span class="small">Meta's brand-deal marketplace, once the account qualifies.</span></div></div>
+      <div class="card butter" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag" style="flex:0 0 66px;text-align:center;background:#d99a00">LATER</span><div><b>Merch.</b> <span class="small">Works once a catchphrase or image is famous enough that strangers want it on a shirt. Best as a limited drop.</span></div></div>
+      <div class="card sky" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag sky" style="flex:0 0 66px;text-align:center">10,000</span><div><b>Subscriptions and Live Badges.</b> <span class="small">Platform fan payments. Real money, but a later rung. Don't plan around it early.</span></div></div>
+      <div class="card lilac" style="display:flex;gap:10px;align-items:center;padding:8px 12px"><span class="tag lilac" style="flex:0 0 66px;text-align:center">INVITE</span><div><b>Bonuses.</b> <span class="small">Platform bonus programs can't be applied for on demand. Treat any invite as a windfall, not a plan.</span></div></div>
+    </div>
+    <p class="small mt">Thresholds are the platform rules as known when this edition was written and can change. Check the current rules in the app before planning around any single one.</p>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 16. CH12 SELL ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>12</i> Sell the system</span>
+    <h2>Your process is a product, and the market has already priced it.</h2>
+    <div class="squig"></div>
+    <p class="lead">Once your character works, the method itself becomes sellable, because thousands of people want the result you already have. This isn't theory: it's what creators in this exact niche are doing. When this playbook was researched, comparable AI-character playbooks and courses were selling at roughly <b>$14.99, $19.99 and $29.90 to $69.90</b>, usually as a PDF plus extras.</p>
+    <h3>How to package yours</h3>
+    <ol class="nums">
+      <li><b>Lead with your case study.</b> Your dated, real numbers are the sales page. Screenshots beat adjectives.</li>
+      <li><b>Price inside the proven band.</b> Around $19.99 to $29 for a PDF playbook; move higher only if you add a video walkthrough or a tool. A short launch price (this playbook launched at $9 for two weeks, then $29) gives early buyers a reason to act.</li>
+      <li><b>Sell where creators already buy:</b> a store link in your bio and on your showcase site.</li>
+      <li><b>Give the templates away inside the product,</b> not on the sales page: the lock, the prompt structure, the caption bank, the checklists.</li>
+      <li><b>Promise the method, never the outcome.</b> Say what the system is and what it did on your account, with dates. That keeps you honest and out of refund trouble: results depend on the buyer's character and execution.</li>
+    </ol>
+    <div class="card peach mt2" style="text-align:center;padding:16px 20px">
+      <div style="font-family:var(--head);font-size:19px">🔁 The loop</div>
+      <p style="margin:6px 0 0">The character promotes the playbook, the playbook teaches new characters, and every buyer's result becomes social proof for both. <b>Your account is the ad. This PDF is the product.</b></p>
+    </div>
+    <h3 style="margin-top:16px">Example: how this playbook was priced</h3>
+    <div class="g3">
+      <div class="stat b"><div class="n">$9</div><div class="l">launch price<br>for the first two weeks</div></div>
+      <div class="stat c"><div class="n">$29</div><div class="l">regular price<br>for the PDF playbook</div></div>
+      <div class="stat d"><div class="n">$$</div><div class="l">higher only if you add<br>a video walkthrough or tool</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 17. CH13 14 DAYS ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>13</i> Launch plan</span>
+    <h2>Your first 14 days, day by day.</h2>
+    <div class="squig"></div>
+    <div class="g2" style="gap:7px 11px;font-size:12.2px;line-height:1.38">
+      <div class="card peach" style="padding:6px 11px"><span class="tag">DAY 1</span> <b>Design</b><br><span class="small">One odd feature, one outfit, one expression, one job. Write the one-paragraph description.</span></div>
+      <div class="card peach" style="padding:6px 11px"><span class="tag">DAY 2</span> <b>Lock it</b><br><span class="small">Write the identity lock from that paragraph. Freeze it.</span></div>
+      <div class="card peach" style="padding:6px 11px"><span class="tag">DAY 3</span> <b>Character sheet</b><br><span class="small">Five full-body angles at one scale (Gemini).</span></div>
+      <div class="card peach" style="padding:6px 11px"><span class="tag">DAY 4</span> <b>Close-ups</b><br><span class="small">Three close-ups and two backup singles. Save the pack in one folder.</span></div>
+      <div class="card mint" style="padding:6px 11px"><span class="tag mint">DAY 5</span> <b>Shortlist</b><br><span class="small">Scroll your niche for one hour. Save ten proven formats.</span></div>
+      <div class="card mint" style="padding:6px 11px"><span class="tag mint">DAY 6</span> <b>Captions first</b><br><span class="small">Write three captions, then three prompts (four parts, lock inside).</span></div>
+      <div class="card mint" style="padding:6px 11px"><span class="tag mint">DAY 7</span> <b>Video one</b><br><span class="small">Generate it in Higgsfield. Lock-check frame by frame. Regenerate drifted beats only.</span></div>
+      <div class="card mint" style="padding:6px 11px"><span class="tag mint">DAY 8</span> <b>Accounts</b><br><span class="small">Bio in character, profile still from the sheet, link in bio, AI label understood.</span></div>
+      <div class="card sky" style="padding:6px 11px"><span class="tag sky">DAY 9</span> <b>Post video one</b><br><span class="small">Everywhere, same day. Note the time.</span></div>
+      <div class="card sky" style="padding:6px 11px"><span class="tag sky">DAY 10</span> <b>Post video two</b><br><span class="small">A different beat from video one (no repeated gimmick back to back).</span></div>
+      <div class="card sky" style="padding:6px 11px"><span class="tag sky">DAY 11</span> <b>Read insights</b><br><span class="small">Shares, follows, % non-followers on both posts. Write them down.</span></div>
+      <div class="card sky" style="padding:6px 11px"><span class="tag sky">DAY 12</span> <b>Post video three</b><br><span class="small">Use whichever of the first two formats travelled further.</span></div>
+      <div class="card lilac" style="padding:6px 11px"><span class="tag lilac">DAY 13</span> <b>Money basics</b><br><span class="small">A tip or verdict offer in the bio link, one affiliate link for your main tool.</span></div>
+      <div class="card lilac" style="padding:6px 11px"><span class="tag lilac">DAY 14</span> <b>Review</b><br><span class="small">Compare the week against chapter 10's table. Pick next week's three formats from data, not taste.</span></div>
+    </div>
+    <div class="card dark" style="text-align:center;margin-top:14px;padding:10px 14px"><p style="margin:0;color:#f3dcc8;font-size:12.5px">Fourteen days won't make you viral. It gives you <b style="color:#fff">a locked character, three posted videos, real data and a money link live</b>, which is more than most accounts ever build, and everything the Toussaint account had underneath its first run.</p></div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 18. CH14 TEMPLATES ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>14</i> Copy-ready</span>
+    <h2>Templates and checklists: copy these exactly.</h2>
+    <div class="squig"></div>
+    <h3 style="margin-top:2px">Identity lock template</h3>
+    <div class="lock"><span class="lbl">COPY ME</span>[Name], [age], [one-line persona]: [exaggerated feature], [second rigid feature], [signature outfit], [hair / head feature], [skin / surface detail], [default expression]. [One restriction, e.g. hands empty.] [One behaviour line: how seriously they take themselves.]</div>
+    <h3>Four-part prompt template</h3>
+    <div class="lock"><span class="lbl">COPY ME</span><em>Camera:</em> [lens, framing, angle, motion].<br><em>Tone:</em> [mood]. [IDENTITY LOCK] [one action with a clear start and end, where].<br><em>Lighting:</em> [one named light source and direction].<br><em>Texture:</em> [materials, skin, surfaces, grain].</div>
+    <div class="g2 mt">
+      <div>
+        <h3 style="margin-top:0">Caption bank</h3>
+        <p class="small" style="margin-bottom:6px">Inspector voice. Adapt the nouns.</p>
+        <ul class="dots small" style="font-size:12px">
+          <li>[Thing] inspected. [Skill]: failed. [Thing]: survived.</li>
+          <li>First time here. Posture: perfect. Etiquette: failed.</li>
+          <li>[Thing] inspected. Ingredients: unknown. Verdict: served anyway.</li>
+          <li>I inspected myself. I failed.</li>
+          <li>Physics inspected. [Thing]: tested. Science: pending.</li>
+          <li>[Thing] tested. [Thing]: lit. Verdict: unclear.</li>
+        </ul>
+      </div>
+      <div class="card mint">
+        <h3 style="margin:0 0 6px;color:var(--ink)">Pre-post checklist</h3>
+        <ul class="cb" style="font-size:12px">
+          <li>Face matches the character sheet</li>
+          <li>Key feature at full size: not shrunk, not softened</li>
+          <li>Default outfit, or the outfit the bit requires</li>
+          <li>Hands empty, unless the prop is the bit</li>
+          <li>Last seconds scrubbed for glitched gestures</li>
+          <li>Caption under 15 words, zero hashtags</li>
+          <li>AI label turned on</li>
+          <li>Posted to every platform, link in bio working</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 19. CH15 LIMITS ============ -->
+<section class="page">
+  <div class="in">
+    <span class="chap"><i>15</i> Honest limits</span>
+    <h2>What breaks a character, and what nobody can promise you.</h2>
+    <div class="squig"></div>
+    <h3 style="margin-top:2px">Lock breaks to catch before you post</h3>
+    <div class="g2">
+      <div class="card peach"><b>👕 Costume drift</b><br><span class="small">A random outfit (a fringed jacket instead of the cardigan) makes the character a stranger for one post. Role uniforms, like a chef coat for a kitchen bit, are the exception because the job explains them.</span></div>
+      <div class="card mint"><b>🌀 AI morphs</b><br><span class="small">A body or face that changes mid-clip pulls every eye to the glitch. If it wasn't intentional, regenerate: viewers will comment on the morph, not the joke.</span></div>
+      <div class="card sky"><b>🖐 Ambiguous gestures</b><br><span class="small">A glitched hand can read as a rude gesture to camera. Scrub the last seconds of every clip before posting.</span></div>
+      <div class="card rose"><b>🎭 Tone breaks</b><br><span class="small">A bit that makes the character creepy instead of strict (peeking instead of inspecting) damages the persona the account is built on. Hold those clips.</span></div>
+    </div>
+    <div class="card butter mt"><b>🏷 Branding accidents.</b> <span class="small">A visible product logo in a gag reads as an unpaid ad, and a powder-on-the-nose joke reads as a drug gag. Decide both deliberately, never by accident.</span></div>
+    <h3 class="mt2">The honest limits of this playbook</h3>
+    <p><b>One account, one viral post, under two weeks.</b> That is a real result and a small sample. The method raises your odds (a recognizable character, proven formats, consistent posting, honest data) but <b>no playbook can promise a viral post, a follower count or an income,</b> and you shouldn't buy or sell one that does.</p>
+    <p>What this system <i>does</i> give you is <b>cheaper learning</b>: every video costs about the price of a coffee, every mistake is visible in the lock-check, and every result is in your own insights within a day.</p>
+  </div>
+  <div class="foot"><span>The AI Character Playbook</span><span class="pg"></span></div>
+</section>
+
+<!-- ============ 20. END ============ -->
+<section class="page cover">
+  <div class="in" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 60px">
+    <span class="spark" style="left:60px;top:70px">✦</span><span class="spark" style="right:70px;top:120px;font-size:15px">✧</span><span class="spark" style="right:90px;bottom:120px">✦</span>
+    <div style="width:170px;height:170px;border-radius:50%;background:url(avatar.jpg) center/cover;border:6px solid #ffb27a;box-shadow:0 8px 0 rgba(0,0,0,.35)"></div>
+    <div class="stamp" style="color:#ffb27a;border-color:#ffb27a;font-size:26px;margin:26px 0 18px;padding:8px 24px">Inspection complete</div>
+    <p style="font-family:var(--head);font-size:24px;line-height:1.25;color:#fff;max-width:440px">Character: buildable.<br>System: repeatable.<br><span style="color:#ffb27a">Results: yours to earn.</span></p>
+    <p style="color:#f3dcc8;margin-top:22px;max-width:430px">Uncle Toussaint lives at <b style="color:#fff">@uncletoussaint</b> on Instagram and TikTok. The playbook's home is <b style="color:#fff">toussaint.getaurorastudios.com</b>.</p>
+    <p style="color:#bfa592;font-size:11.5px;margin-top:30px;max-width:440px">Uncle Toussaint is a fictional, AI-generated character. All figures are real numbers from the account with dates as given; they are a record of one account, not a promise of your results. © 2026 The AI Character Playbook, 2nd edition.</p>
+  </div>
+</section>
+
+</body>
+</html>
