@@ -43,6 +43,11 @@ return [
     // 'reply_catalog' => ['free' => 10, 'packs' => ['pack150' => ['usd' => 5.00]], 'subs' => ['reply' => ['usd' => 12.00]]],  // optional: override any price or allowance (see reply_catalog() in api/lib/pricing.php)
     'reply_pro_quota' => 5000,                               // bigger subscription: replies per month ('reply_monthly_quota' is the standard one)
 
+    // Uncle Toussaint playbook (one-time PDF, guest checkout through Stripe). The PDF goes at releases_dir/uncle-toussaint-playbook.pdf (or set 'playbook_file').
+    'playbook_site_url' => 'https://toussaint.getaurorastudios.com',
+    'playbook_special_ends' => '2026-11-22T23:59:59Z',   // $9 until this moment (UTC), then $29
+    // 'playbook_special_cents' => 900, 'playbook_regular_cents' => 2900, 'playbook_max_downloads' => 10, 'playbook_secret' => '', 'playbook_support' => 'support@getaurorastudios.com',
+
     'paypal_env' => 'sandbox',               // 'live' when ready
     'paypal_client_id' => '', 'paypal_client_secret' => '', 'paypal_webhook_id' => '',
     'paypal_plan_bundle_launch' => '', 'paypal_plan_bundle' => '', 'paypal_plan_facebook' => '', 'paypal_plan_instagram' => '', 'paypal_plan_tiktok' => '',

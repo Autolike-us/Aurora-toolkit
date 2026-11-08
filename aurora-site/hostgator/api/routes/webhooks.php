@@ -13,7 +13,8 @@ function route_webhook_stripe(): void
     if (seen_event($event['id'])) json_out(['ok' => true, 'duplicate' => true]);
     try {
         $type = (string) ($event['type'] ?? ''); $obj = $event['data']['object'] ?? [];
-        if ($type === 'checkout.session.completed' && !empty($obj['subscription'])) stripe_sync_subscription(stripe_call('GET', '/v1/subscriptions/' . rawurlencode($obj['subscription'])));
+        if (in_array($type, ['checkout.session.completed', 'checkout.session.async_payment_succeeded'], true) && ($obj['metadata']['product'] ?? '') === PLAYBOOK_PRODUCT) playbook_fulfil($obj);
+        elseif ($type === 'checkout.session.completed' && !empty($obj['subscription'])) stripe_sync_subscription(stripe_call('GET', '/v1/subscriptions/' . rawurlencode($obj['subscription'])));
         elseif (in_array($type, ['checkout.session.completed', 'checkout.session.async_payment_succeeded'], true) && ($obj['mode'] ?? '') === 'payment') stripe_grant_pack_session($obj);
         elseif (strpos($type, 'customer.subscription.') === 0) stripe_sync_subscription($obj);
         mark_event($event['id'], 'stripe');

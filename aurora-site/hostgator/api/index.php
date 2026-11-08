@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 require __DIR__ . '/lib/bootstrap.php';
-foreach (['pricing', 'entitlements', 'token', 'auth', 'mail', 'stripe', 'paypal', 'reply', 'audit', 'write'] as $f) require __DIR__ . "/lib/$f.php";
-foreach (['auth', 'account', 'billing', 'webhooks', 'license', 'download', 'reply', 'admin', 'audit', 'write'] as $f) require __DIR__ . "/routes/$f.php";
+foreach (['pricing', 'entitlements', 'token', 'auth', 'mail', 'stripe', 'paypal', 'reply', 'audit', 'write', 'playbook'] as $f) require __DIR__ . "/lib/$f.php";
+foreach (['auth', 'account', 'billing', 'webhooks', 'license', 'download', 'reply', 'admin', 'audit', 'write', 'playbook'] as $f) require __DIR__ . "/routes/$f.php";
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -34,6 +34,7 @@ $routes = [
     'POST /webhooks/stripe' => 'route_webhook_stripe', 'POST /webhooks/paypal' => 'route_webhook_paypal',
     'POST /license/verify' => 'route_license_verify', 'GET /download' => 'route_download',
     'POST /reply/draft' => 'route_reply_draft', 'POST /reply/variants' => 'route_reply_variants', 'POST /reply/status' => 'route_reply_status', 'POST /reply/sync' => 'route_reply_sync', 'POST /reply/admin' => 'route_reply_admin', 'POST /admin/overview' => 'route_admin_overview', 'POST /admin/users' => 'route_admin_users', 'POST /admin/user' => 'route_admin_user', 'POST /admin/subscriptions' => 'route_admin_subscriptions', 'POST /admin/orders' => 'route_admin_orders', 'POST /admin/cost' => 'route_admin_cost', 'POST /audit-ai' => 'route_audit_ai', 'POST /reply/write' => 'route_reply_write', 'GET /reply/plans' => 'route_reply_plans', 'GET /reply/account' => 'route_reply_account', 'POST /checkout/pack' => 'route_checkout_pack',
+    'GET /playbook/buy' => 'route_playbook_buy', 'GET /playbook/order' => 'route_playbook_order', 'GET /playbook/download' => 'route_playbook_download',
 ];
 $handler = $routes["$method $path"] ?? null;
 if (!$handler) { http_response_code(404); echo json_encode(['ok' => false, 'error' => 'Not found.']); exit; }

@@ -452,5 +452,46 @@ $r = call('POST', '/admin/orders', [], $s3); check('Admin: the pack orders list 
 $r = call('POST', '/admin/cost', [], $s3); check('Admin: the cost page lists months with tokens, dollars and cost per reply', $r['status'] === 200 && ($r['json']['months'][0]['costUsd'] ?? 0) > 0 && ($r['json']['months'][0]['costPerReplyUsd'] ?? 0) > 0);
 check('Admin: the old key-based owner page is gone', call('POST', '/owner/overview', ['key' => 'AUR-MSTR-ADMN-0000'])['status'] === 404);
 
+// ---- Uncle Toussaint playbook: guest checkout, server-set price, emailed private download ----
+function playbook_hook(string $id, array $obj): array { $payload = json_encode(['id' => $id, 'type' => 'checkout.session.completed', 'data' => ['object' => $obj]]); $t = time(); return call('POST', '/webhooks/stripe', $payload, null, ['Stripe-Signature: t=' . $t . ',v1=' . hash_hmac('sha256', $t . '.' . $payload, 'whsec_test')], true); }
+$noFollow = function (string $path) use ($port): array { $ch = curl_init("http://127.0.0.1:$port/api$path"); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_FOLLOWLOCATION => false]); $resp = (string) curl_exec($ch); $hs = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE); $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE); curl_close($ch); return ['status' => $code, 'headers' => substr($resp, 0, $hs), 'body' => substr($resp, $hs)]; };
+$r = $noFollow('/playbook/buy'); preg_match('#Location: (\S+)#i', $r['headers'], $lm); $pbSess = basename($lm[1] ?? '');
+$sl = array_values(array_filter($plog(), fn($e) => $e['p'] === '/v1/checkout/sessions' && $e['m'] === 'POST')); $f = end($sl)['form'] ?? [];
+check('Playbook: the Buy button redirects to Stripe with a one-time payment, no sign-in needed', $r['status'] === 303 && strpos($lm[1] ?? '', 'stripe.test') !== false && ($f['mode'] ?? '') === 'payment' && ($f['metadata']['product'] ?? '') === 'playbook');
+check('Playbook: during the launch special the server charges $9 (the visitor cannot choose the price)', (int) ($f['line_items'][0]['price_data']['unit_amount'] ?? 0) === 900 && ($f['metadata']['kind'] ?? '') === 'special' && strpos($f['success_url'] ?? '', '/thanks.html?cs={CHECKOUT_SESSION_ID}') !== false);
+$r = call('GET', '/playbook/order?cs=' . $pbSess); check('Playbook: before payment the thank-you page gets PENDING and no link', ($r['json']['status'] ?? '') === 'PENDING' && empty($r['json']['downloadUrl']));
+check('Playbook: a made-up session id is refused', call('GET', '/playbook/order?cs=nope')['status'] === 400);
+file_put_contents("$tmp/paid-$pbSess", 'Buyer@Example.com');
+$r = call('GET', '/playbook/order?cs=' . $pbSess); $dl = (string) ($r['json']['downloadUrl'] ?? '');
+check('Playbook: after payment the thank-you page gets the private download link', ($r['json']['status'] ?? '') === 'PAID' && ($r['json']['email'] ?? '') === 'buyer@example.com' && preg_match('#/api/playbook/download\?t=[a-f0-9]{48}$#', $dl) === 1, $r['json'] ?? []);
+$m = last_mail('buyer@example.com'); check('Playbook: the buyer is emailed the same link, once', $m && strpos($m['text'], $dl) !== false && (int) $pdo->query("SELECT COUNT(*) FROM playbook_orders")->fetchColumn() === 1);
+call('GET', '/playbook/order?cs=' . $pbSess); $mails = array_filter(file("$tmp/mail.log"), fn($l) => (json_decode($l, true)['to'] ?? '') === 'buyer@example.com');
+check('Playbook: reloading the thank-you page does not email or record a second order', count($mails) === 1 && (int) $pdo->query("SELECT COUNT(*) FROM playbook_orders")->fetchColumn() === 1);
+$ev = ['id' => $pbSess, 'mode' => 'payment', 'payment_status' => 'paid', 'amount_total' => 900, 'customer_details' => ['email' => 'buyer@example.com'], 'metadata' => ['product' => 'playbook', 'kind' => 'special']];
+check('Playbook: the signed webhook for an already-recorded order is harmless', playbook_hook('evt_pb1', $ev)['status'] === 200 && (int) $pdo->query("SELECT COUNT(*) FROM playbook_orders")->fetchColumn() === 1);
+$ev2 = ['id' => 'cs_test_webhookonly01', 'mode' => 'payment', 'payment_status' => 'paid', 'amount_total' => 900, 'customer_details' => ['email' => 'second@example.com'], 'metadata' => ['product' => 'playbook', 'kind' => 'special']];
+check('Playbook: a webhook alone records the order and emails the buyer', playbook_hook('evt_pb2', $ev2)['status'] === 200 && last_mail('second@example.com') !== null && (int) $pdo->query("SELECT COUNT(*) FROM playbook_orders")->fetchColumn() === 2);
+playbook_hook('evt_pb3', ['id' => 'cs_test_wrongamount01', 'mode' => 'payment', 'payment_status' => 'paid', 'amount_total' => 100, 'customer_details' => ['email' => 'cheat@example.com'], 'metadata' => ['product' => 'playbook', 'kind' => 'special']]);
+playbook_hook('evt_pb4', ['id' => 'cs_test_unpaid0000001', 'mode' => 'payment', 'payment_status' => 'unpaid', 'amount_total' => 900, 'customer_details' => ['email' => 'unpaid@example.com'], 'metadata' => ['product' => 'playbook', 'kind' => 'special']]);
+check('Playbook: a wrong amount or an unpaid session is never fulfilled', last_mail('cheat@example.com') === null && last_mail('unpaid@example.com') === null && (int) $pdo->query("SELECT COUNT(*) FROM playbook_orders")->fetchColumn() === 2);
+check('Playbook: an unsigned webhook is rejected', call('POST', '/webhooks/stripe', json_encode(['id' => 'evt_x', 'type' => 'checkout.session.completed', 'data' => ['object' => $ev2]]), null, ['Stripe-Signature: t=1,v1=bad'], true)['status'] === 400);
+$tok = substr($dl, strrpos($dl, '=') + 1);
+check('Playbook: before the PDF is uploaded the download says so politely', call('GET', '/playbook/download?t=' . $tok)['status'] === 404);
+file_put_contents("$tmp/releases/uncle-toussaint-playbook.pdf", "%PDF-1.4 test");
+$r = call('GET', '/playbook/download?t=' . $tok); check('Playbook: the private link downloads the PDF', $r['status'] === 200 && strpos($r['body'], '%PDF') === 0 && stripos($r['headers'], 'application/pdf') !== false && stripos($r['headers'], 'attachment') !== false);
+check('Playbook: a wrong or malformed link gets nothing', call('GET', '/playbook/download?t=' . str_repeat('a', 48))['status'] === 404 && call('GET', '/playbook/download?t=x')['status'] === 404);
+$pdo->exec("UPDATE playbook_orders SET downloads = 10"); check('Playbook: after 10 downloads the link stops (buyer is told to email support)', call('GET', '/playbook/download?t=' . $tok)['status'] === 429);
+$pdo->exec("UPDATE playbook_orders SET downloads = 0, expires_at = '" . gmdate('Y-m-d H:i:s', time() - 60) . "'"); check('Playbook: an expired link says so', call('GET', '/playbook/download?t=' . $tok)['status'] === 410);
+// After the special ends: a second server whose config says the special ended yesterday.
+$p2 = random_int(50000, 59000);
+$cfg2 = (require "$tmp/config.php"); $cfg2['playbook_special_ends'] = gmdate('Y-m-d\TH:i:s\Z', time() - 86400);
+file_put_contents("$tmp/config2.php", '<?php return ' . var_export($cfg2, true) . ';');
+$pid2 = (int) trim((string) shell_exec(sprintf('AURORA_CONFIG=%s php -S 127.0.0.1:%d %s > /dev/null 2>&1 & echo $!', escapeshellarg("$tmp/config2.php"), $p2, escapeshellarg("$root/api/index.php"))));
+for ($i = 0; $i < 50; $i++) { if (@fsockopen('127.0.0.1', $p2)) break; usleep(100000); }
+$ch = curl_init("http://127.0.0.1:$p2/api/playbook/buy"); curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => false]); curl_exec($ch); curl_close($ch);
+$sl = array_values(array_filter($plog(), fn($e) => $e['p'] === '/v1/checkout/sessions' && $e['m'] === 'POST')); $f = end($sl)['form'] ?? [];
+check('Playbook: after the special ends the server charges $29', (int) ($f['line_items'][0]['price_data']['unit_amount'] ?? 0) === 2900 && ($f['metadata']['kind'] ?? '') === 'regular');
+posix_kill($pid2, SIGTERM);
+
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);
