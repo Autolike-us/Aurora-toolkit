@@ -5,7 +5,7 @@ Owner: non-technical. Wants **simple numbered steps**, never real keys/passwords
 ## Repos (all in /home/user)
 | Product | Folder | Latest | Notes |
 |---|---|---|---|
-| Facebook Studio (paid, not in store) | FB-Growth-V1 | **1.4.4** | post to groups, several-in-one, share reels/posts to groups |
+| Facebook Studio (paid, not in store) | FB-Growth-V1 | **1.4.5** | post to groups (Automatic now 1–2 min wait, no forced daily cap), several-in-one, share reels/posts to groups |
 | Instagram Studio | ig-growth-v1 | 1.2.4 | feed scrolling fixed (1.2.3), movable/hideable button (1.2.4) |
 | TikTok Studio | tk-growth-v1 | 1.2.3 | movable/hideable button |
 | Aurora Extract (free, in store) | 3in1-extract-v1 | **0.5.1** | runs in own small window, progress card on user tab, IG list scroll fix. Store update NOT yet submitted (notes: store/UPDATE-0.5.1.md) |
@@ -23,7 +23,7 @@ Files: `groupposts.js` (page steps: rules, post, several-groups, share pair, lis
 - Server part: `POST /reply/variants` (different wording per group, 1 Reply credit each, up to 6 per call) is in aurora-site `hostgator/api` (index.php, lib/reply.php, routes/reply.php). **Owner must upload `aurora-api-variants-update.zip` to public_html** (built from the working copy; check it matches what is live). Not yet confirmed uploaded.
 
 ## Open items for the owner
-1. Test Facebook Studio 1.4.4 live (load reels, share 1-2 reels to test groups, Assisted then Automatic) and send "Copy debug report" if anything stops. Owner should check groups for the 3 shares that Aurora paused on (probably went through).
+1. Test Facebook Studio 1.4.5 live (load reels, share 1-2 reels to test groups, Assisted then Automatic) and send "Copy debug report" if anything stops. Owner should check groups for the 3 shares that Aurora paused on (probably went through).
 2. Submit Extract 0.5.1 and Reply 1.2.2 to the Chrome Web Store (and Edge) when happy.
 3. Upload the website API update (variants) and the earlier pending site items: TikTok developer-app pages (callback, /openshorts, legal edits; zip built, not deployed) and `reel-drop` (PHP clip hosting for OpenShorts; zip built, not deployed; owner must set a secret in index.php first).
 4. Aurora Clips alpha (OpenShorts + Docker) and owner checklist (lawyer review of privacy/terms, Anthropic spend limit).
